@@ -541,9 +541,9 @@
 
     #teaPerfectZone {
       position: absolute;
-      left: 42%;
+      left: 36%;
       top: 0;
-      width: 16%;
+      width: 28%;
       height: 100%;
       background: rgba(255,255,255,.55);
       box-shadow: 0 0 14px rgba(255,209,102,.9);
@@ -666,6 +666,56 @@
       transform: translate(-50%, -50%) scale(1);
     }
 
+    /* ===== Mini game pha trà sữa theo ý ===== */
+    .builderGroupLabel {
+      font-weight: 900;
+      color: #7a4f8a;
+      margin: 10px 0 2px;
+      text-align: left;
+    }
+
+    .builderRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .optChip {
+      border: 3px solid rgba(91, 58, 102, 0.6);
+      background: #fff7fb;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 12px;
+      box-shadow: 0 4px 0 rgba(91, 58, 102, 0.16);
+    }
+
+    .optChip.on {
+      background: linear-gradient(180deg, #fff1b8, #ffd1e6);
+      border-color: #ff6ead;
+    }
+
+    #builderCanvas {
+      width: 192px;
+      height: 252px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      background: transparent;
+      display: block;
+      margin: 8px auto;
+      filter: none;
+      transform: none;
+    }
+
+    .primaryBtn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
   </style>
 </head>
 
@@ -727,11 +777,33 @@
         </div>
       </div>
 
+      <div id="builderOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>🧋 Pha Trà Sữa Theo Ý Mình</h2>
+          <p id="builderIntro">Chọn vị, mức ngọt và topping để tạo ly trà sữa cuối cùng — pha xong nhớ chụp ảnh gửi anh nhà nha!</p>
+          <div class="builderGroupLabel">🍵 Vị trà:</div>
+          <div class="builderRow" id="flavorRow"></div>
+          <div class="builderGroupLabel">🍬 Mức ngọt:</div>
+          <div class="builderRow" id="sweetRow"></div>
+          <div class="builderGroupLabel">🟤 Topping (chọn thoải mái):</div>
+          <div class="builderRow" id="toppingRow"></div>
+          <div class="builderGroupLabel">🎀 Trang trí ly:</div>
+          <div class="builderRow" id="decoRow"></div>
+          <canvas id="builderCanvas" width="64" height="84"></canvas>
+          <div class="modalActions">
+            <button class="primaryBtn" id="photoBtn">📸 Chụp ảnh ly trà sữa</button>
+            <button class="primaryBtn" id="finishBuildBtn" disabled>Gửi quà & nhận thư 💌</button>
+            <button class="ghostBtn" id="closeBuilder">Để lát nữa</button>
+          </div>
+          <p id="builderHint" style="min-height: 22px; color: #b64a7f;"></p>
+        </div>
+      </div>
+
       <div id="startOverlay" class="overlay">
         <div class="modal pixel-panel">
           <h1>Love Quest Pixel Adventure</h1>
           <p>Một thế giới pixel nhỏ được dựng nên từ những kỷ niệm. Hãy thu thập các Mảnh Ghép Trái Tim để đánh thức món quà cuối cùng. 💗</p>
-          <label class="nameLabel" for="playerNameInput">✏️ Tên của người chơi:</label>
+          <label class="nameLabel" for="playerNameInput">✏️ Đặt tên nhân vật của bạn:</label>
           <input id="playerNameInput" type="text" maxlength="16" autocomplete="off" placeholder="Nhập tên dễ thương..." />
           <label class="nameLabel">🎀 Chọn nhân vật:</label>
           <div id="charGrid"></div>
@@ -798,7 +870,7 @@
       },
 
       // Có thể đổi mật mã ở đây.
-      passcode: "yeuchibe",
+      passcode: "yêu",
 
       // Link quà bí mật: đổi sang link Drive, mã voucher, ảnh bill trà sữa, playlist, thư, v.v.
       secretGiftLink: "https://example.com/coc-tra-sua-rieng-cho-chi-be",
@@ -862,8 +934,8 @@
 
       finalGiftCutsceneLines: [
         "Từ ánh sáng lấp lánh, một chàng trai pixel bước ra.",
-        "Cậu ấy trao cho chị bé một cốc trà sữa thật xinh 🧋",
-        "Rồi gửi chị bé một nụ hôn gió pixel nhẹ như trái tim bay 💗"
+        "{name} đưa cậu ấy ly trà sữa vừa tự tay pha — đúng vị cậu ấy thích nhất 🧋",
+        "Đổi lại, cậu ấy gửi {name} một nụ hôn gió pixel nhẹ như trái tim bay 💗"
       ],
 
       finalLetter: [
@@ -871,7 +943,7 @@
         "Anh tạo trò chơi nhỏ này để chị bé có một món quà thật riêng. Có thể nó không hoàn hảo, nhưng từng chi tiết trong game đều là điều anh muốn gửi đến chị bé: một chút vui vẻ, một chút bất ngờ, và thật nhiều sự quan tâm.",
         "Mong rằng khi chơi đến đây, chị bé sẽ mỉm cười một chút.",
         "Cảm ơn chị bé vì đã bước vào thế giới nhỏ này của anh.",
-        "P/s: Món quà riêng dành cho chị bé là một cốc trà sữa thật ngọt nè 🧋",
+        "P/s: Ly trà sữa cuối cùng là do chính tay chị bé pha đó — nhớ gửi ảnh cho anh nhà nha 🧋📸",
         "Thương chị bé thật nhiều."
       ],
 
@@ -964,7 +1036,7 @@
         <div id="skinOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🎀 Tủ Skin Pixel</h2><p>Đổi ngoại hình nhân vật chính. Skin chỉ đổi màu, không ảnh hưởng gameplay.</p><div id="skinItems" class="panelGrid"></div><div class="modalActions"><button class="ghostBtn" id="closeSkin">Đóng</button></div></div></div>
         <div id="achOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🏆 Thành tựu</h2><div id="achItems" class="panelGrid"></div><div class="modalActions"><button class="ghostBtn" id="closeAch">Đóng</button></div></div></div>
         <div id="logOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>📜 Nhật ký nhiệm vụ phụ</h2><div id="sideLog"></div><div class="modalActions"><button class="ghostBtn" id="closeLog">Đóng</button></div></div></div>
-        <div id="teaOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🧋 Mini game pha trà sữa</h2><p>Canh kim vào vùng sáng rồi bấm <b>Lắc trà sữa!</b>. Đủ 3 lần đẹp là hoàn thành.</p><div id="teaGameArea"><div id="teaMeter"><div id="teaPerfectZone"></div><div id="teaPointer"></div></div></div><p id="teaScoreText">Lượt 1/3</p><div class="modalActions"><button class="primaryBtn" id="shakeTeaBtn">Lắc trà sữa!</button><button class="ghostBtn" id="closeTea">Để lát nữa</button></div></div></div>
+        <div id="teaOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🍰 Mini game nướng bánh</h2><p>Canh kim vào vùng sáng rồi bấm <b>Nướng bánh!</b>. Chỉ cần 2 lần chuẩn là bánh chín, dễ lắm nè. Bánh ngon hồi đầy năng lượng, và nghe nói mùi bánh sẽ dụ được một bé mèo đó 🐱</p><div id="teaGameArea"><div id="teaMeter"><div id="teaPerfectZone"></div><div id="teaPointer"></div></div></div><p id="teaScoreText">Lượt 1/6 · cần 2 lần chuẩn</p><div class="modalActions"><button class="primaryBtn" id="shakeTeaBtn">Nướng bánh! 🔥</button><button class="ghostBtn" id="closeTea">Để lát nữa</button></div></div></div>
       `);
 
       ui.loveMeterText = document.getElementById("loveMeterText");
@@ -1004,12 +1076,12 @@
     const keys = Object.create(null);
     const mobile = { up: false, down: false, left: false, right: false };
 
-    const STORAGE_KEY = "loveQuestPixelAdventureSave_v4";
+    const STORAGE_KEY = "loveQuestPixelAdventureSave_v5";
     const collectedIds = new Set();
     const achievements = [
       { id: "first_piece", name: "Mảnh Ghép Đầu Tiên", desc: "Nhận mảnh ghép trái tim số 1." },
       { id: "all_pieces", name: "Người Ghép Tim", desc: "Thu thập đủ 3 mảnh ghép chính." },
-      { id: "tea_master", name: "Nghệ Nhân Trà Sữa", desc: "Hoàn thành mini game pha trà sữa." },
+      { id: "tea_master", name: "Thợ Bánh Tài Ba", desc: "Hoàn thành mini game nướng bánh và rước bé mèo về." },
       { id: "side_helper", name: "Người Tốt Của Thị Trấn", desc: "Hoàn thành đủ nhiệm vụ phụ." },
       { id: "secret_found", name: "Thám Tử Tim Hồng", desc: "Tìm được bí mật ẩn." },
       { id: "no_hurt", name: "Chị Bé Can Đảm", desc: "Mở rương thử thách khi chưa va chướng ngại." },
@@ -1054,7 +1126,9 @@
       stars: 0,
       shield: 0,
       flawlessChallenge: true,
-      teaMade: false,
+      cakeBaked: false,
+      hasPet: false,
+      customTea: null,
       teaPerfect: 0,
       currentSkin: "classic",
       unlockedSkins: ["classic"],
@@ -1443,7 +1517,7 @@
         map: toRows(map),
         start: { tx: 3, ty: 9 },
         objects,
-        quest: () => player.finalGiftOpened ? "Nhiệm vụ: mở lá thư và nhận cốc trà sữa bí mật." : "Nhiệm vụ: đi tới cốc trà sữa lớn và nhấn E để mở món quà cuối.",
+        quest: () => player.finalGiftOpened ? "Nhiệm vụ: mở lá thư và nhận cốc trà sữa bí mật." : "Nhiệm vụ: đi tới cốc trà sữa lớn để tự tay pha món quà cuối.",
         theme: "stars"
       };
     }
@@ -1469,6 +1543,58 @@
       el.classList.add("show");
       if (chapterTimer) clearTimeout(chapterTimer);
       chapterTimer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    // Pet mèo kem đi theo người chơi (mở khóa khi thắng mini game nướng bánh).
+    const pet = { x: 0, y: 0 };
+
+    function updatePet(dt) {
+      if (!player.hasPet) return;
+      const off = {
+        down: { x: -2, y: -22 },
+        up: { x: -2, y: 24 },
+        left: { x: 24, y: 4 },
+        right: { x: -24, y: 4 }
+      }[player.dir] || { x: -22, y: 0 };
+      const tx = player.x + off.x;
+      const ty = player.y + off.y;
+      const k = Math.min(1, dt * 4.5);
+      pet.x += (tx - pet.x) * k;
+      pet.y += (ty - pet.y) * k;
+    }
+
+    function drawPetCat(x, y) {
+      const bob = Math.sin(visualClock * 4) * 0.8;
+      const baseY = Math.floor(y + bob);
+      drawBlobShadow(x + 1, y + 12, 17, 4);
+      // Đuôi ve vẩy.
+      const wag = Math.sin(visualClock * 6) > 0 ? 1 : 0;
+      ctx.fillStyle = "#f3c08a";
+      ctx.fillRect(x - 3, baseY + 3 + wag, 4, 2);
+      // Thân.
+      ctx.fillStyle = "#ffe3b3";
+      ctx.fillRect(x + 1, baseY + 4, 12, 8);
+      // Đầu.
+      ctx.fillRect(x + 8, baseY, 9, 8);
+      // Tai + sọc.
+      ctx.fillStyle = "#f3c08a";
+      ctx.fillRect(x + 8, baseY - 2, 3, 3);
+      ctx.fillRect(x + 14, baseY - 2, 3, 3);
+      ctx.fillRect(x + 3, baseY + 5, 2, 3);
+      ctx.fillRect(x + 7, baseY + 6, 2, 3);
+      // Mặt.
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 10, baseY + 3, 1, 2);
+      ctx.fillRect(x + 14, baseY + 3, 1, 2);
+      ctx.fillStyle = "#ff9fcb";
+      ctx.fillRect(x + 12, baseY + 5, 1, 1);
+      // Vòng cổ hồng.
+      ctx.fillStyle = "#ff6ead";
+      ctx.fillRect(x + 8, baseY + 8, 9, 2);
+      // Chân.
+      ctx.fillStyle = "#ffe3b3";
+      ctx.fillRect(x + 2, baseY + 12, 3, 2);
+      ctx.fillRect(x + 9, baseY + 12, 3, 2);
     }
 
     const butterflies = [];
@@ -1550,7 +1676,9 @@
         stars: 0,
         shield: 0,
         flawlessChallenge: true,
-        teaMade: false,
+        cakeBaked: false,
+        hasPet: false,
+        customTea: null,
         teaPerfect: 0,
         currentSkin: "classic",
         unlockedSkins: ["classic"],
@@ -1584,6 +1712,7 @@
         spawnAreaSparkles();
         spawnButterflies();
         refreshMusic();
+        if (player.hasPet) { pet.x = player.x - 22; pet.y = player.y; }
         showToast(`Đã tới: ${currentArea.name}`);
         sfx("warp");
         if (!visitedAreas.has(id)) {
@@ -1834,16 +1963,16 @@
     }
 
     function openTeaGame() {
-      if (player.teaMade) {
-        openDialog(["Ly trà sữa hoàn hảo đã được chuẩn bị rồi. Cuối game nhớ nhận nha 🧋"]);
+      if (player.cakeBaked) {
+        openDialog(["Bánh đã nướng xong từ trước rồi. Bé mèo kem vẫn đang lon ton theo {name} kìa 🐱"]);
         return;
       }
       teaGame.active = true;
       teaGame.t = 0;
       teaGame.round = 1;
       teaGame.success = 0;
-      teaGame.speed = 1.1;
-      ui.teaScoreText.textContent = "Lượt 1/3";
+      teaGame.speed = 0.75;
+      ui.teaScoreText.textContent = "Lượt 1/6 · cần 2 lần chuẩn";
       ui.teaPointer.style.left = "0%";
       ui.teaOverlay.classList.remove("hidden");
     }
@@ -1858,31 +1987,39 @@
     function shakeTea() {
       if (!teaGame.active) return;
       const pos = (Math.sin(teaGame.t * Math.PI * 2) + 1) / 2;
-      const perfect = pos >= 0.42 && pos <= 0.58;
+      const perfect = pos >= 0.36 && pos <= 0.64;
       if (perfect) {
         teaGame.success += 1;
         player.teaPerfect += 1;
-        ui.teaScoreText.textContent = `Chuẩn vị! ${teaGame.success}/3 lần đẹp ✨`;
+        ui.teaScoreText.textContent = `Chín tới! ${teaGame.success}/2 lần chuẩn ✨`;
         sfx("pickup");
       } else {
-        ui.teaScoreText.textContent = "Lệch nhịp một chút, thử lại nè 😽";
+        ui.teaScoreText.textContent = "Hơi quá lửa chút, canh lại nè 😽";
         sfx("locked");
       }
       teaGame.round += 1;
-      teaGame.speed += 0.16;
-      if (teaGame.success >= 3 || teaGame.round > 6) {
-        const success = teaGame.success >= 3;
+      teaGame.speed += 0.08;
+      if (teaGame.success >= 2 || teaGame.round > 6) {
+        const success = teaGame.success >= 2;
         teaGame.active = false;
         ui.teaOverlay.classList.add("hidden");
         if (success) {
-          player.teaMade = true;
-          if (!player.unlockedSkins.includes("milktea")) player.unlockedSkins.push("milktea");
-          addLove(12, "pha trà sữa hoàn hảo");
+          player.cakeBaked = true;
+          player.energy = player.maxEnergy;
+          player.hasPet = true;
+          pet.x = player.x - 20;
+          pet.y = player.y + 4;
+          addLove(12, "nướng bánh ngọt thành công");
           addStars(4);
           unlockAchievement("tea_master");
-          openDialog(["Trà sữa đã được pha xong: thơm, ngọt, và rất chị bé 🧋", "Mở khóa skin Trà sữa ấm và nhận 4 sao nhỏ ⭐"]);
+          openDialog([
+            "Bánh chín vàng ươm, thơm nức cả thị trấn! 🍰",
+            "{name} ăn một miếng — năng lượng đầy lại tràn trề 💗",
+            "Một bé mèo kem bị mùi bánh dụ tới... và quyết định đi theo {name} luôn! 🐱",
+            "Nhận 4 sao nhỏ ⭐"
+          ]);
         } else {
-          openDialog(["Ly trà sữa hơi lắc lệch nhịp, nhưng vẫn có vị cố gắng. Chị bé thử lại lúc nào cũng được nè."]);
+          openDialog(["Bánh hơi quá lửa xíu, nhưng thử lại lúc nào cũng được nè. Lò nướng không đi đâu hết á 🍪"]);
         }
       } else {
         ui.teaScoreText.textContent += ` | Lượt ${teaGame.round}/6`;
@@ -1991,7 +2128,7 @@
           energy: player.energy, pieces: player.pieces, townHearts: player.townHearts,
           memoriesRead: player.memoriesRead, gotPiece1: player.gotPiece1, gotPiece2: player.gotPiece2, gotPiece3: player.gotPiece3,
           finalGiftOpened: player.finalGiftOpened, love: player.love, stars: player.stars, shield: player.shield,
-          flawlessChallenge: player.flawlessChallenge, teaMade: player.teaMade, teaPerfect: player.teaPerfect,
+          flawlessChallenge: player.flawlessChallenge, cakeBaked: player.cakeBaked, hasPet: player.hasPet, customTea: player.customTea, teaPerfect: player.teaPerfect,
           currentSkin: player.currentSkin, unlockedSkins: player.unlockedSkins, boughtItems: player.boughtItems,
           achievements: player.achievements, sideQuests: player.sideQuests, secretFound: player.secretFound
         },
@@ -2053,8 +2190,10 @@
     }
 
     function checkPassword() {
-      const value = ui.passwordInput.value.trim().toLowerCase();
-      if (value === CONFIG.passcode.toLowerCase()) {
+      // Chấp nhận cả gõ có dấu lẫn không dấu (vd: "yêu" hoặc "yeu").
+      const normalize = s => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+      const value = normalize(ui.passwordInput.value);
+      if (value === normalize(CONFIG.passcode)) {
         closePassword();
         showToast("Cánh cửa đã mở! 💗");
         addLove(6, "mở khóa nhà bí mật");
@@ -2066,12 +2205,191 @@
       }
     }
 
+    /******************************************************************
+     * MINI GAME PHA TRÀ SỮA THEO Ý — phần thưởng cuối game.
+     * Người chơi chọn vị, mức ngọt, topping, trang trí; chụp ảnh thành
+     * phẩm gửi anh nhà rồi mới nhận thư cuối.
+     ******************************************************************/
+    const TEA_FLAVORS = [
+      { id: "truyenthong", name: "Truyền thống", color: "#d49a6a", light: "#f0c79a" },
+      { id: "matcha", name: "Matcha", color: "#8fcf7e", light: "#c2eab4" },
+      { id: "khoaimon", name: "Khoai môn", color: "#c9a6e8", light: "#e6d4f7" },
+      { id: "dau", name: "Dâu", color: "#ff9fcb", light: "#ffd1e6" },
+      { id: "socola", name: "Socola", color: "#9c6b43", light: "#c79a72" }
+    ];
+    const TEA_SWEETS = ["30%", "50%", "70%", "100%"];
+    const TEA_TOPPINGS = [
+      { id: "tcden", name: "Trân châu đen", color: "#3b2645" },
+      { id: "tctrang", name: "Trân châu trắng", color: "#fff7fb" },
+      { id: "pudding", name: "Pudding trứng", color: "#ffd166" },
+      { id: "thachdau", name: "Thạch dâu", color: "#ff6f91" },
+      { id: "kemcheese", name: "Kem cheese", color: "#fff3d6" }
+    ];
+    const TEA_DECOS = [
+      { id: "tim", name: "Tim hồng 💗" },
+      { id: "sao", name: "Ngôi sao ⭐" },
+      { id: "no", name: "Nơ xinh 🎀" }
+    ];
+
+    const builder = { flavor: "truyenthong", sweet: "70%", toppings: new Set(["tcden"]), deco: "tim", photoTaken: false, target: null };
+
+    function drawCupSprite(g, ox, oy, s) {
+      const px = (x, y, w, h, color) => { g.fillStyle = color; g.fillRect(ox + x * s, oy + y * s, w * s, h * s); };
+      const fl = TEA_FLAVORS.find(f => f.id === builder.flavor) || TEA_FLAVORS[0];
+      const bandMap = { "30%": 6, "50%": 10, "70%": 14, "100%": 18 };
+      const band = bandMap[builder.sweet] || 12;
+
+      // Ống hút.
+      px(38, 0, 6, 16, "#ff6ead");
+      px(40, 1, 2, 14, "#ff9fcb");
+
+      // Trà bên trong + lớp sữa theo mức ngọt.
+      px(15, 19, 34, 56, fl.color);
+      px(15, 19, 34, band, fl.light);
+
+      // Topping hạt rải dưới đáy; kem cheese phủ lớp trên cùng.
+      const slotPos = [[17, 66], [23, 69], [29, 64], [35, 69], [41, 66], [20, 62], [33, 62], [43, 70], [26, 71], [38, 60]];
+      const grain = [...builder.toppings].filter(t => t !== "kemcheese");
+      grain.forEach((tid, ti) => {
+        const t = TEA_TOPPINGS.find(o => o.id === tid);
+        slotPos.forEach((p, i2) => { if (i2 % grain.length === ti) px(p[0], p[1], 4, 4, t.color); });
+      });
+      if (builder.toppings.has("kemcheese")) px(15, 19, 34, 7, "#fff3d6");
+
+      // Vệt sáng thành ly.
+      px(18, 24, 3, 44, "rgba(255,255,255,0.45)");
+
+      // Nhãn trang trí mặt ly.
+      px(24, 36, 16, 17, "rgba(255,255,255,0.5)");
+      if (builder.deco === "tim") {
+        const c = "#ff4f8b";
+        px(26, 38, 4, 4, c); px(34, 38, 4, 4, c); px(25, 41, 14, 5, c); px(27, 46, 10, 3, c); px(30, 49, 4, 3, c);
+      } else if (builder.deco === "sao") {
+        px(30, 38, 4, 13, "#ffb800"); px(26, 42, 12, 4, "#ffb800"); px(29, 41, 6, 6, "#ffd166");
+      } else {
+        px(25, 41, 6, 6, "#ff6ead"); px(33, 41, 6, 6, "#ff6ead"); px(30, 42, 4, 4, "#ffd1e6");
+      }
+
+      // Thành ly, đáy và nắp.
+      px(12, 19, 3, 58, "#ffd1e6");
+      px(49, 19, 3, 58, "#ffd1e6");
+      px(12, 74, 40, 3, "#ffd1e6");
+      px(14, 14, 36, 5, "#fff7fb");
+      px(16, 12, 32, 3, "#e9ddff");
+    }
+
+    function renderBuilderPreview() {
+      const cv = document.getElementById("builderCanvas");
+      const g = cv.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      g.clearRect(0, 0, cv.width, cv.height);
+      drawCupSprite(g, 0, 0, 1);
+    }
+
+    function chipRow(rowId, items, isOn, onPick) {
+      const row = document.getElementById(rowId);
+      row.innerHTML = "";
+      items.forEach(item => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "optChip" + (isOn(item) ? " on" : "");
+        b.textContent = item.name || item;
+        b.addEventListener("click", () => {
+          onPick(item);
+          renderBuilderRows();
+          renderBuilderPreview();
+          sfx("pickup");
+        });
+        row.appendChild(b);
+      });
+    }
+
+    function renderBuilderRows() {
+      chipRow("flavorRow", TEA_FLAVORS, i => builder.flavor === i.id, i => { builder.flavor = i.id; });
+      chipRow("sweetRow", TEA_SWEETS, s => builder.sweet === s, s => { builder.sweet = s; });
+      chipRow("toppingRow", TEA_TOPPINGS, i => builder.toppings.has(i.id), i => {
+        if (builder.toppings.has(i.id)) builder.toppings.delete(i.id);
+        else builder.toppings.add(i.id);
+      });
+      chipRow("decoRow", TEA_DECOS, i => builder.deco === i.id, i => { builder.deco = i.id; });
+    }
+
+    function openBuilder(target) {
+      builder.target = target;
+      builder.photoTaken = false;
+      ui.finishBuildBtn.disabled = true;
+      ui.builderHint.textContent = "Pha xong nhớ bấm chụp ảnh để gửi anh nhà nha 📸";
+      document.getElementById("builderIntro").textContent = fmt("Chọn vị, mức ngọt và topping để tạo ly trà sữa của {name} — pha xong nhớ chụp ảnh gửi anh nhà nha!");
+      renderBuilderRows();
+      renderBuilderPreview();
+      ui.builderOverlay.classList.remove("hidden");
+      sfx("memory");
+    }
+
+    function takeTeaPhoto() {
+      const pc = document.createElement("canvas");
+      pc.width = 420;
+      pc.height = 560;
+      const g = pc.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      const bg = g.createLinearGradient(0, 0, 0, 560);
+      bg.addColorStop(0, "#fff0f7");
+      bg.addColorStop(1, "#f2edff");
+      g.fillStyle = bg;
+      g.fillRect(0, 0, 420, 560);
+      for (let i = 0; i < 40; i++) {
+        g.fillStyle = i % 2 ? "rgba(255,122,182,.16)" : "rgba(191,162,255,.16)";
+        g.fillRect((i * 53) % 420, (i * 97) % 460, 6, 6);
+      }
+      g.strokeStyle = "#ff7ab6";
+      g.lineWidth = 8;
+      g.strokeRect(10, 10, 400, 540);
+      drawCupSprite(g, 82, 56, 4);
+      const fl = TEA_FLAVORS.find(f => f.id === builder.flavor) || TEA_FLAVORS[0];
+      g.textAlign = "center";
+      g.fillStyle = "#b64a7f";
+      g.font = "bold 22px 'Courier New', monospace";
+      g.fillText(`Trà sữa ${fl.name} · ngọt ${builder.sweet}`, 210, 448);
+      g.fillText(`${player.name} pha tặng anh nhà 💗`, 210, 482);
+      g.fillStyle = "#7a4f8a";
+      g.font = "bold 15px 'Courier New', monospace";
+      g.fillText("Love Quest Pixel Adventure", 210, 522);
+
+      const a = document.createElement("a");
+      a.download = `tra-sua-cua-${player.name.toLowerCase().replace(/\s+/g, "-")}.png`;
+      a.href = pc.toDataURL("image/png");
+      a.click();
+
+      builder.photoTaken = true;
+      ui.finishBuildBtn.disabled = false;
+      ui.builderHint.textContent = "Đã lưu ảnh! Gửi ảnh đó cho anh nhà rồi bấm nhận thư nha 😽";
+      showToast("Đã chụp ảnh ly trà sữa 📸");
+      sfx("complete");
+    }
+
+    function finishBuilder() {
+      if (!builder.photoTaken) {
+        ui.builderHint.textContent = "Chụp ảnh ly trà sữa trước đã nha 📸";
+        sfx("locked");
+        return;
+      }
+      ui.builderOverlay.classList.add("hidden");
+      const fl = TEA_FLAVORS.find(f => f.id === builder.flavor) || TEA_FLAVORS[0];
+      player.customTea = { flavor: fl.name, sweet: builder.sweet, toppings: [...builder.toppings], deco: builder.deco };
+      if (!player.unlockedSkins.includes("milktea")) player.unlockedSkins.push("milktea");
+      addLove(6, "tự tay pha trà sữa");
+      beginFinalCutscene(builder.target);
+    }
+
     function startFinalGiftCutscene(target) {
       if (player.finalGiftOpened) {
         showFinalLetter();
         return;
       }
+      openBuilder(target);
+    }
 
+    function beginFinalCutscene(target) {
       player.finalGiftOpened = true;
       addLove(8, "nhận cốc trà sữa cuối");
       finalCutscene.active = true;
@@ -2114,10 +2432,10 @@
 
 
     function getEndingTitle() {
-      if (player.teaMade && player.love >= 90 && countSideQuestDone() >= 5 && player.secretFound) {
+      if (player.cakeBaked && player.love >= 90 && countSideQuestDone() >= 5 && player.secretFound) {
         return { title: "Ending Đặc Biệt: Trà Sữa Siêu Cấp 💗🧋", desc: "Chị bé đã tìm gần hết những điều anh giấu trong thế giới nhỏ này." };
       }
-      if (player.teaMade) return { title: "Ending Trà Sữa Ngọt Ngào 🧋", desc: "Ly trà sữa hoàn hảo đã được chuẩn bị bằng rất nhiều sự để tâm." };
+      if (player.cakeBaked) return { title: "Ending Bánh Ngọt & Mèo Kem 🍰🐱", desc: "Bánh thơm, mèo cute và một hành trình được chăm chút từng chút một." };
       if (player.love >= 80) return { title: "Ending Dịu Dàng 💗", desc: "Độ rung rinh cao làm Cánh Đồng Sao sáng hơn một chút." };
       if (player.flawlessChallenge) return { title: "Ending Can Đảm ✨", desc: "Chị bé đã vượt thử thách với tinh thần rất chiến." };
       return { title: "Ending Ngọt Nhẹ 🌸", desc: "Hành trình nhỏ đã hoàn thành, đủ để mỉm cười một chút." };
@@ -2251,7 +2569,7 @@
     }
 
     function movePlayer(dt) {
-      if (dialog.active || ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false) {
+      if (dialog.active || ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false || ui.builderOverlay.classList.contains("hidden") === false) {
         player.moving = false;
         return;
       }
@@ -2363,7 +2681,7 @@
         return;
       }
 
-      if (ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false) return;
+      if (ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false || ui.builderOverlay.classList.contains("hidden") === false) return;
 
       if (!nearestObject) {
         showToast("Không có gì để tương tác ở gần đây.");
@@ -2455,7 +2773,7 @@
     }
 
     function updateHud() {
-      ui.areaName.textContent = `📍 ${currentArea.name}`;
+      ui.areaName.textContent = `📍 ${currentArea.name} · ${player.name}`;
       ui.quest.textContent = fmt(currentArea.quest());
       const hp = "💗".repeat(player.energy) + "🤍".repeat(player.maxEnergy - player.energy);
       ui.stats.textContent = `${hp} | 🧩 ${player.pieces}/3 | ⭐ ${player.stars} | 🛡 ${player.shield}`;
@@ -2473,6 +2791,7 @@
       player.invincible = Math.max(0, player.invincible - dt);
 
       movePlayer(dt);
+      updatePet(dt);
       updateCamera();
       updateObjects(dt);
       updateParticles(dt);
@@ -2490,6 +2809,10 @@
         .filter(item => item.active)
         .concat([{ type: "player", x: player.x, y: player.y, w: player.w, h: player.h }]);
 
+      if (player.hasPet) {
+        drawables.push({ type: "pet", x: pet.x, y: pet.y, w: 18, h: 14 });
+      }
+
       if (finalCutscene.active) {
         drawables.push({ type: "cutsceneBoy", x: finalCutscene.x, y: finalCutscene.y, w: 22, h: 27 });
       }
@@ -2498,6 +2821,7 @@
 
       for (const item of drawables) {
         if (item.type === "player") drawPlayer();
+        else if (item.type === "pet") drawPetCat(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y));
         else if (item.type === "cutsceneBoy") drawBoySprite(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y));
         else drawObject(item);
       }
@@ -3263,6 +3587,7 @@
 
 
     function drawTeaStand(x, y) {
+      // Quầy bánh ngọt: bánh kem dâu đặt trên quầy gỗ.
       drawBlobShadow(x + 2, y + 24, 28, 5);
       ctx.fillStyle = "#8f653d";
       ctx.fillRect(x + 3, y + 14, 25, 13);
@@ -3270,7 +3595,16 @@
       ctx.fillRect(x + 2, y + 9, 27, 7);
       ctx.fillStyle = "#fff7fb";
       ctx.fillRect(x + 6, y + 11, 7, 3);
-      drawMilkTeaGift(x + 8, y - 3);
+      // Bánh kem.
+      ctx.fillStyle = "#ffe3b3";
+      ctx.fillRect(x + 8, y + 1, 16, 7);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 8, y - 3, 16, 4);
+      ctx.fillStyle = "#ff9fcb";
+      ctx.fillRect(x + 8, y - 1, 16, 2);
+      ctx.fillStyle = "#ff4f8b";
+      ctx.fillRect(x + 14, y - 6, 4, 4);
+      drawSparkle(x + 24, y - 8, "#fff3a3");
       ctx.fillStyle = "#3b2645";
       ctx.fillRect(x + 8, y + 18, 12, 2);
     }
@@ -3769,6 +4103,13 @@
     ui.logBtn.addEventListener("click", openSideLog);
     ui.shakeTeaBtn.addEventListener("click", shakeTea);
     ui.closeTea.addEventListener("click", () => { teaGame.active = false; ui.teaOverlay.classList.add("hidden"); });
+
+    ui.builderOverlay = document.getElementById("builderOverlay");
+    ui.builderHint = document.getElementById("builderHint");
+    ui.finishBuildBtn = document.getElementById("finishBuildBtn");
+    document.getElementById("photoBtn").addEventListener("click", takeTeaPhoto);
+    ui.finishBuildBtn.addEventListener("click", finishBuilder);
+    document.getElementById("closeBuilder").addEventListener("click", () => ui.builderOverlay.classList.add("hidden"));
 
     document.querySelectorAll(".dpad button[data-dir]").forEach(button => {
       const dir = button.dataset.dir;
