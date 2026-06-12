@@ -39,20 +39,16 @@
       inset: 0;
       display: grid;
       place-items: center;
-      padding: 10px;
+      padding: 0;
     }
 
+    /* Toàn màn hình: trò chơi chiếm trọn viewport. */
     #gameShell {
       position: relative;
-      width: min(100vw - 18px, 980px);
-      aspect-ratio: 5 / 3;
-      max-height: calc(100vh - 18px);
-      border: 6px solid #fff7fb;
-      border-radius: 24px;
-      box-shadow:
-        0 30px 90px rgba(128, 61, 96, 0.34),
-        0 0 0 2px rgba(255, 255, 255, 0.72),
-        inset 0 0 0 3px rgba(255, 122, 182, 0.26);
+      width: 100vw;
+      height: 100dvh;
+      border: 0;
+      border-radius: 0;
       background:
         radial-gradient(circle at 30% 20%, rgba(255,255,255,0.82), transparent 28%),
         linear-gradient(135deg, #ffeaf4, #f3efff);
@@ -438,6 +434,19 @@
       }
     }
 
+    /* Điện thoại cầm dọc: tự xoay ngang cả màn chơi. */
+    @media (max-width: 760px) and (orientation: portrait) {
+      #gameShell {
+        position: fixed;
+        top: 0;
+        left: 100vw;
+        width: 100dvh;
+        height: 100vw;
+        transform-origin: 0 0;
+        transform: rotate(90deg);
+      }
+    }
+
 
     /* ===== Expansion Pack UI ===== */
     #loveMeterBox {
@@ -541,9 +550,9 @@
 
     #teaPerfectZone {
       position: absolute;
-      left: 36%;
+      left: 32%;
       top: 0;
-      width: 28%;
+      width: 36%;
       height: 100%;
       background: rgba(255,255,255,.55);
       box-shadow: 0 0 14px rgba(255,209,102,.9);
@@ -1070,8 +1079,30 @@
     installExpansionUI();
 
     const TILE = 32;
-    const VIEW_W = canvas.width;
-    const VIEW_H = canvas.height;
+    // Render 2x (supersampling) cho hình nét hơn; khung nhìn logic tự co theo tỉ lệ màn hình.
+    const SCALE = 2;
+    let VIEW_W = 640;
+    let VIEW_H = 384;
+
+    function isPortraitPhone() {
+      return window.matchMedia("(max-width: 760px) and (orientation: portrait)").matches;
+    }
+
+    function resizeCanvas() {
+      // Khi điện thoại cầm dọc, màn chơi bị xoay 90° nên hoán đổi chiều rộng/cao.
+      const w = isPortraitPhone() ? window.innerHeight : window.innerWidth;
+      const h = isPortraitPhone() ? window.innerWidth : window.innerHeight;
+      const aspect = w / Math.max(1, h);
+      VIEW_H = 384;
+      VIEW_W = Math.round(clamp(384 * aspect, 480, 960) / 2) * 2;
+      canvas.width = VIEW_W * SCALE;
+      canvas.height = VIEW_H * SCALE;
+      ctx.imageSmoothingEnabled = false;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 60));
+    resizeCanvas();
     const SOLID_TILES = new Set(["T", "W", "X", "H", "R", "D"]);
     const keys = Object.create(null);
     const mobile = { up: false, down: false, left: false, right: false };
@@ -1815,6 +1846,61 @@
     function completeQuest() {
       showToast("Hoàn thành nhiệm vụ! ✨");
       sfx("complete");
+      startKissRun();
+    }
+
+    // Chàng trai pixel chạy tới hôn má một cái rồi chạy đi — mỗi khi xong nhiệm vụ.
+    const kissRun = { active: false, phase: "in", x: 0, y: 0, t: 0 };
+
+    function startKissRun() {
+      if (kissRun.active || finalCutscene.active) return;
+      kissRun.active = true;
+      kissRun.phase = "in";
+      kissRun.t = 0;
+      kissRun.x = camera.x + VIEW_W + 30;
+      kissRun.y = player.y;
+    }
+
+    function updateKissRun(dt) {
+      if (!kissRun.active) return;
+      kissRun.t += dt;
+      if (kissRun.phase === "in") {
+        const tx = player.x + player.w + 6;
+        const ty = player.y - 2;
+        const dx = tx - kissRun.x;
+        const dy = ty - kissRun.y;
+        const dist = Math.hypot(dx, dy);
+        const stepLen = 235 * dt;
+        if (dist <= stepLen + 2) {
+          kissRun.x = tx;
+          kissRun.y = ty;
+          kissRun.phase = "kiss";
+          kissRun.t = 0;
+          burst(player.x + player.w / 2, player.y, CONFIG.colors.primary, 26, "heart");
+          sfx("kiss");
+        } else {
+          kissRun.x += (dx / dist) * stepLen;
+          kissRun.y += (dy / dist) * stepLen;
+        }
+      } else if (kissRun.phase === "kiss") {
+        if (kissRun.t > 0.85) {
+          kissRun.phase = "out";
+          kissRun.t = 0;
+        }
+      } else {
+        kissRun.x += 255 * dt;
+        if (kissRun.x > camera.x + VIEW_W + 40 || kissRun.t > 2.4) kissRun.active = false;
+      }
+    }
+
+    function drawKissRunFx() {
+      if (!kissRun.active || kissRun.phase !== "kiss") return;
+      const x = Math.floor(kissRun.x - camera.x + 14);
+      const y = Math.floor(kissRun.y - camera.y - 12);
+      ctx.fillStyle = "rgba(255, 247, 251, 0.92)";
+      ctx.fillRect(x - 3, y - 3, 22, 15);
+      drawHeartShape(x + 2, y, 2, CONFIG.colors.primary);
+      drawSparkle(x + 16, y - 5, "#fff3a3");
     }
 
 
@@ -1971,7 +2057,7 @@
       teaGame.t = 0;
       teaGame.round = 1;
       teaGame.success = 0;
-      teaGame.speed = 0.75;
+      teaGame.speed = 0.55;
       ui.teaScoreText.textContent = "Lượt 1/6 · cần 2 lần chuẩn";
       ui.teaPointer.style.left = "0%";
       ui.teaOverlay.classList.remove("hidden");
@@ -1987,7 +2073,7 @@
     function shakeTea() {
       if (!teaGame.active) return;
       const pos = (Math.sin(teaGame.t * Math.PI * 2) + 1) / 2;
-      const perfect = pos >= 0.36 && pos <= 0.64;
+      const perfect = pos >= 0.32 && pos <= 0.68;
       if (perfect) {
         teaGame.success += 1;
         player.teaPerfect += 1;
@@ -1998,7 +2084,7 @@
         sfx("locked");
       }
       teaGame.round += 1;
-      teaGame.speed += 0.08;
+      teaGame.speed += 0.04;
       if (teaGame.success >= 2 || teaGame.round > 6) {
         const success = teaGame.success >= 2;
         teaGame.active = false;
@@ -2628,8 +2714,13 @@
     function updateCamera() {
       const mapW = currentArea.map[0].length * TILE;
       const mapH = currentArea.map.length * TILE;
-      camera.x = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, Math.max(0, mapW - VIEW_W));
-      camera.y = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H));
+      // Bản đồ nhỏ hơn khung nhìn thì căn giữa, để rừng cây viền hai bên.
+      camera.x = mapW > VIEW_W
+        ? clamp(player.x + player.w / 2 - VIEW_W / 2, 0, mapW - VIEW_W)
+        : (mapW - VIEW_W) / 2;
+      camera.y = mapH > VIEW_H
+        ? clamp(player.y + player.h / 2 - VIEW_H / 2, 0, mapH - VIEW_H)
+        : (mapH - VIEW_H) / 2;
     }
 
     function updateObjects(dt) {
@@ -2788,6 +2879,7 @@
       worldTime += dt;
 
       updateFinalCutscene(dt);
+      updateKissRun(dt);
       player.invincible = Math.max(0, player.invincible - dt);
 
       movePlayer(dt);
@@ -2801,6 +2893,7 @@
 
     function draw() {
       if (!currentArea) return;
+      ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
       ctx.clearRect(0, 0, VIEW_W, VIEW_H);
       drawMap();
       drawAmbientOverlays();
@@ -2817,16 +2910,22 @@
         drawables.push({ type: "cutsceneBoy", x: finalCutscene.x, y: finalCutscene.y, w: 22, h: 27 });
       }
 
+      if (kissRun.active) {
+        drawables.push({ type: "kissBoy", x: kissRun.x, y: kissRun.y, w: 22, h: 27 });
+      }
+
       drawables.sort((a, b) => (a.y + a.h) - (b.y + b.h));
 
       for (const item of drawables) {
         if (item.type === "player") drawPlayer();
         else if (item.type === "pet") drawPetCat(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y));
         else if (item.type === "cutsceneBoy") drawBoySprite(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y));
+        else if (item.type === "kissBoy") drawBoySprite(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y), kissRun.t);
         else drawObject(item);
       }
 
       drawFinalCutsceneFx();
+      drawKissRunFx();
 
       drawParticles();
       drawButterflies();
@@ -2870,15 +2969,24 @@
     }
 
     function drawMap() {
-      const startX = Math.floor(camera.x / TILE);
-      const startY = Math.floor(camera.y / TILE);
-      const endX = startX + Math.ceil(VIEW_W / TILE) + 2;
-      const endY = startY + Math.ceil(VIEW_H / TILE) + 2;
+      const rows = currentArea.map.length;
+      const cols = currentArea.map[0].length;
+      const startX = Math.floor(camera.x / TILE) - 1;
+      const startY = Math.floor(camera.y / TILE) - 1;
+      const endX = startX + Math.ceil(VIEW_W / TILE) + 3;
+      const endY = startY + Math.ceil(VIEW_H / TILE) + 3;
 
       for (let ty = startY; ty < endY; ty++) {
         for (let tx = startX; tx < endX; tx++) {
-          const tile = tileAt(tx, ty);
-          drawTile(tile, tx * TILE - camera.x, ty * TILE - camera.y, tx, ty);
+          const sx = Math.floor(tx * TILE - camera.x);
+          const sy = Math.floor(ty * TILE - camera.y);
+          if (ty < 0 || tx < 0 || ty >= rows || tx >= cols) {
+            // Ngoài rìa bản đồ: rừng cây bao quanh thế giới.
+            drawGrassTile(sx, sy, tx, ty);
+            drawTreeTile(sx, sy, hash(tx, ty));
+            continue;
+          }
+          drawTile(currentArea.map[ty][tx], sx, sy, tx, ty);
         }
       }
     }
@@ -2978,6 +3086,16 @@
       if (h % 2 === 0) ctx.fillRect(sx + 5, sy + 7, 4, 2);
       if (hash(tx + 1, ty) % 3 === 0) ctx.fillRect(sx + 20, sy + 22, 5, 2);
       if (hash(tx + 3, ty + 2) % 5 === 0) ctx.fillRect(sx + 13, sy + 16, 3, 2);
+      // Hoa cúc trắng nhỏ rải rác cho nền cỏ sinh động.
+      if (hash(tx + 5, ty + 1) % 11 === 0) {
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(sx + 22, sy + 9, 2, 2);
+        ctx.fillRect(sx + 20, sy + 11, 2, 2);
+        ctx.fillRect(sx + 24, sy + 11, 2, 2);
+        ctx.fillRect(sx + 22, sy + 13, 2, 2);
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(sx + 22, sy + 11, 2, 2);
+      }
       ctx.fillStyle = "rgba(74, 154, 98, 0.12)";
       ctx.fillRect(sx, sy + TILE - 3, TILE, 3);
     }
@@ -3008,6 +3126,11 @@
       ctx.fillRect(sx + 13, sy + 17, 7, 12);
       ctx.fillStyle = "#b9793a";
       ctx.fillRect(sx + 15, sy + 18, 2, 9);
+      // Viền tối quanh tán lá cho cây nổi khối hơn.
+      ctx.fillStyle = "#1f6b47";
+      ctx.fillRect(sx + 6 + sway, sy + 9, 20, 15);
+      ctx.fillRect(sx + 9 + sway, sy + 4, 15, 13);
+      ctx.fillRect(sx + 3 + sway, sy + 13, 26, 10);
       ctx.fillStyle = "#2f8d61";
       ctx.fillRect(sx + 7 + sway, sy + 10, 18, 13);
       ctx.fillRect(sx + 10 + sway, sy + 5, 13, 11);
@@ -3451,8 +3574,8 @@
       drawSparkle(x + 27, y + 1, "#fff3a3");
     }
 
-    function drawBoySprite(x, y) {
-      const bob = Math.sin(finalCutscene.t * 10) * 1.2;
+    function drawBoySprite(x, y, t = finalCutscene.t) {
+      const bob = Math.sin(t * 10) * 1.2;
       const baseY = Math.floor(y + bob);
       drawBlobShadow(x + 2, y + 23, 20, 5);
 
