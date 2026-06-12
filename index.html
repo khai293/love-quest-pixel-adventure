@@ -317,8 +317,13 @@
 
     .modal {
       width: min(620px, 100%);
-      max-height: min(92vh, 680px);
+      /* Dùng cả vh lẫn vw để khi màn chơi bị xoay 90° trên điện thoại dọc,
+         modal vẫn vừa chiều cao thực tế và cuộn được. */
+      max-height: min(86vh, 86vw, 660px);
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
       padding: 22px;
     }
 
@@ -440,8 +445,11 @@
         position: fixed;
         top: 0;
         left: 100vw;
+        left: 100dvw;
+        width: 100vh;
         width: 100dvh;
         height: 100vw;
+        height: 100dvw;
         transform-origin: 0 0;
         transform: rotate(90deg);
       }
@@ -927,6 +935,7 @@
         challengeIntro: [
           "Tia Sáng ⚡: Phía trước là Con Đường Thử Thách đó nha!",
           "Tia Sáng ⚡: Bụi gai và mây buồn sẽ làm mất tim năng lượng. Có kẹo ngọt để hồi đó!",
+          "Tia Sáng ⚡: Dạo này mấy bé mây buồn còn bay qua bay lại tuần tra nữa — canh nhịp mà né nha!",
           "Tia Sáng ⚡: Nghe đồn ai vượt đường mà không trầy xước sẽ được tặng một huy hiệu can đảm đó."
         ],
         houseHint: [
@@ -1300,6 +1309,11 @@
         interact: () => openShop()
       }));
 
+      objects.push(obj("critter_puppy", "critter", 10, 13, {
+        data: { kind: "puppy", name: "Cún Bơ", hello: "vẫy đuôi tít mù: Gâu gâu! 🐶", again: "lăn ra đất đòi {name} xoa bụng nè 🐶" },
+        interact: target => petCritter(target)
+      }));
+
       objects.push(obj("gate_town", "gate", 26, 9, {
         w: 28,
         h: 32,
@@ -1368,6 +1382,11 @@
         }));
       });
 
+      objects.push(obj("critter_bunny", "critter", 21, 4, {
+        data: { kind: "bunny", name: "Thỏ Bún", hello: "nghiêng đôi tai hồng, chụt chụt mũi chào {name} 🐰", again: "nhảy tưng tưng vòng quanh chân {name} 🐰" },
+        interact: target => petCritter(target)
+      }));
+
       objects.push(obj("gate_garden", "gate", 28, 9, {
         w: 28,
         h: 32,
@@ -1407,6 +1426,9 @@
       rect(map, 17, 10, 8, 2, "P");
       rect(map, 24, 8, 2, 4, "P");
       rect(map, 25, 8, 5, 2, "P");
+      // Nhánh đường vòng xuống góc đông nam dẫn tới rương (xa cổng hơn).
+      rect(map, 24, 12, 2, 4, "P");
+      rect(map, 26, 14, 4, 2, "P");
 
       // Tường đá và vật cản cứng.
       [[6,6],[6,7],[11,8],[12,8],[13,8],[14,8],[19,7],[20,7],[21,7],[27,11],[28,11],
@@ -1421,29 +1443,42 @@
         interact: () => openDialog(CONFIG.npcLines.challengeIntro)
       }));
 
-      [[9,8], [16,8], [22,10], [25,9]].forEach(([x,y], i) => {
+      [[9,8], [16,8], [22,10], [25,9], [11,5], [19,11], [24,13], [27,14]].forEach(([x,y], i) => {
         objects.push(obj(`thorn_${i}`, "danger", x, y, {
           data: { kind: "thorn" }
         }));
       });
 
-      [[12,5], [18,10], [24,8]].forEach(([x,y], i) => {
+      // Mây buồn giờ bay tuần tra qua lại — phải canh nhịp mới né được.
+      [
+        [12, 5, "x", 26, 1.4],
+        [18, 10, "x", 30, 1.1],
+        [24, 8, "y", 22, 1.6],
+        [5, 8, "x", 24, 1.3],
+        [27, 13, "y", 20, 1.2]
+      ].forEach(([x, y, axis, range, speed], i) => {
         objects.push(obj(`cloud_${i}`, "danger", x, y, {
-          data: { kind: "cloud" }
+          data: { kind: "cloud", move: { axis, range, speed, phase: i * 1.7 } }
         }));
       });
 
       objects.push(obj("candy_1", "candy", 10, 5));
       objects.push(obj("candy_2", "candy", 21, 10));
+      objects.push(obj("candy_3", "candy", 25, 14));
       objects.push(obj("happy_cloud", "happyCloud", 14, 6, {
         interact: target => rescueCloud(target)
       }));
 
-      objects.push(obj("piece_chest", "chest", 29, 8, {
+      objects.push(obj("piece_chest", "chest", 29, 14, {
         w: 28,
         h: 24,
         solid: false,
         interact: target => openPieceChest(target)
+      }));
+
+      objects.push(obj("critter_bird", "critter", 5, 5, {
+        data: { kind: "bird", name: "Chim Sữa", hello: "đậu lên vai hót líu lo chào {name} 🐦", again: "hót một bản nhạc tí hon cổ vũ {name} vượt thử thách 🐦" },
+        interact: target => petCritter(target)
       }));
 
       objects.push(obj("gate_challenge", "gate", 30, 8, {
@@ -1461,7 +1496,7 @@
         start: { tx: 2, ty: 8 },
         objects,
         quest: () => {
-          if (!player.gotPiece3) return "Nhiệm vụ: tránh chướng ngại, tới rương cuối đường để lấy mảnh ghép số 3.";
+          if (!player.gotPiece3) return "Nhiệm vụ: né mây bay và bụi gai, tới rương ở góc đông nam để lấy mảnh ghép số 3.";
           return "Nhiệm vụ: đi qua cổng để tới Ngôi Nhà Bí Mật.";
         },
         theme: "challenge"
@@ -1504,6 +1539,11 @@
           interact: target => collectClue(target)
         }));
       });
+
+      objects.push(obj("critter_chick", "critter", 14, 12, {
+        data: { kind: "chick", name: "Gà Bông", hello: "chiêm chiếp chiêm chiếp chào {name} 🐥", again: "rúc vào lòng bàn tay {name} ngủ khì 🐥" },
+        interact: target => petCritter(target)
+      }));
 
       return {
         id: "house",
@@ -2032,6 +2072,20 @@
         openDialog([`Đã gom ${player.sideQuests.stars}/5 sao nhỏ ở Cánh Đồng Sao.`]);
       }
       sfx("pickup");
+    }
+
+    // Tương tác với các bé pet nhỏ rải rác trong thế giới.
+    function petCritter(target) {
+      const k = target.data;
+      burst(target.x + 12, target.y + 4, CONFIG.colors.primary, 14, "heart");
+      sfx("memory");
+      if (!target.state.petted) {
+        target.state.petted = true;
+        addLove(2, `làm quen ${k.name}`);
+        openDialog([`${k.name} ${k.hello}`, "(+2% rung rinh khi làm quen bạn nhỏ mới 🐾)"]);
+      } else {
+        openDialog([`${k.name} ${k.again}`]);
+      }
     }
 
     function discoverSecret(target) {
@@ -2730,7 +2784,19 @@
       for (const item of currentArea.objects) {
         if (!item.active) continue;
 
-        if (["npc", "shopNpc", "gate", "memory", "chest", "door", "gift", "milkTea", "teaStand", "bouquet", "secret", "waterFlower", "happyCloud", "clue", "starBit"].includes(item.type)) {
+        // Chướng ngại biết bay tuần tra (mây buồn ở Con Đường Thử Thách).
+        if (item.type === "danger" && item.data.move) {
+          if (item.state.baseX === undefined) {
+            item.state.baseX = item.x;
+            item.state.baseY = item.y;
+          }
+          const m = item.data.move;
+          const sway = Math.sin(worldTime * m.speed + (m.phase || 0)) * m.range;
+          if (m.axis === "x") item.x = item.state.baseX + sway;
+          else item.y = item.state.baseY + sway;
+        }
+
+        if (["npc", "shopNpc", "gate", "memory", "chest", "door", "gift", "milkTea", "teaStand", "bouquet", "secret", "waterFlower", "happyCloud", "clue", "starBit", "critter"].includes(item.type)) {
           const d = distance(player, item);
           if (d < 45 && d < nearestDist) {
             nearestDist = d;
@@ -3263,7 +3329,84 @@
         case "starBit":
           drawStarBit(x, y);
           break;
+        case "critter":
+          drawCritter(x, y, item);
+          break;
       }
+    }
+
+    function drawCritter(x, y, item) {
+      const bob = Math.sin(visualClock * 3 + x * 0.05);
+      const by = Math.floor(y + bob);
+      drawBlobShadow(x + 2, y + 13, 17, 4);
+      const kind = item.data.kind;
+
+      if (kind === "puppy") {
+        const wag = Math.sin(visualClock * 7) > 0 ? 1 : 0;
+        ctx.fillStyle = "#c98c4e";
+        ctx.fillRect(x - 1, by + 5 + wag, 4, 3);
+        ctx.fillStyle = "#f0c48a";
+        ctx.fillRect(x + 2, by + 5, 11, 8);
+        ctx.fillRect(x + 9, by + 1, 9, 8);
+        ctx.fillStyle = "#c98c4e";
+        ctx.fillRect(x + 9, by, 3, 4);
+        ctx.fillRect(x + 15, by, 3, 4);
+        ctx.fillStyle = "#3b2645";
+        ctx.fillRect(x + 11, by + 4, 2, 2);
+        ctx.fillRect(x + 15, by + 4, 2, 2);
+        ctx.fillRect(x + 13, by + 6, 2, 2);
+        ctx.fillStyle = "#f0c48a";
+        ctx.fillRect(x + 3, by + 13, 3, 2);
+        ctx.fillRect(x + 9, by + 13, 3, 2);
+      } else if (kind === "bunny") {
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(x + 5, by - 5, 3, 7);
+        ctx.fillRect(x + 11, by - 5, 3, 7);
+        ctx.fillStyle = "#ffb3d6";
+        ctx.fillRect(x + 6, by - 4, 1, 5);
+        ctx.fillRect(x + 12, by - 4, 1, 5);
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(x + 3, by + 2, 13, 9);
+        ctx.fillStyle = "#3b2645";
+        ctx.fillRect(x + 6, by + 5, 2, 2);
+        ctx.fillRect(x + 11, by + 5, 2, 2);
+        ctx.fillStyle = "#ffb3d6";
+        ctx.fillRect(x + 4, by + 7, 2, 2);
+        ctx.fillRect(x + 13, by + 7, 2, 2);
+        ctx.fillRect(x + 9, by + 7, 1, 1);
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(x + 4, by + 11, 3, 2);
+        ctx.fillRect(x + 12, by + 11, 3, 2);
+      } else if (kind === "bird") {
+        const flap = Math.sin(visualClock * 9) > 0 ? 1 : 0;
+        ctx.fillStyle = "#7bdff2";
+        ctx.fillRect(x + 4, by + 3, 11, 8);
+        ctx.fillRect(x + 11, by, 7, 7);
+        ctx.fillStyle = "#aef3ff";
+        ctx.fillRect(x + 3, by + 4 + flap, 5, 4);
+        ctx.fillStyle = "#3b2645";
+        ctx.fillRect(x + 14, by + 2, 2, 2);
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(x + 17, by + 3, 3, 2);
+        ctx.fillStyle = "#ffb800";
+        ctx.fillRect(x + 8, by + 11, 2, 3);
+        ctx.fillRect(x + 12, by + 11, 2, 3);
+      } else {
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(x + 4, by + 2, 12, 10);
+        ctx.fillRect(x + 6, by, 8, 4);
+        ctx.fillStyle = "#3b2645";
+        ctx.fillRect(x + 7, by + 5, 2, 2);
+        ctx.fillRect(x + 12, by + 5, 2, 2);
+        ctx.fillStyle = "#ffb800";
+        ctx.fillRect(x + 9, by + 7, 3, 2);
+        ctx.fillRect(x + 6, by + 12, 2, 2);
+        ctx.fillRect(x + 12, by + 12, 2, 2);
+        ctx.fillStyle = "#ffb3d6";
+        ctx.fillRect(x + 5, by + 8, 2, 1);
+        ctx.fillRect(x + 14, by + 8, 2, 1);
+      }
+      if (!item.state.petted) drawSparkle(x + 16, by - 6, "#fff3a3");
     }
 
     // Vẽ sprite nhân vật chính lên một context bất kỳ (game chính hoặc preview chọn nhân vật).
@@ -3322,33 +3465,40 @@
       g.fillStyle = "rgba(0,0,0,0.06)";
       g.fillRect(x + 4, baseY + 15, 13, 2);
 
-      // Mắt theo hướng, thỉnh thoảng chớp mắt khi đứng yên.
+      // Mắt chibi to long lanh có ánh sáng, má hồng; thỉnh thoảng chớp mắt khi đứng yên.
       g.fillStyle = "#3b2645";
       if (dir === "left") {
-        g.fillRect(x + 5, baseY + 12, 2, 2);
-        g.fillStyle = "#ff9fcb";
-        g.fillRect(x + 12, baseY + 14, 2, 1);
+        g.fillRect(x + 5, baseY + 11, 3, 3);
+        g.fillStyle = "#fff7fb";
+        g.fillRect(x + 7, baseY + 11, 1, 1);
+        g.fillStyle = "#ffb3d6";
+        g.fillRect(x + 12, baseY + 14, 3, 2);
       } else if (dir === "right") {
-        g.fillRect(x + 14, baseY + 12, 2, 2);
-        g.fillStyle = "#ff9fcb";
-        g.fillRect(x + 7, baseY + 14, 2, 1);
+        g.fillRect(x + 13, baseY + 11, 3, 3);
+        g.fillStyle = "#fff7fb";
+        g.fillRect(x + 13, baseY + 11, 1, 1);
+        g.fillStyle = "#ffb3d6";
+        g.fillRect(x + 6, baseY + 14, 3, 2);
       } else if (dir === "up") {
-        g.fillRect(x + 7, baseY + 11, 2, 2);
-        g.fillRect(x + 12, baseY + 11, 2, 2);
+        g.fillRect(x + 6, baseY + 11, 3, 2);
+        g.fillRect(x + 12, baseY + 11, 3, 2);
       } else {
         const blink = !moving && Math.sin(clock * 1.7) > 0.96;
         if (blink) {
-          g.fillRect(x + 6, baseY + 13, 2, 1);
-          g.fillRect(x + 13, baseY + 13, 2, 1);
+          g.fillRect(x + 5, baseY + 13, 3, 1);
+          g.fillRect(x + 13, baseY + 13, 3, 1);
         } else {
-          g.fillRect(x + 6, baseY + 12, 2, 2);
-          g.fillRect(x + 13, baseY + 12, 2, 2);
+          g.fillRect(x + 5, baseY + 11, 3, 3);
+          g.fillRect(x + 13, baseY + 11, 3, 3);
+          g.fillStyle = "#fff7fb";
+          g.fillRect(x + 7, baseY + 11, 1, 1);
+          g.fillRect(x + 15, baseY + 11, 1, 1);
         }
         g.fillStyle = "#ff7ab6";
         g.fillRect(x + 9, baseY + 15, 3, 1);
         g.fillStyle = "#ffb3d6";
-        g.fillRect(x + 4, baseY + 14, 2, 1);
-        g.fillRect(x + 16, baseY + 14, 2, 1);
+        g.fillRect(x + 4, baseY + 14, 2, 2);
+        g.fillRect(x + 15, baseY + 14, 2, 2);
       }
 
       // Áo có highlight.
@@ -3403,8 +3553,14 @@
       ctx.fillStyle = "#ffd7c2";
       ctx.fillRect(x + 4, baseY + 8, 15, 9);
       ctx.fillStyle = "#3b2645";
-      ctx.fillRect(x + 7, baseY + 12, 2, 2);
-      ctx.fillRect(x + 14, baseY + 12, 2, 2);
+      ctx.fillRect(x + 6, baseY + 11, 3, 3);
+      ctx.fillRect(x + 14, baseY + 11, 3, 3);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 8, baseY + 11, 1, 1);
+      ctx.fillRect(x + 16, baseY + 11, 1, 1);
+      ctx.fillStyle = "#ffb3d6";
+      ctx.fillRect(x + 4, baseY + 14, 2, 2);
+      ctx.fillRect(x + 17, baseY + 14, 2, 2);
       ctx.fillStyle = "#ff9fcb";
       ctx.fillRect(x + 10, baseY + 15, 3, 1);
       ctx.fillStyle = color;
