@@ -1,0 +1,3807 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Love Quest Pixel Adventure - Deluxe Graphics</title>
+  <style>
+    :root {
+      --primary: #ff7ab6;
+      --primary-2: #ffd1e6;
+      --accent: #bfa2ff;
+      --warm: #ffd166;
+      --mint: #b8f7c1;
+      --ink: #3b2645;
+      --panel: rgba(255, 246, 252, 0.94);
+      --shadow: rgba(59, 38, 69, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255, 209, 230, 0.9), transparent 34%),
+        radial-gradient(circle at 80% 10%, rgba(191, 162, 255, 0.65), transparent 32%),
+        linear-gradient(135deg, #fff0f7, #effcf3 52%, #f2edff);
+      color: var(--ink);
+      font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+    }
+
+    #gameShell {
+      position: relative;
+      width: min(100vw - 18px, 980px);
+      aspect-ratio: 5 / 3;
+      max-height: calc(100vh - 18px);
+      border: 6px solid #fff7fb;
+      border-radius: 24px;
+      box-shadow:
+        0 30px 90px rgba(128, 61, 96, 0.34),
+        0 0 0 2px rgba(255, 255, 255, 0.72),
+        inset 0 0 0 3px rgba(255, 122, 182, 0.26);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.82), transparent 28%),
+        linear-gradient(135deg, #ffeaf4, #f3efff);
+      overflow: hidden;
+    }
+
+    #gameShell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.18;
+      background:
+        linear-gradient(rgba(255,255,255,0.18) 50%, rgba(255,122,182,0.10) 50%),
+        radial-gradient(circle at 18% 20%, rgba(255,255,255,0.75), transparent 18%),
+        radial-gradient(circle at 86% 10%, rgba(255,209,230,0.65), transparent 20%);
+      background-size: 100% 4px, 100% 100%, 100% 100%;
+      mix-blend-mode: soft-light;
+    }
+
+    #gameShell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      box-shadow: inset 0 0 80px rgba(59, 38, 69, 0.16);
+      border-radius: 18px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      background: #b8f7c1;
+      filter: saturate(1.08) contrast(1.04);
+    }
+
+    /* Góc nhìn 2.5D: nghiêng nhẹ mặt bàn chơi như sa bàn thu nhỏ. */
+    #game {
+      transform: perspective(900px) rotateX(13deg) scale(1.12, 1.2);
+      transform-origin: 50% 68%;
+      will-change: transform;
+    }
+
+    .pixel-panel {
+      border: 4px solid #5b3a66;
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow:
+        0 8px 0 rgba(91, 58, 102, 0.2),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.8);
+    }
+
+    #hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 4;
+      font-weight: 800;
+      text-shadow: 1px 1px 0 #fff;
+    }
+
+    #hud .box {
+      padding: 8px 10px;
+      border: 3px solid rgba(91, 58, 102, 0.88);
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255, 247, 252, 0.84));
+      box-shadow:
+        0 5px 0 rgba(91, 58, 102, 0.13),
+        inset 0 0 0 2px rgba(255,255,255,0.62);
+      font-size: clamp(11px, 1.8vw, 14px);
+      line-height: 1.25;
+    }
+
+    #quest {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #hint {
+      position: absolute;
+      left: 50%;
+      bottom: 108px;
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      border: 3px solid #5b3a66;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      font-weight: 800;
+      z-index: 5;
+      animation: bob 0.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes bob {
+      from { transform: translate(-50%, 0); }
+      to { transform: translate(-50%, -5px); }
+    }
+
+    #dialog {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      min-height: 90px;
+      padding: 14px 16px 12px;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    #dialogText {
+      font-size: clamp(14px, 2.1vw, 18px);
+      line-height: 1.45;
+      font-weight: 800;
+    }
+
+    #nextBtn {
+      align-self: end;
+      border: 0;
+      border-radius: 12px;
+      padding: 9px 12px;
+      background: linear-gradient(180deg, #ff9bcc, #ff6ead);
+      color: white;
+      font-family: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #b64a7f;
+    }
+
+    #nextBtn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #b64a7f;
+    }
+
+    #toast {
+      position: absolute;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, #fff7fb, #ffe1ef);
+      border: 4px solid #5b3a66;
+      border-radius: 16px;
+      font-weight: 900;
+      box-shadow: 0 8px 0 rgba(91, 58, 102, 0.18);
+      animation: toastIn 1.9s ease forwards;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translate(-50%, -12px) scale(0.96); }
+      12% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      82% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+    }
+
+    #topActions {
+      position: absolute;
+      right: 16px;
+      bottom: 122px;
+      display: flex;
+      gap: 8px;
+      z-index: 7;
+    }
+
+    .roundBtn {
+      border: 3px solid #5b3a66;
+      border-radius: 999px;
+      min-width: 44px;
+      height: 44px;
+      padding: 0 12px;
+      background: rgba(255, 247, 252, 0.9);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(91, 58, 102, 0.24);
+    }
+
+    .roundBtn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(91, 58, 102, 0.24);
+    }
+
+    #mobileControls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      z-index: 7;
+      display: none;
+      justify-content: space-between;
+      align-items: end;
+      padding: 0 16px;
+      pointer-events: none;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: 52px 52px 52px;
+      grid-template-rows: 52px 52px 52px;
+      gap: 5px;
+      pointer-events: auto;
+    }
+
+    .dpad button,
+    #interactTouch {
+      border: 4px solid #5b3a66;
+      border-radius: 16px;
+      background: rgba(255, 247, 252, 0.92);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 18px;
+      box-shadow: 0 5px 0 rgba(91, 58, 102, 0.24);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .dpad button:active,
+    #interactTouch:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(91, 58, 102, 0.24);
+    }
+
+    .up { grid-column: 2; grid-row: 1; }
+    .left { grid-column: 1; grid-row: 2; }
+    .down { grid-column: 2; grid-row: 3; }
+    .right { grid-column: 3; grid-row: 2; }
+
+    #interactTouch {
+      width: 104px;
+      height: 62px;
+      pointer-events: auto;
+      background: linear-gradient(180deg, #fff7fb, #ffd1e6);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(255, 209, 230, 0.88), transparent 30%),
+        rgba(42, 22, 50, 0.38);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal {
+      width: min(620px, 100%);
+      max-height: min(92vh, 680px);
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .modal h1,
+    .modal h2 {
+      margin: 0 0 12px;
+      color: #b64a7f;
+      text-shadow: 2px 2px 0 #fff;
+    }
+
+    .modal p {
+      margin: 10px 0;
+      line-height: 1.55;
+      font-weight: 800;
+    }
+
+    .modal input {
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px;
+      border: 4px solid #5b3a66;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 900;
+      outline: none;
+    }
+
+    .modalActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .primaryBtn,
+    .ghostBtn {
+      border: 4px solid #5b3a66;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-family: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 0 rgba(91, 58, 102, 0.22);
+    }
+
+    .primaryBtn {
+      background: linear-gradient(180deg, #ff9bcc, #ff6ead);
+      color: #fff;
+    }
+
+    .ghostBtn {
+      background: #fff7fb;
+      color: var(--ink);
+    }
+
+    .primaryBtn:active,
+    .ghostBtn:active {
+      transform: translateY(3px);
+      box-shadow: 0 3px 0 rgba(91, 58, 102, 0.22);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 760px) {
+      #app {
+        padding: 0;
+      }
+
+      #gameShell {
+        width: 100vw;
+        height: 100vh;
+        max-height: none;
+        aspect-ratio: auto;
+        border: 0;
+        border-radius: 0;
+      }
+
+      #hud {
+        grid-template-columns: 1fr 1fr;
+        right: 8px;
+        left: 8px;
+        top: 8px;
+        gap: 6px;
+      }
+
+      #quest {
+        grid-column: 1 / -1;
+      }
+
+      #mobileControls {
+        display: flex;
+      }
+
+      #dialog {
+        left: 8px;
+        right: 8px;
+        bottom: 86px;
+        min-height: 104px;
+      }
+
+      #hint {
+        bottom: 178px;
+      }
+
+      #topActions {
+        right: 8px;
+        bottom: 202px;
+      }
+    }
+
+
+    /* ===== Expansion Pack UI ===== */
+    #loveMeterBox {
+      position: absolute;
+      left: 12px;
+      top: 108px;
+      width: min(280px, calc(100vw - 24px));
+      z-index: 7;
+      padding: 8px 10px;
+    }
+
+    #loveMeterTrack {
+      height: 12px;
+      background: rgba(91,58,102,.16);
+      border: 2px solid rgba(91,58,102,.28);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.45);
+      overflow: hidden;
+    }
+
+    #loveMeterFill {
+      height: 100%;
+      width: 0%;
+      background: repeating-linear-gradient(90deg, var(--primary), var(--primary) 8px, #ffd166 8px, #ffd166 12px);
+      transition: width .35s ease;
+    }
+
+    #miniMap {
+      position: absolute;
+      right: 12px;
+      top: 82px;
+      width: 126px;
+      height: 90px;
+      border: 3px solid rgba(91,58,102,.82);
+      background: rgba(255,247,252,.88);
+      image-rendering: pixelated;
+      z-index: 7;
+      box-shadow: 0 8px 18px rgba(59,38,69,.18);
+    }
+
+    #extraActions {
+      position: absolute;
+      right: 12px;
+      top: 180px;
+      display: grid;
+      grid-template-columns: repeat(2, 38px);
+      gap: 8px;
+      z-index: 9;
+    }
+
+    .tinyBtn {
+      width: 38px;
+      height: 34px;
+      border: 2px solid rgba(91,58,102,.8);
+      background: rgba(255,247,252,.92);
+      color: var(--ink);
+      font-weight: 900;
+      box-shadow: 0 4px 0 rgba(91,58,102,.2);
+      cursor: pointer;
+    }
+
+    .tinyBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(91,58,102,.2); }
+
+    .panelGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    .cardBtn {
+      border: 3px solid rgba(91,58,102,.72);
+      background: linear-gradient(180deg, #fff7fc, #ffe7f2);
+      color: var(--ink);
+      padding: 12px;
+      text-align: left;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(91,58,102,.18);
+    }
+
+    .cardBtn small { display: block; margin-top: 6px; font-weight: 700; opacity: .78; line-height: 1.35; }
+    .cardBtn.locked { filter: grayscale(.4); opacity: .7; cursor: not-allowed; }
+    .cardBtn.done { background: linear-gradient(180deg, #fff1b8, #ffd1e6); }
+
+    #teaGameArea {
+      margin: 12px auto;
+      width: min(420px, 92vw);
+      padding: 12px;
+      border: 3px solid rgba(91,58,102,.68);
+      background: rgba(255,255,255,.54);
+    }
+
+    #teaMeter {
+      position: relative;
+      height: 26px;
+      border: 3px solid rgba(91,58,102,.75);
+      background: linear-gradient(90deg, #ffd1e6, #fff1b8, #b8f7c1, #fff1b8, #ffd1e6);
+      overflow: hidden;
+    }
+
+    #teaPerfectZone {
+      position: absolute;
+      left: 42%;
+      top: 0;
+      width: 16%;
+      height: 100%;
+      background: rgba(255,255,255,.55);
+      box-shadow: 0 0 14px rgba(255,209,102,.9);
+    }
+
+    #teaPointer {
+      position: absolute;
+      left: 0%;
+      top: -4px;
+      width: 8px;
+      height: 34px;
+      background: #3b2645;
+      box-shadow: 0 0 0 2px #fff7fb;
+    }
+
+    #teaScoreText { min-height: 28px; font-weight: 900; color: #b64a7f; }
+
+    #sideLog {
+      max-height: 52vh;
+      overflow: auto;
+      text-align: left;
+      background: rgba(255,255,255,.36);
+      padding: 10px;
+      border: 2px solid rgba(91,58,102,.2);
+    }
+
+    @media (max-width: 720px) {
+      #miniMap { width: 92px; height: 68px; top: 88px; right: 8px; }
+      #extraActions { right: 8px; top: 164px; grid-template-columns: repeat(2, 34px); gap: 6px; }
+      .tinyBtn { width: 34px; height: 32px; font-size: 13px; }
+      #loveMeterBox { top: 118px; left: 8px; width: calc(100vw - 116px); font-size: 12px; }
+    }
+
+    /* ===== Đặt tên & chọn nhân vật ===== */
+    .nameLabel {
+      display: block;
+      text-align: left;
+      font-weight: 900;
+      margin-top: 8px;
+      color: #7a4f8a;
+    }
+
+    #charGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+      gap: 10px;
+      margin: 10px 0 4px;
+    }
+
+    .charCard {
+      border: 3px solid rgba(91, 58, 102, 0.55);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fff7fc, #ffe7f2);
+      padding: 8px 6px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 900;
+      color: var(--ink);
+      font-family: inherit;
+      box-shadow: 0 5px 0 rgba(91, 58, 102, 0.16);
+      transition: transform 0.12s ease;
+    }
+
+    .charCard:hover { transform: translateY(-2px); }
+
+    .charCard.selected {
+      border-color: #ff6ead;
+      background: linear-gradient(180deg, #fff1b8, #ffd1e6);
+      box-shadow: 0 0 0 3px rgba(255, 122, 182, 0.35), 0 5px 0 rgba(91, 58, 102, 0.16);
+    }
+
+    .charCard canvas {
+      width: 64px;
+      height: 80px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .charCard small {
+      display: block;
+      font-weight: 700;
+      opacity: 0.75;
+      font-size: 11px;
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
+    #fadeLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+      background: #2a1632;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+    }
+
+    #chapterBanner {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.94);
+      z-index: 16;
+      padding: 14px 26px;
+      border: 4px solid #5b3a66;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff7fb, #ffd1e6);
+      font-weight: 900;
+      font-size: clamp(15px, 2.6vw, 22px);
+      color: #b64a7f;
+      text-shadow: 1px 1px 0 #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      white-space: nowrap;
+    }
+
+    #chapterBanner.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="gameShell">
+      <canvas id="game" width="640" height="384" aria-label="Love Quest Pixel Adventure"></canvas>
+      <div id="fadeLayer"></div>
+      <div id="chapterBanner"></div>
+
+      <div id="hud">
+        <div class="box" id="areaName">Khu vực</div>
+        <div class="box" id="quest">Nhiệm vụ</div>
+        <div class="box" id="stats">💗💗💗 | 🧩 0/3</div>
+      </div>
+
+      <div id="hint" class="hidden">Nhấn E để tương tác</div>
+
+      <div id="topActions">
+        <button class="roundBtn" id="musicBtn" title="Bật/tắt nhạc">♪</button>
+      </div>
+
+      <div id="dialog" class="pixel-panel hidden">
+        <div id="dialogText"></div>
+        <button id="nextBtn">Tiếp ▶</button>
+      </div>
+
+      <div id="mobileControls">
+        <div class="dpad" aria-label="Điều khiển di chuyển">
+          <button class="up" data-dir="up">▲</button>
+          <button class="left" data-dir="left">◀</button>
+          <button class="right" data-dir="right">▶</button>
+          <button class="down" data-dir="down">▼</button>
+        </div>
+        <button id="interactTouch">Tương tác</button>
+      </div>
+
+      <div id="passwordOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>🔐 Cánh cửa bí mật</h2>
+          <p id="passwordHint">Mật mã là điều anh muốn nói với chị bé mỗi ngày.</p>
+          <input id="passwordInput" type="text" autocomplete="off" placeholder="Nhập mật mã..." />
+          <p id="passwordError" style="color:#b64a7f; min-height: 24px;"></p>
+          <div class="modalActions">
+            <button class="primaryBtn" id="submitPassword">Mở cửa</button>
+            <button class="ghostBtn" id="closePassword">Để lát nữa</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="finalOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h1>🎁 Món quà cuối cùng</h1>
+          <div id="finalLetter"></div>
+          <div class="modalActions">
+            <button class="ghostBtn" id="restartBtn">Chơi lại</button>
+            <button class="primaryBtn" id="giftBtn">Nhận quà bí mật</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="startOverlay" class="overlay">
+        <div class="modal pixel-panel">
+          <h1>Love Quest Pixel Adventure</h1>
+          <p>Một thế giới pixel nhỏ được dựng nên từ những kỷ niệm. Hãy thu thập các Mảnh Ghép Trái Tim để đánh thức món quà cuối cùng. 💗</p>
+          <label class="nameLabel" for="playerNameInput">✏️ Tên của người chơi:</label>
+          <input id="playerNameInput" type="text" maxlength="16" autocomplete="off" placeholder="Nhập tên dễ thương..." />
+          <label class="nameLabel">🎀 Chọn nhân vật:</label>
+          <div id="charGrid"></div>
+          <p><b>Điều khiển:</b> WASD / phím mũi tên để di chuyển, E để tương tác. Trên điện thoại dùng nút cảm ứng.</p>
+          <div class="modalActions">
+            <button class="primaryBtn" id="startBtn">Bắt đầu chuyến phiêu lưu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    /******************************************************************
+     * LOVE QUEST PIXEL ADVENTURE
+     * Chỉ cần sửa phần CONFIG này để cá nhân hóa game.
+     ******************************************************************/
+    const CONFIG = {
+      gameTitle: "Love Quest Pixel Adventure",
+      loverName: "chị bé",
+      playerName: "Anh",
+
+      // Danh sách nhân vật có thể chọn ở màn hình bắt đầu.
+      characters: [
+        { id: "mochi", name: "Mochi", desc: "Cô bé tóc dài mơ mộng, tin rằng mọi kỷ niệm đều biết tỏa sáng.", hair: "#6b3b5f", hairStyle: "long", skinTone: "#ffd7c2", outfit: "#ff7ab6" },
+        { id: "miu", name: "Miu", desc: "Bé mèo tinh nghịch, đánh hơi được mọi bí mật giấu kín.", hair: "#5b3a66", hairStyle: "cat", skinTone: "#ffe3cf", outfit: "#bfa2ff" },
+        { id: "subin", name: "Su Bin", desc: "Tóc búi năng động, chạy nhanh hơn cả gió mùa thu.", hair: "#a05c2c", hairStyle: "ponytail", skinTone: "#ffd7c2", outfit: "#ffd166" }
+      ],
+
+      // Tiêu đề chương hiện khi bước vào khu vực mới.
+      chapters: {
+        town: "Chương 1 · Thị Trấn Yêu Thương",
+        garden: "Chương 2 · Khu Vườn Kỷ Niệm",
+        challenge: "Chương 3 · Con Đường Thử Thách",
+        house: "Chương 4 · Ngôi Nhà Bí Mật",
+        stars: "Chương Cuối · Cánh Đồng Sao"
+      },
+
+      // Lời dẫn truyện khi lần đầu đặt chân tới mỗi khu vực. {name} sẽ được thay bằng tên người chơi.
+      areaIntros: {
+        town: [
+          "Thị trấn nhỏ này được Người Gửi Quà dựng nên từ những mẩu kỷ niệm vụn.",
+          "Nghe nói khi gom đủ ba Mảnh Ghép Trái Tim, món quà đang say ngủ sẽ thức dậy."
+        ],
+        garden: [
+          "Khu vườn này mọc lên từ những lời chưa kịp nói.",
+          "Mỗi bông hoa ở đây giữ một mẩu ký ức đang chờ {name} ghé đọc."
+        ],
+        challenge: [
+          "Con đường này từng là nơi Người Gửi Quà tập can đảm.",
+          "Bụi gai là những lần ngại ngùng, mây tím là những hôm buồn vu vơ.",
+          "Vượt qua hết, {name} sẽ hiểu vì sao cậu ấy không bỏ cuộc."
+        ],
+        house: [
+          "Ngôi nhà bí mật là nơi Người Gửi Quà cất điều khó nói nhất.",
+          "Cánh cửa chỉ mở khi {name} đoán đúng lời cậu ấy thì thầm mỗi ngày."
+        ],
+        stars: [
+          "Cánh Đồng Sao — nơi mọi kỷ niệm hóa thành ánh sáng.",
+          "Ở cuối cánh đồng, món quà cuối cùng đang chờ {name}."
+        ]
+      },
+
+      // Có thể đổi mật mã ở đây.
+      passcode: "yeuchibe",
+
+      // Link quà bí mật: đổi sang link Drive, mã voucher, ảnh bill trà sữa, playlist, thư, v.v.
+      secretGiftLink: "https://example.com/coc-tra-sua-rieng-cho-chi-be",
+
+      // Món quà cuối có thể đổi nhanh ở đây.
+      finalGiftName: "Cốc trà sữa ngọt ngào",
+      finalGiftButtonText: "Nhận cốc trà sữa 🧋",
+
+      // Số trái tim nhỏ cần nhặt ở khu vực 1.
+      heartsNeededTown: 3,
+
+      // Màu chủ đạo dùng cho một số hiệu ứng UI và pixel.
+      colors: {
+        primary: "#ff7ab6",
+        pink: "#ffd1e6",
+        purple: "#bfa2ff",
+        mint: "#b8f7c1",
+        warm: "#ffd166"
+      },
+
+      npcLines: {
+        townWelcome: [
+          "Miu Thỏ 🐰: Chào mừng {name} đến với Thị Trấn Yêu Thương 💗",
+          "Miu Thỏ 🐰: Tớ là thỏ trưởng thị trấn, người canh giữ Mảnh Ghép Trái Tim số 1.",
+          "Miu Thỏ 🐰: Quanh đây có 3 trái tim nhỏ đang trốn. Nhặt đủ rồi quay lại gặp tớ nhé!"
+        ],
+        townNeedMore: [
+          "Miu Thỏ 🐰: Vẫn còn trái tim nhỏ đang trốn đâu đó nè.",
+          "Miu Thỏ 🐰: Thử ngó quanh hoa, gốc cây và hàng rào xem sao!"
+        ],
+        townComplete: [
+          "Miu Thỏ 🐰: Tuyệt vời! {name} đã gom đủ 3 trái tim nhỏ!",
+          "Miu Thỏ 🐰: Đây, Mảnh Ghép Trái Tim số 1 — nó ấm như một cái ôm vậy 🧩",
+          "Miu Thỏ 🐰: Nghe nói mảnh số 2 đang ngủ quên ở Khu Vườn Kỷ Niệm phía đông đó..."
+        ],
+        gardenIntro: [
+          "Bác Hướng Dương 🌻: Chào cháu, đây là Khu Vườn Kỷ Niệm.",
+          "Bác Hướng Dương 🌻: Mỗi tấm thiệp lấp lánh trong vườn giữ một lời nhắn thật lòng của Người Gửi Quà.",
+          "Bác Hướng Dương 🌻: Đọc đủ 4 lời nhắn, mảnh ghép số 2 sẽ tự tìm đến cháu."
+        ],
+        gateLocked: [
+          "Cánh cổng khẽ lắc đầu: vẫn còn khóa nè.",
+          "Hoàn thành nhiệm vụ hiện tại rồi quay lại nha!"
+        ],
+        challengeIntro: [
+          "Tia Sáng ⚡: Phía trước là Con Đường Thử Thách đó nha!",
+          "Tia Sáng ⚡: Bụi gai và mây buồn sẽ làm mất tim năng lượng. Có kẹo ngọt để hồi đó!",
+          "Tia Sáng ⚡: Nghe đồn ai vượt đường mà không trầy xước sẽ được tặng một huy hiệu can đảm đó."
+        ],
+        houseHint: [
+          "Mật mã là điều anh muốn nói với {name} mỗi ngày."
+        ]
+      },
+
+      memoryMessages: [
+        "Cảm ơn chị bé vì đã xuất hiện trong cuộc sống của anh.",
+        "Mỗi ngày có chị bé đều trở nên đặc biệt hơn một chút.",
+        "Anh mong chị bé luôn được vui vẻ và bình yên.",
+        "Dù thế giới có ồn ào, anh vẫn muốn là nơi chị bé thấy nhẹ lòng."
+      ],
+
+      finalGiftCutsceneLines: [
+        "Từ ánh sáng lấp lánh, một chàng trai pixel bước ra.",
+        "Cậu ấy trao cho chị bé một cốc trà sữa thật xinh 🧋",
+        "Rồi gửi chị bé một nụ hôn gió pixel nhẹ như trái tim bay 💗"
+      ],
+
+      finalLetter: [
+        "Gửi chị bé,",
+        "Anh tạo trò chơi nhỏ này để chị bé có một món quà thật riêng. Có thể nó không hoàn hảo, nhưng từng chi tiết trong game đều là điều anh muốn gửi đến chị bé: một chút vui vẻ, một chút bất ngờ, và thật nhiều sự quan tâm.",
+        "Mong rằng khi chơi đến đây, chị bé sẽ mỉm cười một chút.",
+        "Cảm ơn chị bé vì đã bước vào thế giới nhỏ này của anh.",
+        "P/s: Món quà riêng dành cho chị bé là một cốc trà sữa thật ngọt nè 🧋",
+        "Thương chị bé thật nhiều."
+      ],
+
+      openingStory: [
+        "Ngày xửa ngày xưa, có một người lặng lẽ gom từng kỷ niệm nhỏ...",
+        "Người ấy được gọi là Người Gửi Quà — vì món quà nào của cậu cũng giấu một nhịp tim.",
+        "Cậu dựng nên cả một thế giới pixel: một thị trấn, một khu vườn, một con đường thử thách và một cánh đồng sao.",
+        "Nhưng thế giới ấy chỉ thật sự sống dậy khi có một người đặc biệt bước vào...",
+        "Và hôm nay, {name} chính là người được mời 💗"
+      ],
+
+      loveMeterMax: 100,
+      secretHint: "Có một cây hoa hồng rất im lặng ở Thị trấn Yêu Thương. Đứng cạnh nó và nhấn E thử xem.",
+
+      sideQuestLines: {
+        bouquet: "Bó hoa thất lạc đã về đúng chỗ. Một mùi hương hồng pastel lan ra quanh thị trấn.",
+        watering: "Những bông hoa kỷ niệm đã được tưới đủ. Cả khu vườn sáng hơn một chút.",
+        cloud: "Bé mây buồn đã được dỗ dành và biến thành mây vui vẻ.",
+        clues: "Ba chữ cái gợi ý đã ghép lại thành: YÊU.",
+        stars: "Những sao nhỏ đã được gom đủ để thắp sáng cốc trà sữa cuối."
+      },
+
+      shopItems: [
+        { id: "candyPack", name: "Túi kẹo ngọt", cost: 3, desc: "Hồi đầy tim năng lượng." },
+        { id: "peaceCharm", name: "Bùa bình yên", cost: 5, desc: "Chặn một lần mất tim ở đường thử thách." },
+        { id: "ribbonSkin", name: "Nơ hồng pixel", cost: 6, desc: "Mở skin Nơ Hồng trong tủ đồ." }
+      ],
+
+      skins: [
+        { id: "classic", name: "Chibi hồng", primary: "#ff7ab6", hair: "#6b3b5f", unlocked: true },
+        { id: "violet", name: "Áo tím sao", primary: "#bfa2ff", hair: "#5b3a66", unlocked: false },
+        { id: "ribbon", name: "Nơ hồng trà sữa", primary: "#ff9fcb", hair: "#7a4f8a", unlocked: false },
+        { id: "milktea", name: "Trà sữa ấm", primary: "#d29a65", hair: "#6b3b5f", unlocked: false }
+      ]
+    };
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    const ui = {
+      areaName: document.getElementById("areaName"),
+      quest: document.getElementById("quest"),
+      stats: document.getElementById("stats"),
+      hint: document.getElementById("hint"),
+      dialog: document.getElementById("dialog"),
+      dialogText: document.getElementById("dialogText"),
+      nextBtn: document.getElementById("nextBtn"),
+      toast: null,
+      musicBtn: document.getElementById("musicBtn"),
+      startOverlay: document.getElementById("startOverlay"),
+      startBtn: document.getElementById("startBtn"),
+      passwordOverlay: document.getElementById("passwordOverlay"),
+      passwordInput: document.getElementById("passwordInput"),
+      passwordError: document.getElementById("passwordError"),
+      submitPassword: document.getElementById("submitPassword"),
+      closePassword: document.getElementById("closePassword"),
+      finalOverlay: document.getElementById("finalOverlay"),
+      finalLetter: document.getElementById("finalLetter"),
+      restartBtn: document.getElementById("restartBtn"),
+      giftBtn: document.getElementById("giftBtn"),
+      interactTouch: document.getElementById("interactTouch")
+    };
+
+    document.documentElement.style.setProperty("--primary", CONFIG.colors.primary);
+    document.documentElement.style.setProperty("--primary-2", CONFIG.colors.pink);
+    document.documentElement.style.setProperty("--accent", CONFIG.colors.purple);
+    document.documentElement.style.setProperty("--warm", CONFIG.colors.warm);
+    document.documentElement.style.setProperty("--mint", CONFIG.colors.mint);
+    ui.giftBtn.textContent = CONFIG.finalGiftButtonText || "Nhận quà bí mật";
+
+
+    function installExpansionUI() {
+      const shell = document.getElementById("gameShell");
+      shell.insertAdjacentHTML("beforeend", `
+        <div class="box" id="loveMeterBox">
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;"><b>💗 Độ Rung Rinh</b><span id="loveMeterText">0%</span></div>
+          <div id="loveMeterTrack"><div id="loveMeterFill"></div></div>
+        </div>
+        <canvas id="miniMap" width="126" height="90" aria-label="Mini map"></canvas>
+        <div id="extraActions">
+          <button class="tinyBtn" id="saveBtn" title="Lưu game">💾</button>
+          <button class="tinyBtn" id="loadBtn" title="Tải game">↺</button>
+          <button class="tinyBtn" id="shopBtn" title="Shop">🛍</button>
+          <button class="tinyBtn" id="skinBtn" title="Skin">🎀</button>
+          <button class="tinyBtn" id="achBtn" title="Thành tựu">🏆</button>
+          <button class="tinyBtn" id="logBtn" title="Nhiệm vụ phụ">📜</button>
+        </div>
+        <div id="shopOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🛍 Shop Dễ Thương</h2><p>Dùng sao nhỏ ⭐ để mua đồ. Sao kiếm bằng nhiệm vụ phụ, bí mật và minigame.</p><div id="shopItems" class="panelGrid"></div><div class="modalActions"><button class="ghostBtn" id="closeShop">Đóng</button></div></div></div>
+        <div id="skinOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🎀 Tủ Skin Pixel</h2><p>Đổi ngoại hình nhân vật chính. Skin chỉ đổi màu, không ảnh hưởng gameplay.</p><div id="skinItems" class="panelGrid"></div><div class="modalActions"><button class="ghostBtn" id="closeSkin">Đóng</button></div></div></div>
+        <div id="achOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🏆 Thành tựu</h2><div id="achItems" class="panelGrid"></div><div class="modalActions"><button class="ghostBtn" id="closeAch">Đóng</button></div></div></div>
+        <div id="logOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>📜 Nhật ký nhiệm vụ phụ</h2><div id="sideLog"></div><div class="modalActions"><button class="ghostBtn" id="closeLog">Đóng</button></div></div></div>
+        <div id="teaOverlay" class="overlay hidden"><div class="modal pixel-panel"><h2>🧋 Mini game pha trà sữa</h2><p>Canh kim vào vùng sáng rồi bấm <b>Lắc trà sữa!</b>. Đủ 3 lần đẹp là hoàn thành.</p><div id="teaGameArea"><div id="teaMeter"><div id="teaPerfectZone"></div><div id="teaPointer"></div></div></div><p id="teaScoreText">Lượt 1/3</p><div class="modalActions"><button class="primaryBtn" id="shakeTeaBtn">Lắc trà sữa!</button><button class="ghostBtn" id="closeTea">Để lát nữa</button></div></div></div>
+      `);
+
+      ui.loveMeterText = document.getElementById("loveMeterText");
+      ui.loveMeterFill = document.getElementById("loveMeterFill");
+      ui.miniMap = document.getElementById("miniMap");
+      ui.saveBtn = document.getElementById("saveBtn");
+      ui.loadBtn = document.getElementById("loadBtn");
+      ui.shopBtn = document.getElementById("shopBtn");
+      ui.skinBtn = document.getElementById("skinBtn");
+      ui.achBtn = document.getElementById("achBtn");
+      ui.logBtn = document.getElementById("logBtn");
+      ui.shopOverlay = document.getElementById("shopOverlay");
+      ui.shopItems = document.getElementById("shopItems");
+      ui.skinOverlay = document.getElementById("skinOverlay");
+      ui.skinItems = document.getElementById("skinItems");
+      ui.achOverlay = document.getElementById("achOverlay");
+      ui.achItems = document.getElementById("achItems");
+      ui.logOverlay = document.getElementById("logOverlay");
+      ui.sideLog = document.getElementById("sideLog");
+      ui.teaOverlay = document.getElementById("teaOverlay");
+      ui.teaPointer = document.getElementById("teaPointer");
+      ui.teaScoreText = document.getElementById("teaScoreText");
+      ui.shakeTeaBtn = document.getElementById("shakeTeaBtn");
+      ui.closeTea = document.getElementById("closeTea");
+      document.getElementById("closeShop").addEventListener("click", () => ui.shopOverlay.classList.add("hidden"));
+      document.getElementById("closeSkin").addEventListener("click", () => ui.skinOverlay.classList.add("hidden"));
+      document.getElementById("closeAch").addEventListener("click", () => ui.achOverlay.classList.add("hidden"));
+      document.getElementById("closeLog").addEventListener("click", () => ui.logOverlay.classList.add("hidden"));
+    }
+
+    installExpansionUI();
+
+    const TILE = 32;
+    const VIEW_W = canvas.width;
+    const VIEW_H = canvas.height;
+    const SOLID_TILES = new Set(["T", "W", "X", "H", "R", "D"]);
+    const keys = Object.create(null);
+    const mobile = { up: false, down: false, left: false, right: false };
+
+    const STORAGE_KEY = "loveQuestPixelAdventureSave_v4";
+    const collectedIds = new Set();
+    const achievements = [
+      { id: "first_piece", name: "Mảnh Ghép Đầu Tiên", desc: "Nhận mảnh ghép trái tim số 1." },
+      { id: "all_pieces", name: "Người Ghép Tim", desc: "Thu thập đủ 3 mảnh ghép chính." },
+      { id: "tea_master", name: "Nghệ Nhân Trà Sữa", desc: "Hoàn thành mini game pha trà sữa." },
+      { id: "side_helper", name: "Người Tốt Của Thị Trấn", desc: "Hoàn thành đủ nhiệm vụ phụ." },
+      { id: "secret_found", name: "Thám Tử Tim Hồng", desc: "Tìm được bí mật ẩn." },
+      { id: "no_hurt", name: "Chị Bé Can Đảm", desc: "Mở rương thử thách khi chưa va chướng ngại." },
+      { id: "sweet_ending", name: "Ending Ngọt Nhất", desc: "Mở kết thúc với độ rung rinh cao." }
+    ];
+
+    const teaGame = { active: false, t: 0, round: 1, success: 0, speed: 1.15 };
+    let worldTime = 0;
+
+    let world = null;
+    let currentArea = null;
+    let nearestObject = null;
+    let lastTime = 0;
+    let gameStarted = false;
+
+    const camera = { x: 0, y: 0 };
+    const particles = [];
+    let visualClock = 0;
+
+    const player = {
+      name: CONFIG.loverName,
+      charId: CONFIG.characters[0].id,
+      x: 0,
+      y: 0,
+      w: 20,
+      h: 24,
+      speed: 116,
+      dir: "down",
+      moving: false,
+      step: 0,
+      energy: 3,
+      maxEnergy: 3,
+      invincible: 0,
+      pieces: 0,
+      townHearts: 0,
+      memoriesRead: 0,
+      gotPiece1: false,
+      gotPiece2: false,
+      gotPiece3: false,
+      finalGiftOpened: false,
+      love: 0,
+      stars: 0,
+      shield: 0,
+      flawlessChallenge: true,
+      teaMade: false,
+      teaPerfect: 0,
+      currentSkin: "classic",
+      unlockedSkins: ["classic"],
+      boughtItems: [],
+      achievements: [],
+      sideQuests: { bouquet: false, watering: 0, cloud: false, clues: 0, stars: 0 },
+      secretFound: false
+    };
+
+    const dialog = {
+      active: false,
+      lines: [],
+      index: 0,
+      char: 0,
+      text: "",
+      speed: 24,
+      onDone: null
+    };
+
+    const finalCutscene = {
+      active: false,
+      x: 0,
+      y: 0,
+      startX: 0,
+      startY: 0,
+      targetX: 0,
+      targetY: 0,
+      t: 0,
+      kissFxDone: false
+    };
+
+    const audio = {
+      ctx: null,
+      enabled: false,
+      musicTimer: null,
+      beat: 0
+    };
+
+    function makeMap(w, h, fill = "G") {
+      return Array.from({ length: h }, () => Array.from({ length: w }, () => fill));
+    }
+
+    function rect(map, x, y, w, h, tile) {
+      for (let yy = y; yy < y + h; yy++) {
+        for (let xx = x; xx < x + w; xx++) {
+          if (map[yy] && map[yy][xx] !== undefined) map[yy][xx] = tile;
+        }
+      }
+    }
+
+    function put(map, x, y, tile) {
+      if (map[y] && map[y][x] !== undefined) map[y][x] = tile;
+    }
+
+    function toRows(map) {
+      return map.map(row => row.join(""));
+    }
+
+    function obj(id, type, tx, ty, extra = {}) {
+      const w = extra.w || 24;
+      const h = extra.h || 24;
+      return {
+        id,
+        type,
+        x: tx * TILE + (TILE - w) / 2,
+        y: ty * TILE + (TILE - h) / 2,
+        w,
+        h,
+        active: extra.active !== false,
+        solid: !!extra.solid,
+        data: extra.data || {},
+        state: extra.state || {},
+        interact: extra.interact || null
+      };
+    }
+
+    function createWorld() {
+      const areas = {
+        town: createTown(),
+        garden: createGarden(),
+        challenge: createChallenge(),
+        house: createHouse(),
+        stars: createStars()
+      };
+      return { areas };
+    }
+
+    function createTown() {
+      const map = makeMap(28, 20, "G");
+
+      rect(map, 0, 0, 28, 1, "X");
+      rect(map, 0, 19, 28, 1, "X");
+      rect(map, 0, 0, 1, 20, "X");
+      rect(map, 27, 0, 1, 20, "X");
+
+      rect(map, 2, 9, 24, 2, "P");
+      rect(map, 5, 2, 2, 16, "P");
+      rect(map, 15, 7, 2, 8, "P");
+      rect(map, 9, 14, 12, 2, "P");
+
+      rect(map, 10, 3, 6, 4, "H");
+      put(map, 12, 6, "P");
+      put(map, 13, 6, "P");
+
+      rect(map, 20, 3, 5, 4, "W");
+
+      const trees = [[2,2],[3,4],[8,3],[18,2],[24,10],[22,15],[3,16],[25,17],[18,17]];
+      trees.forEach(([x,y]) => put(map, x, y, "T"));
+
+      const flowers = [[8,8],[9,8],[11,11],[12,12],[18,11],[19,12],[21,9],[3,12],[7,15],[11,17],[23,7],[25,8]];
+      flowers.forEach(([x,y]) => put(map, x, y, "F"));
+
+      const objects = [];
+      objects.push(obj("npc_town", "npc", 8, 9, {
+        solid: true,
+        data: { role: "townGuide", color: "#bfa2ff" },
+        interact: () => talkTownNpc()
+      }));
+
+      objects.push(obj("heart_1", "heartItem", 4, 5));
+      objects.push(obj("heart_2", "heartItem", 17, 5));
+      objects.push(obj("heart_3", "heartItem", 22, 12));
+
+      objects.push(obj("tea_stand", "teaStand", 13, 10, {
+        w: 30, h: 28,
+        interact: () => openTeaGame()
+      }));
+      objects.push(obj("town_bouquet", "bouquet", 23, 16, {
+        interact: target => finishBouquetQuest(target)
+      }));
+      objects.push(obj("secret_rose", "secret", 2, 3, {
+        w: 20, h: 24,
+        interact: target => discoverSecret(target)
+      }));
+      objects.push(obj("shop_npc", "shopNpc", 12, 9, {
+        solid: true,
+        data: { color: "#ffd166" },
+        interact: () => openShop()
+      }));
+
+      objects.push(obj("gate_town", "gate", 26, 9, {
+        w: 28,
+        h: 32,
+        solid: true,
+        data: { to: "garden", require: "gotPiece1" },
+        interact: () => useGate("garden", "gotPiece1")
+      }));
+
+      return {
+        id: "town",
+        name: "Thị trấn Yêu Thương",
+        map: toRows(map),
+        start: { tx: 5, ty: 11 },
+        objects,
+        quest: () => {
+          if (!player.gotPiece1) {
+            return `Nhiệm vụ: tìm ${CONFIG.heartsNeededTown} trái tim nhỏ (${player.townHearts}/${CONFIG.heartsNeededTown}), rồi gặp NPC.`;
+          }
+          return "Nhiệm vụ: đi qua cổng phía đông để tới Khu Vườn Kỷ Niệm.";
+        },
+        theme: "day"
+      };
+    }
+
+    function createGarden() {
+      const map = makeMap(30, 20, "G");
+      rect(map, 0, 0, 30, 1, "X");
+      rect(map, 0, 19, 30, 1, "X");
+      rect(map, 0, 0, 1, 20, "X");
+      rect(map, 29, 0, 1, 20, "X");
+
+      rect(map, 2, 9, 25, 2, "P");
+      rect(map, 7, 4, 2, 12, "P");
+      rect(map, 16, 4, 2, 12, "P");
+      rect(map, 23, 6, 2, 10, "P");
+
+      rect(map, 11, 3, 4, 3, "W");
+      rect(map, 11, 6, 4, 1, "W");
+
+      const flowerPatch = [
+        [3,3],[4,4],[5,3],[10,10],[11,11],[12,12],[18,6],[19,5],[20,6],
+        [21,12],[22,13],[24,14],[5,15],[6,16],[9,17],[14,15],[18,16],[26,5]
+      ];
+      flowerPatch.forEach(([x,y]) => put(map, x, y, "F"));
+
+      [[3,16],[4,2],[26,3],[27,15],[2,6],[13,17],[20,17]].forEach(([x,y]) => put(map, x, y, "T"));
+
+      const objects = [];
+      objects.push(obj("npc_garden", "npc", 4, 9, {
+        solid: true,
+        data: { role: "gardenKeeper", color: "#ffb86b" },
+        interact: () => openDialog(CONFIG.npcLines.gardenIntro)
+      }));
+
+      CONFIG.memoryMessages.forEach((message, index) => {
+        const spots = [[7,5], [17,5], [8,15], [23,12]];
+        objects.push(obj(`memory_${index}`, "memory", spots[index][0], spots[index][1], {
+          data: { index, message },
+          interact: target => readMemory(target)
+        }));
+      });
+
+      [[5,14],[10,16],[14,12],[19,16],[25,5]].forEach(([x,y], i) => {
+        objects.push(obj(`water_flower_${i}`, "waterFlower", x, y, {
+          interact: target => waterFlower(target)
+        }));
+      });
+
+      objects.push(obj("gate_garden", "gate", 28, 9, {
+        w: 28,
+        h: 32,
+        solid: true,
+        data: { to: "challenge", require: "gotPiece2" },
+        interact: () => useGate("challenge", "gotPiece2")
+      }));
+
+      return {
+        id: "garden",
+        name: "Khu Vườn Kỷ Niệm",
+        map: toRows(map),
+        start: { tx: 2, ty: 9 },
+        objects,
+        quest: () => {
+          if (!player.gotPiece2) {
+            return `Nhiệm vụ: đọc 4 điểm kỷ niệm (${player.memoriesRead}/4).`;
+          }
+          return "Nhiệm vụ: đi qua cổng phía đông để tới Con Đường Thử Thách.";
+        },
+        theme: "garden"
+      };
+    }
+
+    function createChallenge() {
+      const map = makeMap(32, 18, "G");
+      rect(map, 0, 0, 32, 1, "X");
+      rect(map, 0, 17, 32, 1, "X");
+      rect(map, 0, 0, 1, 18, "X");
+      rect(map, 31, 0, 1, 18, "X");
+
+      // Đường đi chính.
+      rect(map, 2, 8, 7, 2, "P");
+      rect(map, 8, 5, 2, 5, "P");
+      rect(map, 9, 5, 8, 2, "P");
+      rect(map, 16, 5, 2, 7, "P");
+      rect(map, 17, 10, 8, 2, "P");
+      rect(map, 24, 8, 2, 4, "P");
+      rect(map, 25, 8, 5, 2, "P");
+
+      // Tường đá và vật cản cứng.
+      [[6,6],[6,7],[11,8],[12,8],[13,8],[14,8],[19,7],[20,7],[21,7],[27,11],[28,11],
+       [4,12],[5,12],[10,12],[11,12],[18,13],[19,13],[20,13],[21,13],[23,4],[24,4]].forEach(([x,y]) => put(map, x, y, "R"));
+
+      [[3,4],[5,3],[15,3],[29,4],[3,14],[13,15],[27,15]].forEach(([x,y]) => put(map, x, y, "T"));
+
+      const objects = [];
+      objects.push(obj("npc_challenge", "npc", 3, 8, {
+        solid: true,
+        data: { role: "challengeGuide", color: "#7bdff2" },
+        interact: () => openDialog(CONFIG.npcLines.challengeIntro)
+      }));
+
+      [[9,8], [16,8], [22,10], [25,9]].forEach(([x,y], i) => {
+        objects.push(obj(`thorn_${i}`, "danger", x, y, {
+          data: { kind: "thorn" }
+        }));
+      });
+
+      [[12,5], [18,10], [24,8]].forEach(([x,y], i) => {
+        objects.push(obj(`cloud_${i}`, "danger", x, y, {
+          data: { kind: "cloud" }
+        }));
+      });
+
+      objects.push(obj("candy_1", "candy", 10, 5));
+      objects.push(obj("candy_2", "candy", 21, 10));
+      objects.push(obj("happy_cloud", "happyCloud", 14, 6, {
+        interact: target => rescueCloud(target)
+      }));
+
+      objects.push(obj("piece_chest", "chest", 29, 8, {
+        w: 28,
+        h: 24,
+        solid: false,
+        interact: target => openPieceChest(target)
+      }));
+
+      objects.push(obj("gate_challenge", "gate", 30, 8, {
+        w: 28,
+        h: 32,
+        solid: true,
+        data: { to: "house", require: "gotPiece3" },
+        interact: () => useGate("house", "gotPiece3")
+      }));
+
+      return {
+        id: "challenge",
+        name: "Con Đường Thử Thách",
+        map: toRows(map),
+        start: { tx: 2, ty: 8 },
+        objects,
+        quest: () => {
+          if (!player.gotPiece3) return "Nhiệm vụ: tránh chướng ngại, tới rương cuối đường để lấy mảnh ghép số 3.";
+          return "Nhiệm vụ: đi qua cổng để tới Ngôi Nhà Bí Mật.";
+        },
+        theme: "challenge"
+      };
+    }
+
+    function createHouse() {
+      const map = makeMap(22, 16, "G");
+      rect(map, 0, 0, 22, 1, "X");
+      rect(map, 0, 15, 22, 1, "X");
+      rect(map, 0, 0, 1, 16, "X");
+      rect(map, 21, 0, 1, 16, "X");
+
+      rect(map, 2, 10, 18, 2, "P");
+      rect(map, 10, 4, 2, 8, "P");
+      rect(map, 7, 3, 8, 5, "H");
+      put(map, 10, 7, "P");
+      put(map, 11, 7, "P");
+
+      [[3,3],[4,4],[17,3],[18,4],[5,13],[16,13]].forEach(([x,y]) => put(map, x, y, "T"));
+      [[4,10],[5,11],[15,10],[16,11],[18,12]].forEach(([x,y]) => put(map, x, y, "F"));
+
+      const objects = [];
+      objects.push(obj("house_door", "door", 10, 7, {
+        w: 32,
+        h: 24,
+        solid: false,
+        interact: () => openPassword()
+      }));
+
+      objects.push(obj("npc_house", "npc", 5, 10, {
+        solid: true,
+        data: { role: "secretKeeper", color: "#ffc6ff" },
+        interact: () => openDialog([CONFIG.npcLines.houseHint[0], player.sideQuests.clues >= 3 ? CONFIG.sideQuestLines.clues : "Trong nhà có 3 chữ cái nhỏ đang trốn. Tìm đủ sẽ có gợi ý ngọt hơn đó."])
+      }));
+
+      [[4,13],[17,12],[18,5]].forEach(([x,y], i) => {
+        objects.push(obj(`clue_${i}`, "clue", x, y, {
+          data: { letter: ["Y", "Ê", "U"][i] },
+          interact: target => collectClue(target)
+        }));
+      });
+
+      return {
+        id: "house",
+        name: "Ngôi Nhà Bí Mật",
+        map: toRows(map),
+        start: { tx: 3, ty: 10 },
+        objects,
+        quest: () => "Nhiệm vụ: nhập mật mã ở cửa Ngôi Nhà Bí Mật.",
+        theme: "house"
+      };
+    }
+
+    function createStars() {
+      const map = makeMap(28, 18, "S");
+      rect(map, 0, 0, 28, 1, "X");
+      rect(map, 0, 17, 28, 1, "X");
+      rect(map, 0, 0, 1, 18, "X");
+      rect(map, 27, 0, 1, 18, "X");
+
+      rect(map, 2, 9, 24, 2, "P");
+      rect(map, 13, 4, 2, 10, "P");
+      [[5,5],[6,6],[8,13],[20,5],[22,12],[24,6],[4,14],[15,15]].forEach(([x,y]) => put(map, x, y, "L"));
+      [[10,6],[17,7],[19,13],[7,9],[23,9]].forEach(([x,y]) => put(map, x, y, "F"));
+
+      const objects = [];
+      objects.push(obj("final_milk_tea", "milkTea", 24, 9, {
+        w: 30,
+        h: 30,
+        data: { giftName: CONFIG.finalGiftName },
+        interact: target => startFinalGiftCutscene(target)
+      }));
+
+      [[6,5],[9,13],[14,7],[19,6],[22,14]].forEach(([x,y], i) => {
+        objects.push(obj(`star_bit_${i}`, "starBit", x, y, {
+          interact: target => collectStarBit(target)
+        }));
+      });
+
+      return {
+        id: "stars",
+        name: "Cánh Đồng Sao",
+        map: toRows(map),
+        start: { tx: 3, ty: 9 },
+        objects,
+        quest: () => player.finalGiftOpened ? "Nhiệm vụ: mở lá thư và nhận cốc trà sữa bí mật." : "Nhiệm vụ: đi tới cốc trà sữa lớn và nhấn E để mở món quà cuối.",
+        theme: "stars"
+      };
+    }
+
+    // Thay {name} (và "chị bé" mặc định) bằng tên người chơi đã chọn.
+    function fmt(text) {
+      return String(text)
+        .replaceAll("{name}", player.name)
+        .replaceAll("chị bé", player.name)
+        .replaceAll("Chị bé", player.name);
+    }
+
+    function getCharacter() {
+      return CONFIG.characters.find(c => c.id === player.charId) || CONFIG.characters[0];
+    }
+
+    const visitedAreas = new Set();
+    let chapterTimer = null;
+
+    function showChapterBanner(text) {
+      const el = document.getElementById("chapterBanner");
+      el.textContent = text;
+      el.classList.add("show");
+      if (chapterTimer) clearTimeout(chapterTimer);
+      chapterTimer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    const butterflies = [];
+
+    function makeButterfly(firefly) {
+      const mapW = currentArea.map[0].length * TILE;
+      const mapH = currentArea.map.length * TILE;
+      return {
+        x: Math.random() * mapW,
+        y: Math.random() * mapH,
+        t: Math.random() * 10,
+        speed: 14 + Math.random() * 18,
+        firefly,
+        color: firefly ? "#fff3a3" : (Math.random() > 0.5 ? "#ff9fcb" : "#bfa2ff")
+      };
+    }
+
+    function spawnButterflies() {
+      butterflies.length = 0;
+      if (["town", "garden", "house"].includes(currentArea.id)) {
+        for (let i = 0; i < 7; i++) butterflies.push(makeButterfly(false));
+      } else if (currentArea.id === "stars") {
+        for (let i = 0; i < 10; i++) butterflies.push(makeButterfly(true));
+      }
+    }
+
+    function updateButterflies(dt) {
+      for (const b of butterflies) {
+        b.t += dt;
+        b.x += Math.cos(b.t * 0.9) * b.speed * dt;
+        b.y += Math.sin(b.t * 1.4) * b.speed * 0.7 * dt;
+      }
+    }
+
+    function drawButterflies() {
+      for (const b of butterflies) {
+        const x = Math.floor(b.x - camera.x);
+        const y = Math.floor(b.y - camera.y + Math.sin(b.t * 6) * 2);
+        if (x < -10 || y < -10 || x > VIEW_W + 10 || y > VIEW_H + 10) continue;
+        if (b.firefly) {
+          ctx.save();
+          ctx.globalAlpha = 0.5 + Math.sin(b.t * 5) * 0.4;
+          ctx.fillStyle = b.color;
+          ctx.fillRect(x, y, 3, 3);
+          ctx.globalAlpha = 0.18;
+          ctx.fillRect(x - 2, y - 2, 7, 7);
+          ctx.restore();
+        } else {
+          const flap = Math.sin(b.t * 14) > 0;
+          ctx.fillStyle = b.color;
+          if (flap) {
+            ctx.fillRect(x - 3, y, 3, 3);
+            ctx.fillRect(x + 2, y, 3, 3);
+          } else {
+            ctx.fillRect(x - 2, y - 1, 2, 4);
+            ctx.fillRect(x + 2, y - 1, 2, 4);
+          }
+          ctx.fillStyle = "#3b2645";
+          ctx.fillRect(x, y, 2, 4);
+        }
+      }
+    }
+
+    function resetGame() {
+      world = createWorld();
+      Object.assign(player, {
+        x: 0,
+        y: 0,
+        energy: 3,
+        invincible: 0,
+        pieces: 0,
+        townHearts: 0,
+        memoriesRead: 0,
+        gotPiece1: false,
+        gotPiece2: false,
+        gotPiece3: false,
+        finalGiftOpened: false,
+        love: 0,
+        stars: 0,
+        shield: 0,
+        flawlessChallenge: true,
+        teaMade: false,
+        teaPerfect: 0,
+        currentSkin: "classic",
+        unlockedSkins: ["classic"],
+        boughtItems: [],
+        achievements: [],
+        sideQuests: { bouquet: false, watering: 0, cloud: false, clues: 0, stars: 0 },
+        secretFound: false,
+        dir: "down",
+        moving: false,
+        step: 0
+      });
+      particles.length = 0;
+      collectedIds.clear();
+      visitedAreas.clear();
+      butterflies.length = 0;
+      worldTime = 0;
+      finalCutscene.active = false;
+      finalCutscene.kissFxDone = false;
+      setArea("town");
+    }
+
+    function setArea(id) {
+      const fade = document.getElementById("fadeLayer");
+      const apply = () => {
+        currentArea = world.areas[id];
+        const start = currentArea.start;
+        player.x = start.tx * TILE + 6;
+        player.y = start.ty * TILE + 4;
+        camera.x = 0;
+        camera.y = 0;
+        spawnAreaSparkles();
+        spawnButterflies();
+        refreshMusic();
+        showToast(`Đã tới: ${currentArea.name}`);
+        sfx("warp");
+        if (!visitedAreas.has(id)) {
+          visitedAreas.add(id);
+          showChapterBanner(CONFIG.chapters[id] || currentArea.name);
+          if (gameStarted && CONFIG.areaIntros[id]) openDialog(CONFIG.areaIntros[id]);
+        }
+        fade.style.opacity = "0";
+      };
+      if (!gameStarted) { apply(); return; }
+      fade.style.opacity = "1";
+      setTimeout(apply, 460);
+    }
+
+    function talkTownNpc() {
+      if (player.townHearts < CONFIG.heartsNeededTown) {
+        openDialog(player.townHearts === 0 ? CONFIG.npcLines.townWelcome : CONFIG.npcLines.townNeedMore);
+        return;
+      }
+
+      if (!player.gotPiece1) {
+        addPiece(1);
+        player.gotPiece1 = true;
+        addLove(10, "mảnh ghép đầu tiên");
+        unlockAchievement("first_piece");
+        openDialog(CONFIG.npcLines.townComplete);
+        completeQuest();
+        return;
+      }
+
+      openDialog(["Cổng phía đông đã mở rồi đó. Đi tiếp thôi nào!"]);
+    }
+
+    function readMemory(target) {
+      if (target.state.read) {
+        openDialog(["Kỷ niệm này đã được đọc rồi. Nó vẫn đang lấp lánh ở đây nè ✨"]);
+        return;
+      }
+
+      target.state.read = true;
+      markCollected(target.id);
+      player.memoriesRead += 1;
+      burst(target.x + target.w / 2, target.y + target.h / 2, "#ffd166", 16, "spark");
+
+      const lines = [target.data.message];
+      if (player.memoriesRead >= CONFIG.memoryMessages.length && !player.gotPiece2) {
+        player.gotPiece2 = true;
+        addPiece(2);
+        addLove(10, "đọc đủ kỷ niệm");
+        lines.push("{name} đã đọc đủ 4 lời nhắn.");
+        lines.push("Nhận Mảnh Ghép Trái Tim số 2! 🧩");
+        lines.push("Mảnh ghép khẽ rung lên — hình như nó vừa nghe được nhịp tim của khu vườn...");
+        lines.push("Con Đường Thử Thách ở phía đông đang chờ {name} đó!");
+        completeQuest();
+      }
+      openDialog(lines);
+      sfx("memory");
+    }
+
+    function openPieceChest(target) {
+      if (player.gotPiece3) {
+        openDialog(["Chiếc rương đã mở rồi. Bên trong vẫn còn thơm mùi kẹo ngọt!"]);
+        return;
+      }
+
+      target.state.open = true;
+      markCollected(target.id);
+      player.gotPiece3 = true;
+      addPiece(3);
+      addLove(10, "vượt đường thử thách");
+      if (player.flawlessChallenge) unlockAchievement("no_hurt");
+      completeQuest();
+      burst(target.x + target.w / 2, target.y + target.h / 2, "#ff7ab6", 30, "heart");
+      openDialog([
+        "Rương mở ra với một luồng sáng hồng pastel!",
+        "{name} nhận Mảnh Ghép Trái Tim số 3! 🧩",
+        "Ba mảnh ghép khẽ chạm vào nhau, ngân lên một giai điệu rất nhỏ...",
+        "Ở phía xa, Ngôi Nhà Bí Mật vừa thắp đèn — như đang chờ {name} đến gõ cửa."
+      ]);
+      sfx("chest");
+    }
+
+    function useGate(targetArea, requiredFlag) {
+      if (!player[requiredFlag]) {
+        openDialog(CONFIG.npcLines.gateLocked);
+        sfx("locked");
+        return;
+      }
+      setArea(targetArea);
+    }
+
+    function addPiece(number) {
+      player.pieces = Math.max(player.pieces, number);
+      burst(player.x + player.w / 2, player.y + player.h / 2 - 10, CONFIG.colors.primary, 34, "heart");
+      showToast(`Nhận Mảnh Ghép Trái Tim số ${number}!`);
+      if (number >= 3) unlockAchievement("all_pieces");
+      sfx("piece");
+    }
+
+    function completeQuest() {
+      showToast("Hoàn thành nhiệm vụ! ✨");
+      sfx("complete");
+    }
+
+
+    function addLove(amount, reason = "") {
+      const before = player.love;
+      player.love = clamp(player.love + amount, 0, CONFIG.loveMeterMax);
+      if (player.love > before && reason) showToast(`+${amount}% rung rinh: ${reason}`);
+      updateExpansionHud();
+      if (player.love >= 80) unlockAchievement("sweet_ending");
+    }
+
+    function addStars(amount) {
+      player.stars += amount;
+      showToast(`Nhận ${amount} sao nhỏ ⭐ | Tổng: ${player.stars}`);
+    }
+
+    function markCollected(id) {
+      collectedIds.add(id);
+    }
+
+    function unlockAchievement(id) {
+      if (player.achievements.includes(id)) return;
+      player.achievements.push(id);
+      const ach = achievements.find(a => a.id === id);
+      if (ach) showToast(`🏆 ${ach.name}`);
+      sfx("complete");
+    }
+
+    function countSideQuestDone() {
+      let done = 0;
+      if (player.sideQuests.bouquet) done++;
+      if (player.sideQuests.watering >= 5) done++;
+      if (player.sideQuests.cloud) done++;
+      if (player.sideQuests.clues >= 3) done++;
+      if (player.sideQuests.stars >= 5) done++;
+      return done;
+    }
+
+    function checkSideQuestAchievement() {
+      if (countSideQuestDone() >= 5) unlockAchievement("side_helper");
+    }
+
+    function finishBouquetQuest(target) {
+      if (player.sideQuests.bouquet) {
+        openDialog(["Bó hoa này đã được cắm trước hiên nhà rồi. Thị trấn thơm hơn hẳn đó 🌸"]);
+        return;
+      }
+      target.active = false;
+      markCollected(target.id);
+      player.sideQuests.bouquet = true;
+      addLove(7, "bó hoa thất lạc");
+      addStars(2);
+      completeQuest();
+      checkSideQuestAchievement();
+      openDialog([CONFIG.sideQuestLines.bouquet, "Nhận 2 sao nhỏ ⭐"]);
+    }
+
+    function waterFlower(target) {
+      if (target.state.watered) {
+        openDialog(["Bông hoa này đã được tưới rồi. Cánh hoa đang cười xinh xinh đó."]);
+        return;
+      }
+      target.state.watered = true;
+      markCollected(target.id);
+      player.sideQuests.watering += 1;
+      burst(target.x + 12, target.y + 12, "#70d7ee", 12, "spark");
+      addLove(2, "tưới hoa kỷ niệm");
+      if (player.sideQuests.watering >= 5) {
+        addStars(3);
+        completeQuest();
+        checkSideQuestAchievement();
+        openDialog([CONFIG.sideQuestLines.watering, "Nhận 3 sao nhỏ ⭐"]);
+      } else {
+        openDialog([`Đã tưới ${player.sideQuests.watering}/5 bông hoa kỷ niệm.`]);
+      }
+      sfx("memory");
+    }
+
+    function rescueCloud(target) {
+      if (player.sideQuests.cloud) {
+        openDialog(["Bé mây vui vẻ đang bay lơ lửng và cổ vũ chị bé vượt thử thách ☁️"]);
+        return;
+      }
+      target.state.happy = true;
+      player.sideQuests.cloud = true;
+      markCollected(target.id);
+      addLove(8, "dỗ dành bé mây buồn");
+      addStars(3);
+      completeQuest();
+      checkSideQuestAchievement();
+      openDialog([CONFIG.sideQuestLines.cloud, "Nhận 3 sao nhỏ ⭐"]);
+    }
+
+    function collectClue(target) {
+      if (target.state.read) {
+        openDialog([`Chữ cái này là: ${target.data.letter}`]);
+        return;
+      }
+      target.state.read = true;
+      markCollected(target.id);
+      player.sideQuests.clues += 1;
+      addLove(2, "tìm chữ cái gợi ý");
+      burst(target.x + 10, target.y + 10, CONFIG.colors.warm, 15, "spark");
+      if (player.sideQuests.clues >= 3) {
+        addStars(2);
+        completeQuest();
+        checkSideQuestAchievement();
+        openDialog([CONFIG.sideQuestLines.clues, "Gợi ý phụ: mật mã bắt đầu bằng điều ngọt nhất anh nói mỗi ngày.", "Nhận 2 sao nhỏ ⭐"]);
+      } else {
+        openDialog([`Tìm thấy chữ ${target.data.letter}. Đã có ${player.sideQuests.clues}/3 chữ cái.`]);
+      }
+      sfx("pickup");
+    }
+
+    function collectStarBit(target) {
+      if (target.state.taken) return;
+      target.state.taken = true;
+      target.active = false;
+      markCollected(target.id);
+      player.sideQuests.stars += 1;
+      addLove(2, "gom sao nhỏ");
+      burst(target.x + 12, target.y + 12, CONFIG.colors.warm, 18, "spark");
+      if (player.sideQuests.stars >= 5) {
+        addStars(4);
+        completeQuest();
+        checkSideQuestAchievement();
+        openDialog([CONFIG.sideQuestLines.stars, "Nhận 4 sao nhỏ ⭐"]);
+      } else {
+        openDialog([`Đã gom ${player.sideQuests.stars}/5 sao nhỏ ở Cánh Đồng Sao.`]);
+      }
+      sfx("pickup");
+    }
+
+    function discoverSecret(target) {
+      if (player.secretFound) {
+        openDialog(["Cây hoa hồng bí mật vẫn thì thầm: chị bé là khách VIP của thị trấn này 💗"]);
+        return;
+      }
+      player.secretFound = true;
+      target.state.found = true;
+      addLove(10, "bí mật hoa hồng");
+      addStars(5);
+      unlockAchievement("secret_found");
+      burst(target.x + 10, target.y + 8, CONFIG.colors.primary, 34, "heart");
+      openDialog(["Chị bé tìm thấy hoa hồng bí mật!", "Nó để lại một lời nhắn nhỏ: Có những điều anh giấu kỹ, nhưng thương chị bé thì không giấu được 😽", "Nhận 5 sao nhỏ ⭐"]);
+    }
+
+    function openTeaGame() {
+      if (player.teaMade) {
+        openDialog(["Ly trà sữa hoàn hảo đã được chuẩn bị rồi. Cuối game nhớ nhận nha 🧋"]);
+        return;
+      }
+      teaGame.active = true;
+      teaGame.t = 0;
+      teaGame.round = 1;
+      teaGame.success = 0;
+      teaGame.speed = 1.1;
+      ui.teaScoreText.textContent = "Lượt 1/3";
+      ui.teaPointer.style.left = "0%";
+      ui.teaOverlay.classList.remove("hidden");
+    }
+
+    function updateTeaGame(dt) {
+      if (!teaGame.active) return;
+      teaGame.t += dt * teaGame.speed;
+      const pos = (Math.sin(teaGame.t * Math.PI * 2) + 1) / 2;
+      ui.teaPointer.style.left = `${pos * 98}%`;
+    }
+
+    function shakeTea() {
+      if (!teaGame.active) return;
+      const pos = (Math.sin(teaGame.t * Math.PI * 2) + 1) / 2;
+      const perfect = pos >= 0.42 && pos <= 0.58;
+      if (perfect) {
+        teaGame.success += 1;
+        player.teaPerfect += 1;
+        ui.teaScoreText.textContent = `Chuẩn vị! ${teaGame.success}/3 lần đẹp ✨`;
+        sfx("pickup");
+      } else {
+        ui.teaScoreText.textContent = "Lệch nhịp một chút, thử lại nè 😽";
+        sfx("locked");
+      }
+      teaGame.round += 1;
+      teaGame.speed += 0.16;
+      if (teaGame.success >= 3 || teaGame.round > 6) {
+        const success = teaGame.success >= 3;
+        teaGame.active = false;
+        ui.teaOverlay.classList.add("hidden");
+        if (success) {
+          player.teaMade = true;
+          if (!player.unlockedSkins.includes("milktea")) player.unlockedSkins.push("milktea");
+          addLove(12, "pha trà sữa hoàn hảo");
+          addStars(4);
+          unlockAchievement("tea_master");
+          openDialog(["Trà sữa đã được pha xong: thơm, ngọt, và rất chị bé 🧋", "Mở khóa skin Trà sữa ấm và nhận 4 sao nhỏ ⭐"]);
+        } else {
+          openDialog(["Ly trà sữa hơi lắc lệch nhịp, nhưng vẫn có vị cố gắng. Chị bé thử lại lúc nào cũng được nè."]);
+        }
+      } else {
+        ui.teaScoreText.textContent += ` | Lượt ${teaGame.round}/6`;
+      }
+    }
+
+    function openShop() {
+      renderShop();
+      ui.shopOverlay.classList.remove("hidden");
+    }
+
+    function renderShop() {
+      ui.shopItems.innerHTML = "";
+      CONFIG.shopItems.forEach(item => {
+        const owned = player.boughtItems.includes(item.id);
+        const btn = document.createElement("button");
+        btn.className = `cardBtn ${owned ? "done" : ""}`;
+        btn.innerHTML = `<b>${item.name}</b><small>${item.desc}</small><small>Giá: ${item.cost} ⭐ ${owned ? "| Đã mua" : ""}</small>`;
+        btn.disabled = owned;
+        btn.addEventListener("click", () => buyShopItem(item.id));
+        ui.shopItems.appendChild(btn);
+      });
+    }
+
+    function buyShopItem(id) {
+      const item = CONFIG.shopItems.find(x => x.id === id);
+      if (!item || player.boughtItems.includes(id)) return;
+      if (player.stars < item.cost) {
+        showToast("Chưa đủ sao nhỏ để mua món này ⭐");
+        sfx("locked");
+        return;
+      }
+      player.stars -= item.cost;
+      player.boughtItems.push(id);
+      if (id === "candyPack") player.energy = player.maxEnergy;
+      if (id === "peaceCharm") player.shield += 1;
+      if (id === "ribbonSkin" && !player.unlockedSkins.includes("ribbon")) player.unlockedSkins.push("ribbon");
+      addLove(3, "mua đồ dễ thương");
+      sfx("complete");
+      renderShop();
+      updateHud();
+    }
+
+    function openSkinMenu() {
+      renderSkins();
+      ui.skinOverlay.classList.remove("hidden");
+    }
+
+    function renderSkins() {
+      ui.skinItems.innerHTML = "";
+      CONFIG.skins.forEach(skin => {
+        const unlocked = player.unlockedSkins.includes(skin.id) || skin.unlocked;
+        const btn = document.createElement("button");
+        btn.className = `cardBtn ${player.currentSkin === skin.id ? "done" : ""} ${unlocked ? "" : "locked"}`;
+        btn.innerHTML = `<b>${skin.name}</b><small>${unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</small>`;
+        btn.addEventListener("click", () => {
+          if (!unlocked) { showToast("Skin này chưa mở khóa nè."); return; }
+          player.currentSkin = skin.id;
+          addLove(1, "đổi skin xinh");
+          renderSkins();
+        });
+        ui.skinItems.appendChild(btn);
+      });
+    }
+
+    function openAchievements() {
+      ui.achItems.innerHTML = "";
+      achievements.forEach(ach => {
+        const done = player.achievements.includes(ach.id);
+        const div = document.createElement("div");
+        div.className = `cardBtn ${done ? "done" : "locked"}`;
+        div.innerHTML = `<b>${done ? "🏆" : "🔒"} ${ach.name}</b><small>${ach.desc}</small>`;
+        ui.achItems.appendChild(div);
+      });
+      ui.achOverlay.classList.remove("hidden");
+    }
+
+    function openSideLog() {
+      const lines = [
+        `🌸 Bó hoa thất lạc: ${player.sideQuests.bouquet ? "xong" : "chưa"}`,
+        `💧 Tưới hoa kỷ niệm: ${Math.min(player.sideQuests.watering, 5)}/5`,
+        `☁️ Dỗ bé mây buồn: ${player.sideQuests.cloud ? "xong" : "chưa"}`,
+        `🔤 Chữ cái gợi ý: ${Math.min(player.sideQuests.clues, 3)}/3`,
+        `⭐ Sao Cánh Đồng Sao: ${Math.min(player.sideQuests.stars, 5)}/5`,
+        `🌹 Bí mật ẩn: ${player.secretFound ? "đã tìm thấy" : CONFIG.secretHint}`
+      ];
+      ui.sideLog.innerHTML = lines.map(x => `<p>${x}</p>`).join("");
+      ui.logOverlay.classList.remove("hidden");
+    }
+
+    function updateExpansionHud() {
+      const pct = Math.round((player.love / CONFIG.loveMeterMax) * 100);
+      if (ui.loveMeterText) ui.loveMeterText.textContent = `${pct}%`;
+      if (ui.loveMeterFill) ui.loveMeterFill.style.width = `${pct}%`;
+    }
+
+    function getSkin() {
+      return CONFIG.skins.find(s => s.id === player.currentSkin) || CONFIG.skins[0];
+    }
+
+    function saveGame() {
+      const data = {
+        player: {
+          name: player.name, charId: player.charId,
+          x: player.x, y: player.y, area: currentArea.id,
+          energy: player.energy, pieces: player.pieces, townHearts: player.townHearts,
+          memoriesRead: player.memoriesRead, gotPiece1: player.gotPiece1, gotPiece2: player.gotPiece2, gotPiece3: player.gotPiece3,
+          finalGiftOpened: player.finalGiftOpened, love: player.love, stars: player.stars, shield: player.shield,
+          flawlessChallenge: player.flawlessChallenge, teaMade: player.teaMade, teaPerfect: player.teaPerfect,
+          currentSkin: player.currentSkin, unlockedSkins: player.unlockedSkins, boughtItems: player.boughtItems,
+          achievements: player.achievements, sideQuests: player.sideQuests, secretFound: player.secretFound
+        },
+        collected: Array.from(collectedIds)
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      showToast("Đã lưu game vào trình duyệt 💾");
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) { showToast("Chưa có bản lưu nào."); return; }
+      try {
+        const data = JSON.parse(raw);
+        world = createWorld();
+        collectedIds.clear();
+        (data.collected || []).forEach(id => collectedIds.add(id));
+        Object.assign(player, data.player || {});
+        setArea((data.player && data.player.area) || "town");
+        player.x = data.player.x || player.x;
+        player.y = data.player.y || player.y;
+        applyCollectedState();
+        updateExpansionHud();
+        showToast("Đã tải game đã lưu ↺");
+      } catch (err) {
+        showToast("Không tải được bản lưu này.");
+      }
+    }
+
+    function applyCollectedState() {
+      if (!world) return;
+      Object.values(world.areas).forEach(area => {
+        area.objects.forEach(item => {
+          if (collectedIds.has(item.id)) {
+            if (["heartItem", "candy", "bouquet", "starBit"].includes(item.type)) item.active = false;
+            if (["memory", "waterFlower", "clue", "happyCloud", "secret", "chest"].includes(item.type)) {
+              item.state.read = true;
+              item.state.watered = true;
+              item.state.taken = true;
+              item.state.happy = true;
+              item.state.found = true;
+              if (item.type === "chest") item.state.open = true;
+            }
+          }
+        });
+      });
+    }
+
+    function openPassword() {
+      ui.passwordError.textContent = "";
+      document.getElementById("passwordHint").textContent = fmt(CONFIG.npcLines.houseHint[0]);
+      ui.passwordInput.value = "";
+      ui.passwordOverlay.classList.remove("hidden");
+      setTimeout(() => ui.passwordInput.focus(), 50);
+    }
+
+    function closePassword() {
+      ui.passwordOverlay.classList.add("hidden");
+    }
+
+    function checkPassword() {
+      const value = ui.passwordInput.value.trim().toLowerCase();
+      if (value === CONFIG.passcode.toLowerCase()) {
+        closePassword();
+        showToast("Cánh cửa đã mở! 💗");
+        addLove(6, "mở khóa nhà bí mật");
+        sfx("unlock");
+        setArea("stars");
+      } else {
+        ui.passwordError.textContent = "Sai rồi nè, thử nghĩ ngọt hơn chút đi 😽";
+        sfx("locked");
+      }
+    }
+
+    function startFinalGiftCutscene(target) {
+      if (player.finalGiftOpened) {
+        showFinalLetter();
+        return;
+      }
+
+      player.finalGiftOpened = true;
+      addLove(8, "nhận cốc trà sữa cuối");
+      finalCutscene.active = true;
+      finalCutscene.t = 0;
+      finalCutscene.kissFxDone = false;
+      finalCutscene.startX = target.x - 46;
+      finalCutscene.startY = target.y + 2;
+      finalCutscene.targetX = player.x + player.w + 10;
+      finalCutscene.targetY = player.y - 2;
+      finalCutscene.x = finalCutscene.startX;
+      finalCutscene.y = finalCutscene.startY;
+
+      burst(target.x + target.w / 2, target.y + target.h / 2, CONFIG.colors.warm, 44, "spark");
+      showToast(`${CONFIG.finalGiftName} đã xuất hiện!`);
+      sfx("gift");
+
+      openDialog(CONFIG.finalGiftCutsceneLines, () => {
+        finalCutscene.active = false;
+        showFinalLetter();
+      });
+    }
+
+    function updateFinalCutscene(dt) {
+      if (!finalCutscene.active) return;
+
+      finalCutscene.t += dt;
+      const progress = clamp(finalCutscene.t / 2.1, 0, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      finalCutscene.x = finalCutscene.startX + (finalCutscene.targetX - finalCutscene.startX) * eased;
+      finalCutscene.y = finalCutscene.startY + (finalCutscene.targetY - finalCutscene.startY) * eased;
+
+      if (progress > 0.82 && !finalCutscene.kissFxDone) {
+        finalCutscene.kissFxDone = true;
+        burst(player.x + player.w / 2, player.y + 2, CONFIG.colors.primary, 38, "heart");
+        burst(finalCutscene.x + 12, finalCutscene.y + 4, CONFIG.colors.warm, 22, "spark");
+        showToast("Trà sữa và nụ hôn gió pixel đã được gửi tới chị bé! 💗");
+        sfx("kiss");
+      }
+    }
+
+
+    function getEndingTitle() {
+      if (player.teaMade && player.love >= 90 && countSideQuestDone() >= 5 && player.secretFound) {
+        return { title: "Ending Đặc Biệt: Trà Sữa Siêu Cấp 💗🧋", desc: "Chị bé đã tìm gần hết những điều anh giấu trong thế giới nhỏ này." };
+      }
+      if (player.teaMade) return { title: "Ending Trà Sữa Ngọt Ngào 🧋", desc: "Ly trà sữa hoàn hảo đã được chuẩn bị bằng rất nhiều sự để tâm." };
+      if (player.love >= 80) return { title: "Ending Dịu Dàng 💗", desc: "Độ rung rinh cao làm Cánh Đồng Sao sáng hơn một chút." };
+      if (player.flawlessChallenge) return { title: "Ending Can Đảm ✨", desc: "Chị bé đã vượt thử thách với tinh thần rất chiến." };
+      return { title: "Ending Ngọt Nhẹ 🌸", desc: "Hành trình nhỏ đã hoàn thành, đủ để mỉm cười một chút." };
+    }
+
+    function showFinalLetter() {
+      ui.giftBtn.textContent = CONFIG.finalGiftButtonText || "Nhận quà bí mật";
+      ui.finalLetter.innerHTML = "";
+      const ending = getEndingTitle();
+      const endingP = document.createElement("p");
+      endingP.innerHTML = `<b>${ending.title}</b><br>${fmt(ending.desc)}`;
+      ui.finalLetter.appendChild(endingP);
+      CONFIG.finalLetter.forEach(line => {
+        const p = document.createElement("p");
+        p.textContent = fmt(line);
+        ui.finalLetter.appendChild(p);
+      });
+      ui.finalOverlay.classList.remove("hidden");
+      burst(player.x + player.w / 2, player.y + player.h / 2, "#ffd166", 60, "spark");
+      sfx("complete");
+    }
+
+    function openGiftLink() {
+      window.open(CONFIG.secretGiftLink, "_blank", "noopener,noreferrer");
+    }
+
+    function showToast(message) {
+      if (ui.toast) ui.toast.remove();
+      const div = document.createElement("div");
+      div.id = "toast";
+      div.textContent = fmt(message);
+      document.getElementById("gameShell").appendChild(div);
+      ui.toast = div;
+      setTimeout(() => {
+        if (div.parentNode) div.remove();
+        if (ui.toast === div) ui.toast = null;
+      }, 1900);
+    }
+
+    function openDialog(lines, onDone = null) {
+      dialog.active = true;
+      dialog.lines = (Array.isArray(lines) ? lines : [String(lines)]).map(fmt);
+      dialog.index = 0;
+      dialog.char = 0;
+      dialog.text = "";
+      dialog.onDone = onDone;
+      ui.dialog.classList.remove("hidden");
+      ui.dialogText.textContent = "";
+    }
+
+    function nextDialog() {
+      if (!dialog.active) return;
+      const fullLine = dialog.lines[dialog.index] || "";
+      if (dialog.char < fullLine.length) {
+        dialog.char = fullLine.length;
+        dialog.text = fullLine;
+        ui.dialogText.textContent = dialog.text;
+        return;
+      }
+
+      dialog.index += 1;
+      if (dialog.index >= dialog.lines.length) {
+        dialog.active = false;
+        ui.dialog.classList.add("hidden");
+        const done = dialog.onDone;
+        dialog.onDone = null;
+        if (done) done();
+        return;
+      }
+
+      dialog.char = 0;
+      dialog.text = "";
+      ui.dialogText.textContent = "";
+    }
+
+    function updateDialog(dt) {
+      if (!dialog.active) return;
+      const fullLine = dialog.lines[dialog.index] || "";
+      if (dialog.char < fullLine.length) {
+        dialog.char += dialog.speed * dt;
+        dialog.text = fullLine.slice(0, Math.floor(dialog.char));
+        ui.dialogText.textContent = dialog.text;
+      }
+    }
+
+    function center(entity) {
+      return { x: entity.x + entity.w / 2, y: entity.y + entity.h / 2 };
+    }
+
+    function distance(a, b) {
+      const ac = center(a);
+      const bc = center(b);
+      return Math.hypot(ac.x - bc.x, ac.y - bc.y);
+    }
+
+    function overlaps(a, b) {
+      return a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y;
+    }
+
+    function tileAt(tx, ty) {
+      if (!currentArea || ty < 0 || tx < 0 || ty >= currentArea.map.length || tx >= currentArea.map[0].length) return "X";
+      return currentArea.map[ty][tx];
+    }
+
+    function tileAtWorld(x, y) {
+      return tileAt(Math.floor(x / TILE), Math.floor(y / TILE));
+    }
+
+    function isSolidRect(x, y, w, h) {
+      const points = [
+        [x + 2, y + 14],
+        [x + w - 2, y + 14],
+        [x + 2, y + h - 2],
+        [x + w - 2, y + h - 2]
+      ];
+
+      for (const [px, py] of points) {
+        if (SOLID_TILES.has(tileAtWorld(px, py))) return true;
+      }
+
+      const testBox = { x, y, w, h };
+      for (const item of currentArea.objects) {
+        if (!item.active || !item.solid) continue;
+        if (overlaps(testBox, item)) return true;
+      }
+
+      return false;
+    }
+
+    function movePlayer(dt) {
+      if (dialog.active || ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false) {
+        player.moving = false;
+        return;
+      }
+
+      let dx = 0;
+      let dy = 0;
+
+      if (keys.ArrowUp || keys.w || mobile.up) dy -= 1;
+      if (keys.ArrowDown || keys.s || mobile.down) dy += 1;
+      if (keys.ArrowLeft || keys.a || mobile.left) dx -= 1;
+      if (keys.ArrowRight || keys.d || mobile.right) dx += 1;
+
+      if (dx !== 0 && dy !== 0) {
+        dx *= Math.SQRT1_2;
+        dy *= Math.SQRT1_2;
+      }
+
+      player.moving = dx !== 0 || dy !== 0;
+      if (player.moving) {
+        if (Math.abs(dx) > Math.abs(dy)) player.dir = dx > 0 ? "right" : "left";
+        else player.dir = dy > 0 ? "down" : "up";
+        player.step += dt * 9;
+        if (Math.random() < dt * 6) {
+          particles.push({
+            x: player.x + player.w / 2 + (-4 + Math.random() * 8),
+            y: player.y + player.h - 2,
+            vx: -8 + Math.random() * 16,
+            vy: -6 - Math.random() * 8,
+            gravity: 18,
+            life: 0.3 + Math.random() * 0.25,
+            maxLife: 0.55,
+            color: "#fff7fb",
+            type: "dust",
+            spin: 0,
+            spinSpeed: 0,
+            size: 2
+          });
+        }
+      } else {
+        player.step = 0;
+      }
+
+      const speed = player.speed * dt;
+      const nx = player.x + dx * speed;
+      if (!isSolidRect(nx, player.y, player.w, player.h)) player.x = nx;
+
+      const ny = player.y + dy * speed;
+      if (!isSolidRect(player.x, ny, player.w, player.h)) player.y = ny;
+
+      const maxX = currentArea.map[0].length * TILE - player.w - 1;
+      const maxY = currentArea.map.length * TILE - player.h - 1;
+      player.x = clamp(player.x, 1, maxX);
+      player.y = clamp(player.y, 1, maxY);
+    }
+
+    function updateCamera() {
+      const mapW = currentArea.map[0].length * TILE;
+      const mapH = currentArea.map.length * TILE;
+      camera.x = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, Math.max(0, mapW - VIEW_W));
+      camera.y = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H));
+    }
+
+    function updateObjects(dt) {
+      nearestObject = null;
+      let nearestDist = Infinity;
+
+      for (const item of currentArea.objects) {
+        if (!item.active) continue;
+
+        if (["npc", "shopNpc", "gate", "memory", "chest", "door", "gift", "milkTea", "teaStand", "bouquet", "secret", "waterFlower", "happyCloud", "clue", "starBit"].includes(item.type)) {
+          const d = distance(player, item);
+          if (d < 45 && d < nearestDist) {
+            nearestDist = d;
+            nearestObject = item;
+          }
+        }
+
+        if (item.type === "heartItem" && overlaps(player, item)) {
+          item.active = false;
+          markCollected(item.id);
+          player.townHearts += 1;
+          burst(item.x + item.w / 2, item.y + item.h / 2, CONFIG.colors.primary, 18, "heart");
+          showToast(`Nhặt trái tim nhỏ ${player.townHearts}/${CONFIG.heartsNeededTown}`);
+          addLove(2, "nhặt trái tim nhỏ");
+          sfx("pickup");
+        }
+
+        if (item.type === "candy" && overlaps(player, item)) {
+          item.active = false;
+          markCollected(item.id);
+          player.energy = Math.min(player.maxEnergy, player.energy + 1);
+          burst(item.x + item.w / 2, item.y + item.h / 2, CONFIG.colors.warm, 14, "spark");
+          showToast("Ăn kẹo ngọt: hồi 1 tim năng lượng!");
+          sfx("pickup");
+        }
+
+        if (item.type === "danger" && overlaps(player, item) && player.invincible <= 0) {
+          hurtPlayer();
+        }
+      }
+
+      ui.hint.classList.toggle("hidden", !nearestObject || dialog.active);
+    }
+
+    function interact() {
+      ensureAudio();
+      if (dialog.active) {
+        nextDialog();
+        return;
+      }
+
+      if (ui.passwordOverlay.classList.contains("hidden") === false || ui.finalOverlay.classList.contains("hidden") === false || ui.shopOverlay.classList.contains("hidden") === false || ui.skinOverlay.classList.contains("hidden") === false || ui.achOverlay.classList.contains("hidden") === false || ui.logOverlay.classList.contains("hidden") === false || ui.teaOverlay.classList.contains("hidden") === false) return;
+
+      if (!nearestObject) {
+        showToast("Không có gì để tương tác ở gần đây.");
+        return;
+      }
+
+      if (nearestObject.interact) nearestObject.interact(nearestObject);
+    }
+
+    function hurtPlayer() {
+      player.flawlessChallenge = false;
+      if (player.shield > 0) {
+        player.shield -= 1;
+        player.invincible = 1.0;
+        burst(player.x + player.w / 2, player.y + player.h / 2, CONFIG.colors.warm, 24, "spark");
+        showToast("Bùa bình yên đã chặn một lần mất tim ✨");
+        sfx("unlock");
+        return;
+      }
+      player.energy -= 1;
+      player.invincible = 1.4;
+      burst(player.x + player.w / 2, player.y + player.h / 2, "#9b5de5", 20, "spark");
+      sfx("hurt");
+
+      if (player.energy <= 0) {
+        player.energy = player.maxEnergy;
+        const start = currentArea.start;
+        player.x = start.tx * TILE + 6;
+        player.y = start.ty * TILE + 4;
+        showToast("Hết năng lượng! Quay lại đầu đường thử thách.");
+      } else {
+        showToast(`Ôi! Mất 1 tim năng lượng. Còn ${player.energy}/${player.maxEnergy}.`);
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += p.gravity * dt;
+        p.spin += dt * p.spinSpeed;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function burst(x, y, color, count, type = "spark") {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 20 + Math.random() * 70;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 20,
+          gravity: type === "heart" ? -5 : 12,
+          life: 0.55 + Math.random() * 0.75,
+          maxLife: 1.2,
+          color,
+          type,
+          spin: Math.random() * 6,
+          spinSpeed: -4 + Math.random() * 8,
+          size: 3 + Math.random() * 5
+        });
+      }
+    }
+
+    function spawnAreaSparkles() {
+      const mapW = currentArea.map[0].length * TILE;
+      const mapH = currentArea.map.length * TILE;
+      const count = currentArea.id === "stars" ? 80 : 28;
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: 20 + Math.random() * (mapW - 40),
+          y: 20 + Math.random() * (mapH - 40),
+          vx: -6 + Math.random() * 12,
+          vy: -14 - Math.random() * 20,
+          gravity: -2,
+          life: 1 + Math.random() * 2,
+          maxLife: 3,
+          color: Math.random() > 0.5 ? CONFIG.colors.pink : CONFIG.colors.warm,
+          type: Math.random() > 0.55 ? "heart" : "spark",
+          spin: Math.random() * 6,
+          spinSpeed: -2 + Math.random() * 4,
+          size: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function updateHud() {
+      ui.areaName.textContent = `📍 ${currentArea.name}`;
+      ui.quest.textContent = fmt(currentArea.quest());
+      const hp = "💗".repeat(player.energy) + "🤍".repeat(player.maxEnergy - player.energy);
+      ui.stats.textContent = `${hp} | 🧩 ${player.pieces}/3 | ⭐ ${player.stars} | 🛡 ${player.shield}`;
+      updateExpansionHud();
+    }
+
+    function update(dt) {
+      visualClock += dt;
+      updateDialog(dt);
+      updateTeaGame(dt);
+      if (!gameStarted || !currentArea) return;
+      worldTime += dt;
+
+      updateFinalCutscene(dt);
+      player.invincible = Math.max(0, player.invincible - dt);
+
+      movePlayer(dt);
+      updateCamera();
+      updateObjects(dt);
+      updateParticles(dt);
+      updateButterflies(dt);
+      updateHud();
+    }
+
+    function draw() {
+      if (!currentArea) return;
+      ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+      drawMap();
+      drawAmbientOverlays();
+
+      const drawables = currentArea.objects
+        .filter(item => item.active)
+        .concat([{ type: "player", x: player.x, y: player.y, w: player.w, h: player.h }]);
+
+      if (finalCutscene.active) {
+        drawables.push({ type: "cutsceneBoy", x: finalCutscene.x, y: finalCutscene.y, w: 22, h: 27 });
+      }
+
+      drawables.sort((a, b) => (a.y + a.h) - (b.y + b.h));
+
+      for (const item of drawables) {
+        if (item.type === "player") drawPlayer();
+        else if (item.type === "cutsceneBoy") drawBoySprite(Math.floor(item.x - camera.x), Math.floor(item.y - camera.y));
+        else drawObject(item);
+      }
+
+      drawFinalCutsceneFx();
+
+      drawParticles();
+      drawButterflies();
+      drawForegroundDecor();
+
+      if (player.invincible > 0 && Math.floor(player.invincible * 12) % 2 === 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        ctx.restore();
+      }
+
+      drawDayNightOverlay();
+      drawDepthHaze();
+      drawVignette();
+      drawMiniMap();
+    }
+
+    // Sương mù chiều sâu: phía xa (trên màn hình) mờ và nhạt dần — tăng cảm giác 2.5D.
+    function drawDepthHaze() {
+      ctx.save();
+      const haze = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+      if (currentArea.id === "stars") {
+        haze.addColorStop(0, "rgba(38, 24, 68, 0.5)");
+        haze.addColorStop(0.45, "rgba(38, 24, 68, 0)");
+      } else {
+        haze.addColorStop(0, "rgba(255, 240, 250, 0.34)");
+        haze.addColorStop(0.42, "rgba(255, 240, 250, 0)");
+      }
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+      // Bóng đổ sát mép dưới làm mặt đất "gần" hơn.
+      const ground = ctx.createLinearGradient(0, VIEW_H * 0.8, 0, VIEW_H);
+      ground.addColorStop(0, "rgba(59, 38, 69, 0)");
+      ground.addColorStop(1, "rgba(59, 38, 69, 0.16)");
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, VIEW_H * 0.8, VIEW_W, VIEW_H * 0.2);
+      ctx.restore();
+    }
+
+    function drawMap() {
+      const startX = Math.floor(camera.x / TILE);
+      const startY = Math.floor(camera.y / TILE);
+      const endX = startX + Math.ceil(VIEW_W / TILE) + 2;
+      const endY = startY + Math.ceil(VIEW_H / TILE) + 2;
+
+      for (let ty = startY; ty < endY; ty++) {
+        for (let tx = startX; tx < endX; tx++) {
+          const tile = tileAt(tx, ty);
+          drawTile(tile, tx * TILE - camera.x, ty * TILE - camera.y, tx, ty);
+        }
+      }
+    }
+
+    function drawTile(tile, sx, sy, tx, ty) {
+      sx = Math.floor(sx);
+      sy = Math.floor(sy);
+      const h = hash(tx, ty);
+
+      if (tile === "S") {
+        // Nền trời sao nâng cấp: có chiều sâu, sao lấp lánh và mây tím nhẹ.
+        ctx.fillStyle = "#261844";
+        ctx.fillRect(sx, sy, TILE, TILE);
+        ctx.fillStyle = "#352063";
+        if (h % 2 === 0) ctx.fillRect(sx, sy + 22, TILE, 10);
+        if (h % 5 === 0) {
+          ctx.fillStyle = "rgba(191,162,255,0.32)";
+          ctx.fillRect(sx + 2, sy + 10, 19, 4);
+          ctx.fillRect(sx + 8, sy + 6, 14, 5);
+        }
+        const twinkle = Math.sin(visualClock * 3 + h) > -0.15;
+        if (h % 3 === 0) drawSparkle(sx + 6, sy + 6, twinkle ? "#fff3a3" : "#d9ccff");
+        if (hash(tx + 2, ty + 3) % 4 === 0) {
+          ctx.fillStyle = twinkle ? "#fff7fb" : "#bfa2ff";
+          ctx.fillRect(sx + 22, sy + 12, 2, 2);
+        }
+        return;
+      }
+
+      if (tile === "L") {
+        drawTile("S", sx, sy, tx, ty);
+        const pulse = 0.25 + Math.sin(visualClock * 2 + h) * 0.08;
+        ctx.fillStyle = `rgba(255, 243, 163, ${pulse})`;
+        ctx.fillRect(sx + 5, sy + 5, 22, 20);
+        ctx.fillStyle = "#7bf0a2";
+        ctx.fillRect(sx + 12, sy + 14, 8, 12);
+        ctx.fillStyle = "#c2ffce";
+        ctx.fillRect(sx + 14, sy + 13, 4, 13);
+        ctx.fillStyle = "#fff3a3";
+        ctx.fillRect(sx + 10, sy + 9, 12, 8);
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(sx + 13, sy + 11, 5, 2);
+        return;
+      }
+
+      drawGrassTile(sx, sy, tx, ty);
+      if (tile === "G") return;
+
+      if (tile === "P") {
+        drawPathTile(sx, sy, tx, ty);
+        return;
+      }
+
+      if (tile === "F") {
+        drawGrassTile(sx, sy, tx, ty);
+        drawPixelFlower(sx + 6, sy + 8, h % 2 ? "#ff7ab6" : "#ff9fcb");
+        drawPixelFlower(sx + 19, sy + 16, h % 3 ? "#bfa2ff" : "#ffd166");
+        if (h % 4 === 0) drawTinyPetals(sx + 15, sy + 7, "#fff7fb");
+        return;
+      }
+
+      if (tile === "T") {
+        drawGrassTile(sx, sy, tx, ty);
+        drawTreeTile(sx, sy, h);
+        return;
+      }
+
+      if (tile === "W") {
+        drawWaterTile(sx, sy, tx, ty);
+        return;
+      }
+
+      if (tile === "X") {
+        drawGrassTile(sx, sy, tx, ty);
+        drawFenceTile(sx, sy);
+        return;
+      }
+
+      if (tile === "H") {
+        drawHouseTile(sx, sy, tx, ty);
+        return;
+      }
+
+      if (tile === "R") {
+        drawGrassTile(sx, sy, tx, ty);
+        drawRockTile(sx, sy, h);
+      }
+    }
+
+    function drawGrassTile(sx, sy, tx, ty) {
+      const h = hash(tx, ty);
+      ctx.fillStyle = h % 3 === 0 ? "#b8f7c1" : h % 3 === 1 ? "#aeeeb7" : "#a4e7ad";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
+      if (h % 2 === 0) ctx.fillRect(sx, sy, TILE, 2);
+      ctx.fillStyle = "#7fd890";
+      if (h % 2 === 0) ctx.fillRect(sx + 5, sy + 7, 4, 2);
+      if (hash(tx + 1, ty) % 3 === 0) ctx.fillRect(sx + 20, sy + 22, 5, 2);
+      if (hash(tx + 3, ty + 2) % 5 === 0) ctx.fillRect(sx + 13, sy + 16, 3, 2);
+      ctx.fillStyle = "rgba(74, 154, 98, 0.12)";
+      ctx.fillRect(sx, sy + TILE - 3, TILE, 3);
+    }
+
+    function drawPathTile(sx, sy, tx, ty) {
+      const h = hash(tx, ty);
+      ctx.fillStyle = "#e7bd83";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "#d29a65";
+      ctx.fillRect(sx, sy + 27, TILE, 5);
+      ctx.fillStyle = "#f5d39a";
+      ctx.fillRect(sx, sy, TILE, 3);
+      ctx.fillStyle = "#bf8255";
+      if (h % 2 === 0) ctx.fillRect(sx + 4, sy + 10, 8, 3);
+      if (hash(tx + 4, ty) % 3 === 0) ctx.fillRect(sx + 18, sy + 22, 7, 3);
+      if (h % 5 === 0) {
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillRect(sx + 11, sy + 6, 4, 2);
+      }
+    }
+
+    function drawTreeTile(sx, sy, h) {
+      // Tán cây đung đưa nhẹ theo gió.
+      const sway = Math.round(Math.sin(visualClock * 1.6 + h % 7) * 1.2);
+      ctx.fillStyle = "rgba(59, 38, 69, 0.18)";
+      ctx.fillRect(sx + 6, sy + 25, 22, 5);
+      ctx.fillStyle = "#8b5a2b";
+      ctx.fillRect(sx + 13, sy + 17, 7, 12);
+      ctx.fillStyle = "#b9793a";
+      ctx.fillRect(sx + 15, sy + 18, 2, 9);
+      ctx.fillStyle = "#2f8d61";
+      ctx.fillRect(sx + 7 + sway, sy + 10, 18, 13);
+      ctx.fillRect(sx + 10 + sway, sy + 5, 13, 11);
+      ctx.fillRect(sx + 4 + sway, sy + 14, 24, 8);
+      ctx.fillStyle = "#54c77d";
+      ctx.fillRect(sx + 9 + sway, sy + 8, 8, 5);
+      ctx.fillRect(sx + 18 + sway, sy + 13, 5, 3);
+      ctx.fillStyle = h % 4 === 0 ? "#ff9fcb" : "#b8f7c1";
+      if (h % 3 === 0) ctx.fillRect(sx + 20 + sway, sy + 9, 3, 3);
+    }
+
+    function drawWaterTile(sx, sy, tx, ty) {
+      const wave = Math.floor(Math.sin(visualClock * 3 + tx * 0.7 + ty) * 2);
+      ctx.fillStyle = "#70d7ee";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "#4bb8d9";
+      ctx.fillRect(sx, sy + 8 + wave, TILE, 4);
+      ctx.fillRect(sx + 8, sy + 22 - wave, TILE - 8, 4);
+      ctx.fillStyle = "#dffaff";
+      if ((tx + ty) % 2 === 0) ctx.fillRect(sx + 7, sy + 14 + wave, 10, 2);
+      if (hash(tx, ty) % 5 === 0) ctx.fillRect(sx + 20, sy + 7 - wave, 5, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(sx, sy, TILE, 2);
+    }
+
+    function drawFenceTile(sx, sy) {
+      ctx.fillStyle = "rgba(59, 38, 69, 0.16)";
+      ctx.fillRect(sx + 4, sy + 25, 24, 4);
+      ctx.fillStyle = "#b8895b";
+      ctx.fillRect(sx + 4, sy + 9, 24, 5);
+      ctx.fillRect(sx + 4, sy + 19, 24, 5);
+      ctx.fillStyle = "#8f653d";
+      ctx.fillRect(sx + 7, sy + 5, 5, 23);
+      ctx.fillRect(sx + 21, sy + 5, 5, 23);
+      ctx.fillStyle = "#d9ad78";
+      ctx.fillRect(sx + 8, sy + 6, 3, 4);
+      ctx.fillRect(sx + 22, sy + 6, 3, 4);
+    }
+
+    function drawHouseTile(sx, sy, tx, ty) {
+      ctx.fillStyle = "#ffd1e6";
+      ctx.fillRect(sx, sy + 8, TILE, 24);
+      ctx.fillStyle = "#f9a8cf";
+      ctx.fillRect(sx, sy + 26, TILE, 6);
+      ctx.fillStyle = "#ff6fae";
+      ctx.fillRect(sx, sy + 4, TILE, 10);
+      ctx.fillStyle = "#b64a7f";
+      ctx.fillRect(sx, sy + 12, TILE, 3);
+      ctx.fillStyle = "#fff7fb";
+      if ((tx + ty) % 2 === 0) ctx.fillRect(sx + 7, sy + 17, 8, 8);
+      else ctx.fillRect(sx + 18, sy + 17, 7, 8);
+      ctx.fillStyle = "#ffd166";
+      if ((tx + ty) % 2 === 0) ctx.fillRect(sx + 9, sy + 19, 4, 4);
+      ctx.fillStyle = "rgba(59, 38, 69, 0.18)";
+      ctx.fillRect(sx, sy + 30, TILE, 2);
+    }
+
+    function drawRockTile(sx, sy, h) {
+      ctx.fillStyle = "rgba(59, 38, 69, 0.17)";
+      ctx.fillRect(sx + 6, sy + 24, 20, 4);
+      ctx.fillStyle = "#8f8a98";
+      ctx.fillRect(sx + 7, sy + 13, 18, 12);
+      ctx.fillStyle = "#c8c3d2";
+      ctx.fillRect(sx + 11, sy + 10, 10, 5);
+      ctx.fillStyle = "#756f7d";
+      ctx.fillRect(sx + 16, sy + 22, 8, 3);
+      if (h % 3 === 0) {
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(sx + 12, sy + 13, 4, 2);
+      }
+    }
+
+    function drawObject(item) {
+      const x = Math.floor(item.x - camera.x);
+      const y = Math.floor(item.y - camera.y);
+
+      switch (item.type) {
+        case "npc":
+        case "shopNpc":
+          drawNpc(x, y, item);
+          if (item.type === "shopNpc") drawShopBadge(x, y);
+          break;
+        case "heartItem":
+          drawCollectibleHalo(x + 14, y + 14, CONFIG.colors.primary);
+          drawHeartShape(x + 10, y + 8, 2, CONFIG.colors.primary);
+          drawSparkle(x + 5, y + 2, "#fff7fb");
+          break;
+        case "gate":
+          drawGate(x, y, item);
+          break;
+        case "memory":
+          drawMemory(x, y, item);
+          break;
+        case "danger":
+          drawDanger(x, y, item);
+          break;
+        case "candy":
+          drawCandy(x, y);
+          break;
+        case "chest":
+          drawChest(x, y, item.state.open);
+          break;
+        case "door":
+          drawDoor(x, y);
+          break;
+        case "gift":
+          drawGift(x, y);
+          break;
+        case "milkTea":
+          drawMilkTeaGift(x, y);
+          break;
+        case "teaStand":
+          drawTeaStand(x, y);
+          break;
+        case "bouquet":
+          drawBouquet(x, y);
+          break;
+        case "secret":
+          drawSecretRose(x, y, item);
+          break;
+        case "waterFlower":
+          drawWaterFlowerObject(x, y, item);
+          break;
+        case "happyCloud":
+          drawHappyCloud(x, y, item);
+          break;
+        case "clue":
+          drawClue(x, y, item);
+          break;
+        case "starBit":
+          drawStarBit(x, y);
+          break;
+      }
+    }
+
+    // Vẽ sprite nhân vật chính lên một context bất kỳ (game chính hoặc preview chọn nhân vật).
+    function drawHeroSprite(g, x, y, opts) {
+      const dir = opts.dir || "down";
+      const moving = !!opts.moving;
+      const step = opts.step || 0;
+      const clock = opts.clock || 0;
+      const charDef = opts.charDef;
+      const outfit = opts.outfit || charDef.outfit;
+      const hair = charDef.hair;
+      const skinTone = charDef.skinTone;
+
+      const bob = moving ? Math.sin(step) * 1.8 : Math.sin(clock * 2.2) * 0.35;
+      const foot = moving ? Math.sign(Math.sin(step)) : 0;
+      const baseY = Math.floor(y + bob);
+
+      // Phụ kiện tóc phía sau / trên đầu theo kiểu tóc của nhân vật.
+      if (charDef.hairStyle === "long") {
+        g.fillStyle = hair;
+        g.fillRect(x + 2, baseY + 6, 4, 14);
+        g.fillRect(x + 15, baseY + 6, 4, 14);
+      }
+      if (charDef.hairStyle === "ponytail") {
+        const sway = Math.sin(moving ? step : clock * 2.2) * 1.5;
+        g.fillStyle = hair;
+        g.fillRect(Math.floor(x + 9 + sway), baseY - 4, 4, 5);
+        g.fillRect(Math.floor(x + 8 + sway), baseY - 7, 6, 4);
+        g.fillStyle = "#ff7ab6";
+        g.fillRect(Math.floor(x + 9 + sway), baseY - 3, 4, 1);
+      }
+      if (charDef.hairStyle === "cat") {
+        g.fillStyle = hair;
+        g.fillRect(x + 4, baseY - 3, 4, 5);
+        g.fillRect(x + 13, baseY - 3, 4, 5);
+        g.fillStyle = "#ff9fcb";
+        g.fillRect(x + 5, baseY - 2, 2, 3);
+        g.fillRect(x + 14, baseY - 2, 2, 3);
+      }
+
+      // Viền ngoài giúp nhân vật nổi bật trên mọi nền.
+      g.fillStyle = "rgba(59, 38, 69, 0.78)";
+      g.fillRect(x + 3, baseY + 2, 15, 16);
+      g.fillRect(x + 5, baseY + 17, 12, 9);
+
+      // Tóc.
+      g.fillStyle = hair;
+      g.fillRect(x + 4, baseY + 1, 13, 9);
+      g.fillRect(x + 2, baseY + 6, 17, 5);
+      g.fillStyle = "rgba(255,255,255,0.28)";
+      g.fillRect(x + 6, baseY + 3, 7, 2);
+
+      // Mặt.
+      g.fillStyle = skinTone;
+      g.fillRect(x + 4, baseY + 8, 13, 9);
+      g.fillStyle = "rgba(0,0,0,0.06)";
+      g.fillRect(x + 4, baseY + 15, 13, 2);
+
+      // Mắt theo hướng, thỉnh thoảng chớp mắt khi đứng yên.
+      g.fillStyle = "#3b2645";
+      if (dir === "left") {
+        g.fillRect(x + 5, baseY + 12, 2, 2);
+        g.fillStyle = "#ff9fcb";
+        g.fillRect(x + 12, baseY + 14, 2, 1);
+      } else if (dir === "right") {
+        g.fillRect(x + 14, baseY + 12, 2, 2);
+        g.fillStyle = "#ff9fcb";
+        g.fillRect(x + 7, baseY + 14, 2, 1);
+      } else if (dir === "up") {
+        g.fillRect(x + 7, baseY + 11, 2, 2);
+        g.fillRect(x + 12, baseY + 11, 2, 2);
+      } else {
+        const blink = !moving && Math.sin(clock * 1.7) > 0.96;
+        if (blink) {
+          g.fillRect(x + 6, baseY + 13, 2, 1);
+          g.fillRect(x + 13, baseY + 13, 2, 1);
+        } else {
+          g.fillRect(x + 6, baseY + 12, 2, 2);
+          g.fillRect(x + 13, baseY + 12, 2, 2);
+        }
+        g.fillStyle = "#ff7ab6";
+        g.fillRect(x + 9, baseY + 15, 3, 1);
+        g.fillStyle = "#ffb3d6";
+        g.fillRect(x + 4, baseY + 14, 2, 1);
+        g.fillRect(x + 16, baseY + 14, 2, 1);
+      }
+
+      // Áo có highlight.
+      g.fillStyle = outfit;
+      g.fillRect(x + 5, baseY + 17, 11, 6);
+      g.fillStyle = "rgba(255,255,255,0.42)";
+      g.fillRect(x + 5, baseY + 17, 11, 2);
+      g.fillStyle = "#fff7fb";
+      g.fillRect(x + 8, baseY + 18, 5, 2);
+
+      // Tay và chân.
+      g.fillStyle = skinTone;
+      g.fillRect(x + 2, baseY + 18, 3, 5);
+      g.fillRect(x + 16, baseY + 18, 3, 5);
+      g.fillStyle = "#5b3a66";
+      g.fillRect(x + 5, baseY + 23, 4, 3 + Math.max(0, foot));
+      g.fillRect(x + 12, baseY + 23, 4, 3 + Math.max(0, -foot));
+      g.fillStyle = "#fff7fb";
+      if (moving) g.fillRect(x + (foot > 0 ? 5 : 12), baseY + 26, 4, 1);
+    }
+
+    function drawPlayer() {
+      const x = Math.floor(player.x - camera.x);
+      const y = Math.floor(player.y - camera.y);
+      drawBlobShadow(x + 1, y + 22, 20, 6);
+
+      const charDef = getCharacter();
+      const skin = getSkin();
+      const outfit = player.currentSkin === "classic" ? charDef.outfit : skin.primary;
+      drawHeroSprite(ctx, x, y, {
+        dir: player.dir,
+        moving: player.moving,
+        step: player.step,
+        clock: visualClock,
+        charDef,
+        outfit
+      });
+    }
+
+    function drawNpc(x, y, item) {
+      const color = item.data.color || "#bfa2ff";
+      const bob = Math.sin(visualClock * 2.4 + x * 0.01) * 0.8;
+      const baseY = Math.floor(y + bob);
+      drawBlobShadow(x + 2, y + 22, 20, 6);
+      ctx.fillStyle = "rgba(59, 38, 69, 0.75)";
+      ctx.fillRect(x + 3, baseY + 3, 17, 16);
+      ctx.fillRect(x + 5, baseY + 18, 14, 8);
+      ctx.fillStyle = "#7a4f8a";
+      ctx.fillRect(x + 5, baseY + 1, 13, 8);
+      ctx.fillStyle = "#9e6ab0";
+      ctx.fillRect(x + 8, baseY + 3, 7, 2);
+      ctx.fillStyle = "#ffd7c2";
+      ctx.fillRect(x + 4, baseY + 8, 15, 9);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 7, baseY + 12, 2, 2);
+      ctx.fillRect(x + 14, baseY + 12, 2, 2);
+      ctx.fillStyle = "#ff9fcb";
+      ctx.fillRect(x + 10, baseY + 15, 3, 1);
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 5, baseY + 17, 13, 7);
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillRect(x + 6, baseY + 17, 11, 2);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 9, baseY + 18, 5, 2);
+    }
+
+    function drawGate(x, y, item) {
+      const isOpen = player[item.data.require];
+      drawBlobShadow(x, y + 28, 29, 5);
+      ctx.fillStyle = "#6f4b2d";
+      ctx.fillRect(x + 1, y + 2, 6, 29);
+      ctx.fillRect(x + 22, y + 2, 6, 29);
+      ctx.fillStyle = "#b8895b";
+      ctx.fillRect(x + 2, y + 2, 3, 28);
+      ctx.fillRect(x + 23, y + 2, 3, 28);
+      ctx.fillStyle = isOpen ? "#ffd166" : "#b8895b";
+      ctx.fillRect(x + 5, y + 6, 18, 5);
+      ctx.fillRect(x + 5, y + 17, 18, 5);
+      ctx.fillStyle = isOpen ? "#fff3a3" : "#5b3a66";
+      ctx.fillRect(x + 12, y + 11, 4, 4);
+      if (isOpen) {
+        drawSparkle(x + 20, y + 2, "#fff3a3");
+        ctx.fillStyle = "rgba(255, 209, 102, 0.28)";
+        ctx.fillRect(x + 5, y + 6, 19, 19);
+      }
+    }
+
+    function drawMemory(x, y, item) {
+      drawCollectibleHalo(x + 14, y + 15, item.state.read ? "#ffd166" : "#bfa2ff");
+      ctx.fillStyle = "rgba(59, 38, 69, 0.18)";
+      ctx.fillRect(x + 4, y + 23, 19, 4);
+      ctx.fillStyle = item.state.read ? "#ffd166" : "#bfa2ff";
+      ctx.fillRect(x + 4, y + 8, 18, 14);
+      ctx.fillStyle = item.state.read ? "#fff3a3" : "#d9ccff";
+      ctx.fillRect(x + 4, y + 8, 18, 3);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 7, y + 11, 12, 2);
+      ctx.fillRect(x + 7, y + 16, 9, 2);
+      if (!item.state.read) drawSparkle(x + 20, y + 4, "#ffd166");
+      else drawHeartShape(x + 17, y + 3, 1, CONFIG.colors.primary);
+    }
+
+    function drawDanger(x, y, item) {
+      if (item.data.kind === "cloud") {
+        const bob = Math.sin(visualClock * 2.6 + x) * 1.2;
+        y = Math.floor(y + bob);
+        drawBlobShadow(x + 4, y + 22, 22, 4);
+        ctx.fillStyle = "#9d82e6";
+        ctx.fillRect(x + 5, y + 11, 18, 8);
+        ctx.fillRect(x + 9, y + 7, 10, 7);
+        ctx.fillStyle = "#d9ccff";
+        ctx.fillRect(x + 8, y + 10, 11, 3);
+        ctx.fillStyle = "#5b3a66";
+        ctx.fillRect(x + 10, y + 14, 2, 2);
+        ctx.fillRect(x + 17, y + 14, 2, 2);
+        ctx.fillRect(x + 13, y + 18, 5, 2);
+      } else {
+        drawBlobShadow(x + 4, y + 22, 22, 4);
+        ctx.fillStyle = "#357f55";
+        ctx.fillRect(x + 5, y + 12, 20, 10);
+        ctx.fillStyle = "#4ea36f";
+        ctx.fillRect(x + 7, y + 10, 16, 8);
+        ctx.fillStyle = "#ff7ab6";
+        ctx.fillRect(x + 7, y + 8, 3, 7);
+        ctx.fillRect(x + 14, y + 6, 3, 8);
+        ctx.fillRect(x + 21, y + 9, 3, 6);
+        ctx.fillStyle = "#fff7fb";
+        ctx.fillRect(x + 15, y + 7, 1, 2);
+      }
+    }
+
+    function drawCandy(x, y) {
+      drawCollectibleHalo(x + 14, y + 14, "#ffd166");
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 2, y + 11, 5, 6);
+      ctx.fillRect(x + 21, y + 11, 5, 6);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 7, y + 8, 14, 12);
+      ctx.fillStyle = "#ff7ab6";
+      ctx.fillRect(x + 10, y + 8, 3, 12);
+      ctx.fillRect(x + 16, y + 8, 3, 12);
+      ctx.fillStyle = "rgba(255,255,255,0.62)";
+      ctx.fillRect(x + 9, y + 9, 10, 2);
+    }
+
+    function drawChest(x, y, open) {
+      drawBlobShadow(x + 1, y + 23, 26, 5);
+      ctx.fillStyle = "#6f4b2d";
+      ctx.fillRect(x + 2, y + 9, 24, 14);
+      ctx.fillStyle = "#8f653d";
+      ctx.fillRect(x + 4, y + 13, 20, 8);
+      ctx.fillStyle = open ? "#ffd166" : "#b8895b";
+      ctx.fillRect(x + 2, y + 5, 24, 8);
+      ctx.fillStyle = "#fff3a3";
+      ctx.fillRect(x + 5, y + 6, 18, 2);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 12, y + 12, 5, 5);
+      if (open) {
+        drawSparkle(x + 20, y, "#fff3a3");
+        drawSparkle(x + 7, y + 1, "#ffd166");
+      }
+    }
+
+    function drawDoor(x, y) {
+      drawBlobShadow(x + 2, y + 24, 27, 5);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 3, y + 1, 26, 24);
+      ctx.fillStyle = "#7a4f8a";
+      ctx.fillRect(x + 4, y + 2, 24, 22);
+      ctx.fillStyle = "#9d72ad";
+      ctx.fillRect(x + 6, y + 4, 20, 3);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 20, y + 13, 4, 4);
+      drawHeartShape(x + 12, y + 8, 1, "#ff7ab6");
+      drawSparkle(x + 25, y + 4, "#fff3a3");
+    }
+
+    function drawGift(x, y) {
+      drawCollectibleHalo(x + 15, y + 18, CONFIG.colors.primary);
+      drawBlobShadow(x + 1, y + 31, 29, 5);
+      ctx.fillStyle = "#ff7ab6";
+      ctx.fillRect(x + 4, y + 10, 22, 20);
+      ctx.fillStyle = "#ff9fcb";
+      ctx.fillRect(x + 4, y + 10, 22, 4);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 13, y + 10, 5, 20);
+      ctx.fillRect(x + 4, y + 18, 22, 5);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 8, y + 4, 7, 7);
+      ctx.fillRect(x + 17, y + 4, 7, 7);
+      drawSparkle(x + 26, y + 2, "#fff3a3");
+    }
+
+    function drawMilkTeaGift(x, y) {
+      drawCollectibleHalo(x + 15, y + 16, CONFIG.colors.warm);
+      drawBlobShadow(x + 2, y + 32, 28, 5);
+      // Cốc trà sữa pixel deluxe: ly trong, nắp, ống hút, trân châu và highlight.
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 5, y + 2, 20, 5);
+      ctx.fillStyle = "#e9ddff";
+      ctx.fillRect(x + 7, y + 1, 16, 2);
+      ctx.fillStyle = "#ff7ab6";
+      ctx.fillRect(x + 20, y - 5, 4, 14);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 21, y - 4, 1, 10);
+      ctx.fillStyle = "#ffd1e6";
+      ctx.fillRect(x + 7, y + 8, 17, 23);
+      ctx.fillStyle = "#d49a6a";
+      ctx.fillRect(x + 8, y + 11, 15, 17);
+      ctx.fillStyle = "#f0b47c";
+      ctx.fillRect(x + 9, y + 12, 13, 5);
+      ctx.fillStyle = "#fff3a3";
+      ctx.fillRect(x + 10, y + 13, 11, 3);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 10, y + 24, 3, 3);
+      ctx.fillRect(x + 15, y + 25, 3, 3);
+      ctx.fillRect(x + 20, y + 23, 3, 3);
+      ctx.fillRect(x + 12, y + 20, 2, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.fillRect(x + 11, y + 9, 3, 13);
+      ctx.fillRect(x + 15, y + 9, 1, 19);
+      drawHeartShape(x + 8, y - 7, 1, CONFIG.colors.primary);
+      drawSparkle(x + 27, y + 1, "#fff3a3");
+    }
+
+    function drawBoySprite(x, y) {
+      const bob = Math.sin(finalCutscene.t * 10) * 1.2;
+      const baseY = Math.floor(y + bob);
+      drawBlobShadow(x + 2, y + 23, 20, 5);
+
+      ctx.fillStyle = "rgba(59, 38, 69, 0.76)";
+      ctx.fillRect(x + 3, baseY + 2, 17, 17);
+      ctx.fillRect(x + 5, baseY + 18, 14, 10);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 4, baseY + 1, 14, 8);
+      ctx.fillRect(x + 2, baseY + 6, 18, 5);
+      ctx.fillStyle = "#62506e";
+      ctx.fillRect(x + 6, baseY + 3, 7, 2);
+      ctx.fillStyle = "#ffd7c2";
+      ctx.fillRect(x + 4, baseY + 9, 15, 9);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 7, baseY + 13, 2, 2);
+      ctx.fillRect(x + 15, baseY + 13, 2, 2);
+      ctx.fillStyle = "#ff7ab6";
+      ctx.fillRect(x + 10, baseY + 16, 4, 1);
+
+      ctx.fillStyle = "#7bdff2";
+      ctx.fillRect(x + 5, baseY + 18, 13, 7);
+      ctx.fillStyle = "#aef3ff";
+      ctx.fillRect(x + 6, baseY + 18, 11, 2);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 9, baseY + 19, 5, 2);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 5, baseY + 25, 4, 3);
+      ctx.fillRect(x + 14, baseY + 25, 4, 3);
+    }
+
+    function drawFinalCutsceneFx() {
+      if (!finalCutscene.active || finalCutscene.t < 1.25) return;
+      const x = Math.floor(finalCutscene.x - camera.x + 17);
+      const y = Math.floor(finalCutscene.y - camera.y - 10);
+      ctx.fillStyle = "rgba(255, 247, 251, 0.92)";
+      ctx.fillRect(x - 4, y - 4, 26, 18);
+      ctx.fillStyle = "rgba(255,122,182,0.22)";
+      ctx.fillRect(x - 7, y - 7, 32, 23);
+      drawHeartShape(x + 3, y, 2, CONFIG.colors.primary);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 9, y + 15, 5, 3);
+      drawSparkle(x + 22, y - 3, "#fff3a3");
+    }
+
+    function drawBlobShadow(x, y, w, h) {
+      ctx.fillStyle = "rgba(59, 38, 69, 0.18)";
+      ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+      ctx.fillStyle = "rgba(59, 38, 69, 0.08)";
+      ctx.fillRect(Math.floor(x + 3), Math.floor(y - 1), Math.floor(w - 6), Math.floor(h + 2));
+    }
+
+    function drawCollectibleHalo(cx, cy, color) {
+      const pulse = 0.28 + Math.sin(visualClock * 4 + cx * 0.1) * 0.08;
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.floor(cx - 15), Math.floor(cy - 12), 30, 24);
+      ctx.globalAlpha = pulse + 0.08;
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(Math.floor(cx - 8), Math.floor(cy - 7), 16, 14);
+      ctx.restore();
+    }
+
+    function drawTinyPetals(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 2, 2);
+      ctx.fillRect(x + 5, y + 2, 2, 2);
+      ctx.fillRect(x + 2, y + 5, 2, 2);
+    }
+
+    function drawAmbientOverlays() {
+      if (!currentArea) return;
+      const t = visualClock;
+      ctx.save();
+      if (["town", "garden", "house"].includes(currentArea.id)) {
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = "#fff7fb";
+        for (let i = 0; i < 8; i++) {
+          const x = Math.floor((i * 117 + t * 9) % (VIEW_W + 60) - 40);
+          const y = 28 + (i * 37) % 130;
+          ctx.fillRect(x, y, 28, 5);
+          ctx.fillRect(x + 8, y - 4, 20, 6);
+        }
+      }
+
+      if (currentArea.id === "garden") {
+        // Cánh hoa hồng rơi nhẹ khắp khu vườn.
+        ctx.globalAlpha = 0.5;
+        for (let i = 0; i < 14; i++) {
+          const x = Math.floor((i * 73 + Math.sin(t * 0.8 + i) * 30 + t * 6) % (VIEW_W + 20) - 10);
+          const y = Math.floor((i * 47 + t * 22) % (VIEW_H + 20) - 10);
+          ctx.fillStyle = i % 2 ? "#ff9fcb" : "#ffd1e6";
+          ctx.fillRect(x, y, 3, 2);
+          ctx.fillRect(x + 1, y + 2, 2, 2);
+        }
+      }
+
+      if (currentArea.id === "stars") {
+        ctx.globalAlpha = 0.28;
+        for (let i = 0; i < 18; i++) {
+          const x = Math.floor((i * 53 + Math.sin(t + i) * 8) % VIEW_W);
+          const y = Math.floor((i * 29 + t * 10) % VIEW_H);
+          drawSparkle(x, y, i % 2 ? "#fff3a3" : "#fff7fb");
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawForegroundDecor() {
+      if (!currentArea) return;
+      ctx.save();
+      if (["town", "garden", "house"].includes(currentArea.id)) {
+        ctx.globalAlpha = 0.18;
+        for (let i = 0; i < 7; i++) {
+          const x = Math.floor((i * 91 - visualClock * 12) % (VIEW_W + 40));
+          const y = 42 + ((i * 53) % 230);
+          drawHeartShape(x, y, 1, i % 2 ? CONFIG.colors.pink : CONFIG.colors.primary);
+        }
+      }
+      if (currentArea.id === "challenge") {
+        ctx.globalAlpha = 0.10;
+        ctx.fillStyle = "#5b3a66";
+        for (let i = 0; i < 5; i++) {
+          const x = Math.floor((i * 130 + visualClock * 16) % (VIEW_W + 80) - 60);
+          const y = 44 + i * 48;
+          ctx.fillRect(x, y, 50, 7);
+          ctx.fillRect(x + 14, y - 5, 30, 5);
+        }
+      }
+      ctx.restore();
+    }
+
+
+    function drawTeaStand(x, y) {
+      drawBlobShadow(x + 2, y + 24, 28, 5);
+      ctx.fillStyle = "#8f653d";
+      ctx.fillRect(x + 3, y + 14, 25, 13);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 2, y + 9, 27, 7);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 6, y + 11, 7, 3);
+      drawMilkTeaGift(x + 8, y - 3);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 8, y + 18, 12, 2);
+    }
+
+    function drawBouquet(x, y) {
+      drawCollectibleHalo(x + 12, y + 14, CONFIG.colors.primary);
+      ctx.fillStyle = "#3f9b67";
+      ctx.fillRect(x + 12, y + 10, 2, 14);
+      ctx.fillRect(x + 9, y + 12, 2, 11);
+      ctx.fillRect(x + 15, y + 12, 2, 11);
+      drawPixelFlower(x + 5, y + 1, "#ff7ab6");
+      drawPixelFlower(x + 12, y + 2, "#ffd166");
+    }
+
+    function drawSecretRose(x, y, item) {
+      ctx.save();
+      ctx.globalAlpha = item.state.found ? 1 : 0.58 + Math.sin(visualClock * 4) * 0.16;
+      drawCollectibleHalo(x + 11, y + 12, CONFIG.colors.primary);
+      ctx.fillStyle = "#2f8d61";
+      ctx.fillRect(x + 10, y + 11, 2, 14);
+      ctx.fillRect(x + 12, y + 16, 5, 2);
+      ctx.fillStyle = CONFIG.colors.primary;
+      ctx.fillRect(x + 7, y + 4, 8, 8);
+      ctx.fillRect(x + 9, y + 2, 5, 5);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 9, y + 5, 3, 1);
+      ctx.restore();
+    }
+
+    function drawWaterFlowerObject(x, y, item) {
+      drawCollectibleHalo(x + 13, y + 14, item.state.watered ? "#70d7ee" : "#bfa2ff");
+      drawPixelFlower(x + 7, y + 5, item.state.watered ? "#70d7ee" : "#bfa2ff");
+      if (!item.state.watered) {
+        ctx.fillStyle = "#70d7ee";
+        ctx.fillRect(x + 3, y + 3, 3, 3);
+        ctx.fillRect(x + 20, y + 1, 2, 2);
+      }
+    }
+
+    function drawHappyCloud(x, y, item) {
+      const happy = player.sideQuests.cloud || item.state.happy;
+      drawCollectibleHalo(x + 14, y + 13, happy ? "#fff3a3" : "#bfa2ff");
+      ctx.fillStyle = happy ? "#fff7fb" : "#b9a7cf";
+      ctx.fillRect(x + 4, y + 10, 20, 9);
+      ctx.fillRect(x + 8, y + 6, 12, 8);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 9, y + 13, 2, 2);
+      ctx.fillRect(x + 17, y + 13, 2, 2);
+      ctx.fillRect(x + 12, y + (happy ? 16 : 17), 5, 1);
+    }
+
+    function drawClue(x, y, item) {
+      drawCollectibleHalo(x + 12, y + 14, CONFIG.colors.warm);
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(x + 5, y + 6, 18, 18);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 5, y + 6, 18, 4);
+      ctx.fillStyle = "#3b2645";
+      ctx.font = "bold 12px 'Courier New'";
+      ctx.fillText(item.data.letter || "?", x + 9, y + 21);
+    }
+
+    function drawStarBit(x, y) {
+      drawCollectibleHalo(x + 12, y + 12, CONFIG.colors.warm);
+      drawSparkle(x + 8, y + 7, "#fff3a3");
+    }
+
+    function drawShopBadge(x, y) {
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 19, y + 0, 8, 8);
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 22, y + 2, 2, 4);
+    }
+
+    function drawDayNightOverlay() {
+      if (!currentArea) return;
+      const cycle = (worldTime / 38) % 1;
+      const night = Math.max(0, Math.sin(cycle * Math.PI * 2 - Math.PI / 2));
+      ctx.save();
+      if (currentArea.id !== "stars") {
+        ctx.globalAlpha = night * 0.18;
+        ctx.fillStyle = "#2d1b4d";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        ctx.globalAlpha = Math.max(0, Math.sin(cycle * Math.PI * 2)) * 0.10;
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      }
+      if (night > 0.15 || currentArea.id === "stars") {
+        ctx.globalAlpha = currentArea.id === "stars" ? 0.38 : night * 0.28;
+        for (let i = 0; i < 28; i++) {
+          const x = (hash(i, 7) % VIEW_W);
+          const y = (hash(i, 11) % 160) + 12;
+          drawSparkle(x, y, i % 2 ? "#fff3a3" : "#fff7fb");
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawMiniMap() {
+      if (!ui.miniMap || !currentArea) return;
+      const mctx = ui.miniMap.getContext("2d");
+      const w = ui.miniMap.width, h = ui.miniMap.height;
+      mctx.imageSmoothingEnabled = false;
+      mctx.clearRect(0, 0, w, h);
+      const rows = currentArea.map.length;
+      const cols = currentArea.map[0].length;
+      const scale = Math.min(w / cols, h / rows);
+      const ox = Math.floor((w - cols * scale) / 2);
+      const oy = Math.floor((h - rows * scale) / 2);
+      const colors = { G: "#9fe6aa", P: "#d8a36d", F: "#ff9fcb", T: "#2f8d61", W: "#70d7ee", X: "#8f653d", H: "#ff7ab6", R: "#8f8a98", S: "#261844", L: "#fff3a3" };
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          mctx.fillStyle = colors[currentArea.map[y][x]] || "#b8f7c1";
+          mctx.fillRect(ox + x * scale, oy + y * scale, Math.ceil(scale), Math.ceil(scale));
+        }
+      }
+      currentArea.objects.forEach(o => {
+        if (!o.active) return;
+        mctx.fillStyle = ["gate", "door"].includes(o.type) ? "#bfa2ff" : ["heartItem", "memory", "starBit", "milkTea"].includes(o.type) ? "#ffd166" : "#ff7ab6";
+        mctx.fillRect(ox + (o.x / TILE) * scale, oy + (o.y / TILE) * scale, Math.max(2, scale), Math.max(2, scale));
+      });
+      mctx.fillStyle = "#3b2645";
+      mctx.fillRect(ox + (player.x / TILE) * scale - 1, oy + (player.y / TILE) * scale - 1, 4, 4);
+    }
+
+    function drawPixelFlower(x, y, color) {
+      ctx.fillStyle = "#3f9b67";
+      ctx.fillRect(x + 3, y + 8, 2, 8);
+      ctx.fillRect(x + 5, y + 12, 3, 2);
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 2, y + 2, 3, 3);
+      ctx.fillRect(x + 5, y + 2, 3, 3);
+      ctx.fillRect(x + 2, y + 5, 3, 3);
+      ctx.fillRect(x + 5, y + 5, 3, 3);
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.fillRect(x + 3, y + 3, 2, 1);
+      ctx.fillStyle = "#fff3a3";
+      ctx.fillRect(x + 4, y + 4, 2, 2);
+    }
+
+    function drawHeartShape(x, y, scale, color) {
+      const s = scale;
+      ctx.fillStyle = color;
+      const pixels = [
+        [1,0],[2,0],[4,0],[5,0],
+        [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+        [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+        [1,3],[2,3],[3,3],[4,3],[5,3],
+        [2,4],[3,4],[4,4],
+        [3,5]
+      ];
+      for (const [px, py] of pixels) {
+        ctx.fillRect(Math.floor(x + px * s), Math.floor(y + py * s), s, s);
+      }
+    }
+
+    function drawSparkle(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 3, y, 2, 8);
+      ctx.fillRect(x, y + 3, 8, 2);
+      ctx.fillRect(x + 2, y + 2, 4, 4);
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        const alpha = clamp(p.life / p.maxLife, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const x = Math.floor(p.x - camera.x);
+        const y = Math.floor(p.y - camera.y);
+        if (p.type === "heart") {
+          ctx.globalAlpha = alpha * 0.25;
+          drawHeartShape(x - 2, y - 2, Math.max(1, Math.floor(p.size / 2.8)), "#fff7fb");
+          ctx.globalAlpha = alpha;
+          drawHeartShape(x, y, Math.max(1, Math.floor(p.size / 3)), p.color);
+        } else if (p.type === "dust") {
+          ctx.globalAlpha = alpha * 0.5;
+          ctx.fillStyle = "#fff7fb";
+          ctx.fillRect(x, y, 3, 3);
+        } else {
+          ctx.globalAlpha = alpha * 0.4;
+          ctx.fillStyle = "#fff7fb";
+          ctx.fillRect(x - 2, y - 2, 12, 12);
+          ctx.globalAlpha = alpha;
+          drawSparkle(x, y, p.color);
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawVignette() {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, 50, VIEW_W / 2, VIEW_H / 2, VIEW_W * 0.78);
+      gradient.addColorStop(0, "rgba(255,255,255,0)");
+      if (currentArea.id === "stars") gradient.addColorStop(1, "rgba(25,12,46,0.38)");
+      else if (currentArea.id === "challenge") gradient.addColorStop(1, "rgba(91,58,102,0.18)");
+      else gradient.addColorStop(1, "rgba(255,122,182,0.12)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+      // Viền sáng nhẹ kiểu postcard pixel.
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = "#fff7fb";
+      ctx.fillRect(0, 0, VIEW_W, 3);
+      ctx.fillRect(0, 0, 3, VIEW_H);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(0, VIEW_H - 3, VIEW_W, 3);
+      ctx.fillRect(VIEW_W - 3, 0, 3, VIEW_H);
+      ctx.restore();
+    }
+
+    function gameLoop(time) {
+      const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);
+      lastTime = time;
+      update(dt);
+      draw();
+      drawCharPreviews();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function hash(x, y) {
+      let h = x * 374761393 + y * 668265263;
+      h = (h ^ (h >> 13)) * 1274126177;
+      return Math.abs(h ^ (h >> 16));
+    }
+
+    function ensureAudio() {
+      if (!audio.ctx) {
+        audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audio.ctx.state === "suspended") audio.ctx.resume();
+    }
+
+    function sfx(type) {
+      if (!audio.enabled && type !== "pickup" && type !== "memory") {
+        // Các hiệu ứng nhỏ vẫn có thể phát sau khi người chơi đã tương tác, nhưng tôn trọng nút nhạc nền.
+      }
+      if (!audio.ctx) return;
+
+      const now = audio.ctx.currentTime;
+      const gain = audio.ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.08, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+      gain.connect(audio.ctx.destination);
+
+      const notes = {
+        pickup: [720, 960],
+        piece: [640, 860, 1120],
+        complete: [523, 659, 784, 1046],
+        chest: [220, 440, 880],
+        unlock: [392, 523, 784],
+        locked: [180, 140],
+        hurt: [160, 110],
+        memory: [600, 900],
+        warp: [330, 660],
+        gift: [523, 659, 784, 1046],
+        kiss: [784, 988, 1175]
+      }[type] || [440];
+
+      notes.forEach((freq, i) => {
+        const osc = audio.ctx.createOscillator();
+        const g = audio.ctx.createGain();
+        osc.type = type === "hurt" || type === "locked" ? "sawtooth" : "square";
+        osc.frequency.setValueAtTime(freq, now + i * 0.055);
+        g.gain.setValueAtTime(0.0001, now + i * 0.055);
+        g.gain.exponentialRampToValueAtTime(0.055, now + i * 0.055 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.055 + 0.13);
+        osc.connect(g);
+        g.connect(gain);
+        osc.start(now + i * 0.055);
+        osc.stop(now + i * 0.055 + 0.16);
+      });
+    }
+
+    function toggleMusic() {
+      ensureAudio();
+      audio.enabled = !audio.enabled;
+      ui.musicBtn.textContent = audio.enabled ? "♫" : "♪";
+      ui.musicBtn.style.background = audio.enabled ? "linear-gradient(180deg,#ffd1e6,#ff9bcc)" : "rgba(255,247,252,.9)";
+
+      if (audio.enabled) {
+        startMusic();
+      } else {
+        stopMusic();
+      }
+    }
+
+    /******************************************************************
+     * NHẠC NỀN PHIÊU LƯU LÃNG MẠN (WebAudio, không cần file ngoài)
+     * - "adventure": vòng hợp âm C–G–Am–F với giai điệu chính, bass và arpeggio.
+     * - "dreamy": bản chậm mơ màng cho Cánh Đồng Sao.
+     ******************************************************************/
+    const SONGS = {
+      adventure: {
+        tempo: 230,
+        lead: "triangle",
+        chords: [
+          [261.63, 329.63, 392.00],   // C
+          [196.00, 246.94, 392.00],   // G
+          [220.00, 261.63, 329.63],   // Am
+          [174.61, 220.00, 261.63]    // F
+        ],
+        bass: [65.41, 49.00, 55.00, 43.65],
+        melody: [
+          523.25, null, 659.25, 783.99, 659.25, null, 523.25, null,
+          493.88, null, 587.33, null, 783.99, null, 587.33, null,
+          440.00, null, 523.25, 659.25, 880.00, null, 659.25, null,
+          698.46, null, 659.25, 587.33, 523.25, null, null, null
+        ]
+      },
+      dreamy: {
+        tempo: 330,
+        lead: "sine",
+        chords: [
+          [220.00, 261.63, 329.63],   // Am
+          [174.61, 220.00, 261.63],   // F
+          [261.63, 329.63, 392.00],   // C
+          [196.00, 246.94, 293.66]    // G
+        ],
+        bass: [55.00, 43.65, 65.41, 49.00],
+        melody: [
+          659.25, null, null, 523.25, null, null, 440.00, null,
+          523.25, null, null, 659.25, null, null, 880.00, null,
+          783.99, null, null, 659.25, null, 523.25, null, null,
+          587.33, null, null, 493.88, null, null, null, null
+        ]
+      }
+    };
+
+    function playNote(freq, type, vol, dur, when) {
+      const osc = audio.ctx.createOscillator();
+      const gain = audio.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, when);
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.exponentialRampToValueAtTime(vol, when + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      osc.connect(gain);
+      gain.connect(audio.ctx.destination);
+      osc.start(when);
+      osc.stop(when + dur + 0.05);
+    }
+
+    function currentSong() {
+      return (currentArea && currentArea.id === "stars") ? SONGS.dreamy : SONGS.adventure;
+    }
+
+    function musicStep() {
+      if (!audio.enabled || !audio.ctx) return;
+      const song = currentSong();
+      const now = audio.ctx.currentTime;
+      const step = audio.beat;
+      const chordIdx = Math.floor(step / 8) % song.chords.length;
+      const chord = song.chords[chordIdx];
+
+      // Bass ấm giữ nhịp.
+      if (step % 4 === 0) playNote(song.bass[chordIdx], "triangle", 0.07, 0.5, now);
+
+      // Arpeggio lấp lánh chạy theo hợp âm.
+      playNote(chord[step % 3], "square", 0.014, 0.22, now);
+
+      // Lớp đệm (pad) mỗi lần đổi hợp âm.
+      if (step % 8 === 0) chord.forEach(f => playNote(f / 2, "sine", 0.022, 1.7, now));
+
+      // Giai điệu chính.
+      const m = song.melody[step % song.melody.length];
+      if (m) playNote(m, song.lead, 0.05, 0.45, now);
+
+      // Chuông sao điểm xuyết.
+      if (step % 16 === 12) playNote(1567.98, "sine", 0.016, 0.9, now);
+
+      audio.beat += 1;
+    }
+
+    function startMusic() {
+      stopMusic();
+      audio.beat = 0;
+      audio.musicTimer = setInterval(musicStep, currentSong().tempo);
+    }
+
+    // Đổi bản nhạc khi sang khu vực có mood khác (vd: Cánh Đồng Sao).
+    function refreshMusic() {
+      if (audio.enabled && audio.ctx) startMusic();
+    }
+
+    function stopMusic() {
+      if (audio.musicTimer) {
+        clearInterval(audio.musicTimer);
+        audio.musicTimer = null;
+      }
+    }
+
+    window.addEventListener("keydown", event => {
+      ensureAudio();
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Spacebar"].includes(key)) event.preventDefault();
+
+      if (dialog.active && (key === "Enter" || key === "e" || key === " ")) {
+        nextDialog();
+        return;
+      }
+
+      if (key === "e") {
+        interact();
+        return;
+      }
+
+      keys[key] = true;
+    });
+
+    window.addEventListener("keyup", event => {
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      keys[key] = false;
+    });
+
+    ui.nextBtn.addEventListener("click", () => {
+      ensureAudio();
+      nextDialog();
+    });
+
+    ui.musicBtn.addEventListener("click", toggleMusic);
+
+    let selectedCharId = CONFIG.characters[0].id;
+
+    function buildCharSelect() {
+      const grid = document.getElementById("charGrid");
+      grid.innerHTML = "";
+      CONFIG.characters.forEach(c => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "charCard" + (c.id === selectedCharId ? " selected" : "");
+        card.dataset.charId = c.id;
+        card.innerHTML = `<canvas width="32" height="40" data-char="${c.id}"></canvas><div>${c.name}</div><small>${c.desc}</small>`;
+        card.addEventListener("click", () => {
+          ensureAudio();
+          selectedCharId = c.id;
+          grid.querySelectorAll(".charCard").forEach(el => el.classList.toggle("selected", el.dataset.charId === c.id));
+          sfx("pickup");
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    function drawCharPreviews() {
+      if (ui.startOverlay.classList.contains("hidden")) return;
+      document.querySelectorAll("#charGrid canvas").forEach(cv => {
+        const c = CONFIG.characters.find(ch => ch.id === cv.dataset.char);
+        if (!c) return;
+        const g = cv.getContext("2d");
+        g.imageSmoothingEnabled = false;
+        g.clearRect(0, 0, cv.width, cv.height);
+        drawHeroSprite(g, 5, 9, { dir: "down", moving: false, step: 0, clock: visualClock, charDef: c, outfit: c.outfit });
+      });
+    }
+
+    ui.startBtn.addEventListener("click", () => {
+      ensureAudio();
+      const chosenName = document.getElementById("playerNameInput").value.trim();
+      player.name = chosenName || CONFIG.loverName;
+      player.charId = selectedCharId;
+      gameStarted = true;
+      ui.startOverlay.classList.add("hidden");
+      showChapterBanner(CONFIG.chapters.town);
+      openDialog(CONFIG.openingStory.concat([
+        "Chào mừng {name} đến với Love Quest Pixel Adventure!",
+        "Hãy đi quanh bản đồ, nói chuyện với cư dân, thử mini game trà sữa và thu thập đủ 3 Mảnh Ghép Trái Tim nhé."
+      ]));
+      if (!audio.enabled) toggleMusic();
+    });
+
+    ui.submitPassword.addEventListener("click", checkPassword);
+    ui.closePassword.addEventListener("click", closePassword);
+    ui.passwordInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") checkPassword();
+      if (event.key === "Escape") closePassword();
+    });
+
+    ui.restartBtn.addEventListener("click", () => {
+      ui.finalOverlay.classList.add("hidden");
+      resetGame();
+      gameStarted = true;
+    });
+
+    ui.giftBtn.addEventListener("click", openGiftLink);
+
+    ui.saveBtn.addEventListener("click", saveGame);
+    ui.loadBtn.addEventListener("click", loadGame);
+    ui.shopBtn.addEventListener("click", openShop);
+    ui.skinBtn.addEventListener("click", openSkinMenu);
+    ui.achBtn.addEventListener("click", openAchievements);
+    ui.logBtn.addEventListener("click", openSideLog);
+    ui.shakeTeaBtn.addEventListener("click", shakeTea);
+    ui.closeTea.addEventListener("click", () => { teaGame.active = false; ui.teaOverlay.classList.add("hidden"); });
+
+    document.querySelectorAll(".dpad button[data-dir]").forEach(button => {
+      const dir = button.dataset.dir;
+      const on = event => {
+        event.preventDefault();
+        if (event.currentTarget.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId);
+        ensureAudio();
+        mobile[dir] = true;
+      };
+      const off = event => {
+        event.preventDefault();
+        mobile[dir] = false;
+      };
+      button.addEventListener("pointerdown", on);
+      button.addEventListener("pointerup", off);
+      button.addEventListener("pointercancel", off);
+      button.addEventListener("pointerleave", off);
+    });
+
+    ui.interactTouch.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      ensureAudio();
+      interact();
+    });
+
+    window.addEventListener("blur", () => {
+      for (const key of Object.keys(keys)) keys[key] = false;
+      mobile.up = mobile.down = mobile.left = mobile.right = false;
+    });
+
+    buildCharSelect();
+    resetGame();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
