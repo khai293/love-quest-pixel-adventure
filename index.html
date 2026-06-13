@@ -858,6 +858,8 @@
         garden: "Chương 2 · Khu Vườn Kỷ Niệm",
         challenge: "Chương 3 · Con Đường Thử Thách",
         house: "Chương 4 · Ngôi Nhà Bí Mật",
+        hall: "Chương 5 · Giảng Đường Khóa Luận",
+        festival: "Chương 6 · Lễ Hội Ánh Sao",
         stars: "Chương Cuối · Cánh Đồng Sao"
       },
 
@@ -879,6 +881,17 @@
         house: [
           "Ngôi nhà bí mật là nơi Người Gửi Quà cất điều khó nói nhất.",
           "Cánh cửa chỉ mở khi {name} đoán đúng lời cậu ấy thì thầm mỗi ngày."
+        ],
+        hall: [
+          "Cánh cửa mở ra... một giảng đường lớn rực ánh đèn.",
+          "Hôm nay là ngày {name} bảo vệ khóa luận tốt nghiệp 🎓",
+          "Cả hội đồng và những người thương đều đến để lắng nghe {name}.",
+          "Hãy bước lên bục, hít một hơi thật sâu, và toả sáng nhé!"
+        ],
+        festival: [
+          "Bảo vệ xong rồi! Cả thế giới nhỏ mở hội ăn mừng {name} 🎉",
+          "Đèn lồng, pháo hoa pixel và trà sữa miễn phí khắp nơi.",
+          "Hãy thắp sáng những chiếc đèn lồng chúc mừng trước khi tới Cánh Đồng Sao."
         ],
         stars: [
           "Cánh Đồng Sao — nơi mọi kỷ niệm hóa thành ánh sáng.",
@@ -958,18 +971,20 @@
 
       finalLetter: [
         "Gửi chị bé,",
+        "Trước hết: CHÚC MỪNG chị bé đã bảo vệ khóa luận thành công nha! 🎓💗 Anh tự hào về chị bé lắm đó.",
         "Anh tạo trò chơi nhỏ này để chị bé có một món quà thật riêng. Có thể nó không hoàn hảo, nhưng từng chi tiết trong game đều là điều anh muốn gửi đến chị bé: một chút vui vẻ, một chút bất ngờ, và thật nhiều sự quan tâm.",
+        "Cả một hành trình sáu chương vừa rồi là cách anh muốn nói: dù chị bé đi qua bao thử thách, anh vẫn luôn ở đây cổ vũ.",
         "Mong rằng khi chơi đến đây, chị bé sẽ mỉm cười một chút.",
-        "Cảm ơn chị bé vì đã bước vào thế giới nhỏ này của anh.",
         "P/s: Ly trà sữa cuối cùng là do chính tay chị bé pha đó — nhớ gửi ảnh cho anh nhà nha 🧋📸",
-        "Thương chị bé thật nhiều."
+        "Thương chị bé thật nhiều, tân cử nhân của anh."
       ],
 
       openingStory: [
         "Ngày xửa ngày xưa, có một người lặng lẽ gom từng kỷ niệm nhỏ...",
         "Người ấy được gọi là Người Gửi Quà — vì món quà nào của cậu cũng giấu một nhịp tim.",
-        "Cậu dựng nên cả một thế giới pixel: một thị trấn, một khu vườn, một con đường thử thách và một cánh đồng sao.",
-        "Nhưng thế giới ấy chỉ thật sự sống dậy khi có một người đặc biệt bước vào...",
+        "Cậu dựng nên cả một thế giới pixel sáu chương: thị trấn, khu vườn, con đường thử thách, ngôi nhà bí mật, một giảng đường, và một lễ hội ánh sao.",
+        "Cậu làm tất cả để mừng một điều rất lớn mà người ấy vừa làm được...",
+        "Nhưng thế giới ấy chỉ thật sự sống dậy khi có một người đặc biệt bước vào.",
         "Và hôm nay, {name} chính là người được mời 💗"
       ],
 
@@ -987,14 +1002,27 @@
       shopItems: [
         { id: "candyPack", name: "Túi kẹo ngọt", cost: 3, desc: "Hồi đầy tim năng lượng." },
         { id: "peaceCharm", name: "Bùa bình yên", cost: 5, desc: "Chặn một lần mất tim ở đường thử thách." },
-        { id: "ribbonSkin", name: "Nơ hồng pixel", cost: 6, desc: "Mở skin Nơ Hồng trong tủ đồ." }
+        { id: "ribbonSkin", name: "Nơ hồng pixel", cost: 6, desc: "Mở skin Nơ Hồng trong tủ đồ.", skin: "ribbon" },
+        { id: "skinSakura", name: "Skin Sakura 🌸", cost: 8, desc: "Thiếu nữ hoa anh đào, có cánh hoa trên tóc.", skin: "sakura" },
+        { id: "skinSailor", name: "Skin Thủy Thủ ⭐", cost: 9, desc: "Đồng phục thủy thủ anime, nơ xanh xinh.", skin: "sailor" },
+        { id: "skinNeko", name: "Skin Mèo Anime 🐱", cost: 10, desc: "Tai mèo dễ thương kiểu nekomimi.", skin: "neko" },
+        { id: "skinKitsune", name: "Skin Hồ Ly 🦊", cost: 12, desc: "Tai cáo cam rực, phong cách kitsune.", skin: "kitsune" },
+        { id: "skinAngel", name: "Skin Thiên Sứ 😇", cost: 14, desc: "Vầng hào quang lấp lánh trên đầu.", skin: "angel" },
+        { id: "skinMagical", name: "Skin Ma Pháp Thiếu Nữ ✨", cost: 16, desc: "Magical girl tím sao, lung linh nhất tủ đồ.", skin: "magical" }
       ],
 
       skins: [
         { id: "classic", name: "Chibi hồng", primary: "#ff7ab6", hair: "#6b3b5f", unlocked: true },
         { id: "violet", name: "Áo tím sao", primary: "#bfa2ff", hair: "#5b3a66", unlocked: false },
-        { id: "ribbon", name: "Nơ hồng trà sữa", primary: "#ff9fcb", hair: "#7a4f8a", unlocked: false },
-        { id: "milktea", name: "Trà sữa ấm", primary: "#d29a65", hair: "#6b3b5f", unlocked: false }
+        { id: "ribbon", name: "Nơ hồng trà sữa", primary: "#ff9fcb", hair: "#7a4f8a", acc: "bow", unlocked: false },
+        { id: "milktea", name: "Trà sữa ấm", primary: "#d29a65", hair: "#6b3b5f", unlocked: false },
+        { id: "sakura", name: "Sakura 🌸", primary: "#ff8fb0", hair: "#ffb3c6", acc: "blossom", unlocked: false },
+        { id: "sailor", name: "Thủy thủ ⭐", primary: "#5b8dd9", hair: "#3b2645", acc: "sailor", unlocked: false },
+        { id: "neko", name: "Mèo anime 🐱", primary: "#ffd166", hair: "#5b3a66", acc: "catears", unlocked: false },
+        { id: "kitsune", name: "Hồ ly 🦊", primary: "#ff8a3d", hair: "#e36a2a", acc: "foxears", unlocked: false },
+        { id: "angel", name: "Thiên sứ 😇", primary: "#fff3d6", hair: "#ffe08a", acc: "halo", unlocked: false },
+        { id: "magical", name: "Ma pháp thiếu nữ ✨", primary: "#c07bff", hair: "#9b5de5", acc: "star", unlocked: false },
+        { id: "grad", name: "Tân khoa 🎓", primary: "#2d2d44", hair: "#3b2645", acc: "gradcap", unlocked: false }
       ]
     };
 
@@ -1116,7 +1144,7 @@
     const keys = Object.create(null);
     const mobile = { up: false, down: false, left: false, right: false };
 
-    const STORAGE_KEY = "loveQuestPixelAdventureSave_v5";
+    const STORAGE_KEY = "loveQuestPixelAdventureSave_v6";
     const collectedIds = new Set();
     const achievements = [
       { id: "first_piece", name: "Mảnh Ghép Đầu Tiên", desc: "Nhận mảnh ghép trái tim số 1." },
@@ -1125,6 +1153,10 @@
       { id: "side_helper", name: "Người Tốt Của Thị Trấn", desc: "Hoàn thành đủ nhiệm vụ phụ." },
       { id: "secret_found", name: "Thám Tử Tim Hồng", desc: "Tìm được bí mật ẩn." },
       { id: "no_hurt", name: "Chị Bé Can Đảm", desc: "Mở rương thử thách khi chưa va chướng ngại." },
+      { id: "thesis_master", name: "Tân Khoa Xuất Sắc 🎓", desc: "Bảo vệ khóa luận thành công ở Giảng Đường." },
+      { id: "festival_star", name: "Ngôi Sao Lễ Hội 🎉", desc: "Thắp sáng đủ đèn lồng chúc mừng." },
+      { id: "pet_friend", name: "Bạn Của Muôn Loài 🐾", desc: "Làm quen đủ 4 bé pet trong thế giới." },
+      { id: "fashionista", name: "Tín Đồ Thời Trang 👗", desc: "Mở khóa từ 5 skin trở lên." },
       { id: "sweet_ending", name: "Ending Ngọt Nhất", desc: "Mở kết thúc với độ rung rinh cao." }
     ];
 
@@ -1161,6 +1193,11 @@
       gotPiece1: false,
       gotPiece2: false,
       gotPiece3: false,
+      housePassed: false,
+      gotDiploma: false,
+      festivalReady: false,
+      lanternsLit: 0,
+      crittersMet: 0,
       finalGiftOpened: false,
       love: 0,
       stars: 0,
@@ -1251,6 +1288,8 @@
         garden: createGarden(),
         challenge: createChallenge(),
         house: createHouse(),
+        hall: createHall(),
+        festival: createFestival(),
         stars: createStars()
       };
       return { areas };
@@ -1556,6 +1595,113 @@
       };
     }
 
+    function createHall() {
+      // Giảng đường bảo vệ khóa luận: sàn lát đá hoa, sân khấu phía trên.
+      const map = makeMap(22, 16, "M");
+      rect(map, 0, 0, 22, 1, "X");
+      rect(map, 0, 15, 22, 1, "X");
+      rect(map, 0, 0, 1, 16, "X");
+      rect(map, 21, 0, 1, 16, "X");
+
+      // Bệ sân khấu phía trên (dùng tile nhà hồng làm phông nền sân khấu).
+      rect(map, 3, 1, 16, 2, "H");
+      // Thảm đỏ lối đi giữa.
+      rect(map, 10, 4, 2, 11, "P");
+
+      const objects = [];
+      // Bục thuyết trình — nơi bảo vệ khóa luận.
+      objects.push(obj("podium", "podium", 10, 5, {
+        w: 30, h: 26, solid: true,
+        interact: target => defendThesis(target)
+      }));
+
+      // Hội đồng chấm khóa luận.
+      objects.push(obj("judge_1", "npc", 5, 4, { solid: true, data: { role: "judge", color: "#7bdff2" }, interact: () => openDialog(["Giám khảo 1 📋: Phần trình bày của {name} rất mạch lạc và đầy tâm huyết!"]) }));
+      objects.push(obj("judge_2", "npc", 16, 4, { solid: true, data: { role: "judge", color: "#ffb86b" }, interact: () => openDialog(["Giám khảo 2 📋: Hội đồng đánh giá rất cao. {name} xứng đáng điểm tuyệt đối!"]) }));
+      objects.push(obj("judge_3", "npc", 4, 9, { solid: true, data: { role: "judge", color: "#bfa2ff" }, interact: () => openDialog(["Cô hướng dẫn 🌷: Cô tự hào về {name} lắm. Bước lên bục và toả sáng đi nào!"]) }));
+
+      // Hàng ghế khán giả hai bên.
+      [[4,11],[6,11],[4,13],[6,13],[15,11],[17,11],[15,13],[17,13]].forEach(([x,y], i) => {
+        objects.push(obj(`seat_${i}`, "seat", x, y, { w: 24, h: 22 }));
+      });
+
+      objects.push(obj("gate_hall", "gate", 20, 8, {
+        w: 28, h: 32, solid: true,
+        data: { to: "festival", require: "gotDiploma" },
+        interact: () => useGate("festival", "gotDiploma")
+      }));
+
+      return {
+        id: "hall",
+        name: "Giảng Đường Khóa Luận",
+        map: toRows(map),
+        start: { tx: 10, ty: 13 },
+        objects,
+        quest: () => player.gotDiploma
+          ? "Nhiệm vụ: ra cổng phải để tới Lễ Hội Ánh Sao ăn mừng!"
+          : "Nhiệm vụ: bước lên bục (giữa giảng đường) và nhấn E để bảo vệ khóa luận.",
+        theme: "hall"
+      };
+    }
+
+    function createFestival() {
+      // Lễ hội đêm ăn mừng: quảng trường có đèn lồng, sân khấu, pháo hoa.
+      const map = makeMap(26, 18, "G");
+      rect(map, 0, 0, 26, 1, "X");
+      rect(map, 0, 17, 26, 1, "X");
+      rect(map, 0, 0, 1, 18, "X");
+      rect(map, 25, 0, 1, 18, "X");
+
+      // Quảng trường lát gạch.
+      rect(map, 3, 8, 20, 3, "P");
+      rect(map, 11, 3, 3, 13, "P");
+      rect(map, 6, 5, 2, 9, "F");
+      rect(map, 18, 5, 2, 9, "F");
+
+      // Sân khấu nhỏ phía trên.
+      rect(map, 9, 2, 7, 2, "H");
+      [[2,2],[23,2],[2,15],[23,15],[5,14],[20,14]].forEach(([x,y]) => put(map, x, y, "T"));
+
+      const objects = [];
+      objects.push(obj("npc_festival", "npc", 12, 4, { solid: true, data: { role: "host", color: "#ff9fcb" }, interact: () => openDialog(["MC Lễ Hội 🎤: Xin một tràng pháo tay cho tân khoa {name} nào!", "MC Lễ Hội 🎤: Thắp sáng đủ 5 chiếc đèn lồng chúc mừng để mở đường tới Cánh Đồng Sao nha!"]) }));
+
+      // Năm chiếc đèn lồng cần thắp sáng.
+      [[5,7],[20,7],[7,12],[18,12],[13,13]].forEach(([x,y], i) => {
+        objects.push(obj(`lantern_${i}`, "lantern", x, y, {
+          interact: target => lightLantern(target)
+        }));
+      });
+
+      // Quầy trà sữa miễn phí (trang trí, hồi năng lượng).
+      objects.push(obj("festival_stall", "teaStand", 4, 11, {
+        w: 30, h: 28,
+        interact: () => { player.energy = player.maxEnergy; addLove(2, "trà sữa lễ hội"); openDialog(["Quầy trà sữa lễ hội rót tặng {name} một ly mát lạnh 🧋", "Năng lượng đầy lại rồi nè!"]); sfx("pickup"); }
+      }));
+
+      objects.push(obj("critter_corgi", "critter", 21, 11, {
+        data: { kind: "puppy", name: "Cọc Lễ Hội", hello: "đeo nơ hội chợ, sủa mừng {name} 🐶🎉", again: "ngậm một que kẹo bông chạy vòng quanh {name} 🍡" },
+        interact: target => petCritter(target)
+      }));
+
+      objects.push(obj("gate_festival", "gate", 24, 9, {
+        w: 28, h: 32, solid: true,
+        data: { to: "stars", require: "festivalReady" },
+        interact: () => useGate("stars", "festivalReady")
+      }));
+
+      return {
+        id: "festival",
+        name: "Lễ Hội Ánh Sao",
+        map: toRows(map),
+        start: { tx: 2, ty: 9 },
+        objects,
+        quest: () => player.festivalReady
+          ? "Nhiệm vụ: ra cổng phải để tới Cánh Đồng Sao nhận quà cuối!"
+          : `Nhiệm vụ: thắp sáng đèn lồng chúc mừng (${player.lanternsLit}/5).`,
+        theme: "festival"
+      };
+    }
+
     function createStars() {
       const map = makeMap(28, 18, "S");
       rect(map, 0, 0, 28, 1, "X");
@@ -1687,8 +1833,8 @@
       butterflies.length = 0;
       if (["town", "garden", "house"].includes(currentArea.id)) {
         for (let i = 0; i < 7; i++) butterflies.push(makeButterfly(false));
-      } else if (currentArea.id === "stars") {
-        for (let i = 0; i < 10; i++) butterflies.push(makeButterfly(true));
+      } else if (currentArea.id === "stars" || currentArea.id === "festival") {
+        for (let i = 0; i < 12; i++) butterflies.push(makeButterfly(true));
       }
     }
 
@@ -1742,6 +1888,11 @@
         gotPiece1: false,
         gotPiece2: false,
         gotPiece3: false,
+        housePassed: false,
+        gotDiploma: false,
+        festivalReady: false,
+        lanternsLit: 0,
+        crittersMet: 0,
         finalGiftOpened: false,
         love: 0,
         stars: 0,
@@ -2081,10 +2232,63 @@
       sfx("memory");
       if (!target.state.petted) {
         target.state.petted = true;
+        player.crittersMet += 1;
         addLove(2, `làm quen ${k.name}`);
+        if (player.crittersMet >= 4) unlockAchievement("pet_friend");
         openDialog([`${k.name} ${k.hello}`, "(+2% rung rinh khi làm quen bạn nhỏ mới 🐾)"]);
       } else {
         openDialog([`${k.name} ${k.again}`]);
+      }
+    }
+
+    // Bảo vệ khóa luận ở Giảng Đường (Chương 5).
+    function defendThesis(target) {
+      if (player.gotDiploma) {
+        openDialog(["Tấm bằng đã nằm gọn trong tay {name} rồi đó. Hội đồng vẫn đang vỗ tay không ngớt 👏"]);
+        return;
+      }
+      openDialog([
+        "{name} bước lên bục, tim đập thình thịch...",
+        "\"Em xin phép bắt đầu phần bảo vệ khóa luận của mình ạ!\"",
+        "{name} trình bày trôi chảy, trả lời câu hỏi hội đồng thật tự tin.",
+        "Hội đồng hội ý... rồi đồng loạt mỉm cười.",
+        "🎓 CHÚC MỪNG! {name} đã BẢO VỆ KHÓA LUẬN THÀNH CÔNG! 🎉",
+        "Mở khóa skin Tân Khoa 🎓 và nhận 6 sao nhỏ ⭐"
+      ], () => {
+        player.gotDiploma = true;
+        if (!player.unlockedSkins.includes("grad")) player.unlockedSkins.push("grad");
+        addLove(15, "bảo vệ khóa luận thành công");
+        addStars(6);
+        unlockAchievement("thesis_master");
+        completeQuest();
+        burst(player.x + player.w / 2, player.y - 6, CONFIG.colors.warm, 60, "spark");
+        burst(player.x + player.w / 2, player.y - 6, CONFIG.colors.primary, 40, "heart");
+        showToast("Tân khoa của anh đây rồi! 🎓💗");
+      });
+      sfx("complete");
+    }
+
+    // Thắp đèn lồng ở Lễ Hội Ánh Sao (Chương 6).
+    function lightLantern(target) {
+      if (target.state.lit) {
+        openDialog(["Chiếc đèn lồng này đã sáng rồi, ấm áp ghê 🏮"]);
+        return;
+      }
+      target.state.lit = true;
+      markCollected(target.id);
+      player.lanternsLit += 1;
+      addLove(2, "thắp đèn lồng chúc mừng");
+      burst(target.x + 12, target.y + 8, CONFIG.colors.warm, 18, "spark");
+      sfx("pickup");
+      if (player.lanternsLit >= 5 && !player.festivalReady) {
+        player.festivalReady = true;
+        addStars(4);
+        unlockAchievement("festival_star");
+        completeQuest();
+        openDialog(["Cả 5 chiếc đèn lồng cùng bừng sáng! 🏮🏮🏮🏮🏮", "Pháo hoa pixel nở rộ trên bầu trời lễ hội 🎆", "Con đường tới Cánh Đồng Sao đã mở. Nhận 4 sao nhỏ ⭐"]);
+        burst(player.x + player.w / 2, player.y - 20, CONFIG.colors.primary, 50, "heart");
+      } else {
+        openDialog([`Đèn lồng bừng sáng! Đã thắp ${player.lanternsLit}/5 chiếc 🏮`]);
       }
     }
 
@@ -2196,7 +2400,12 @@
       player.boughtItems.push(id);
       if (id === "candyPack") player.energy = player.maxEnergy;
       if (id === "peaceCharm") player.shield += 1;
-      if (id === "ribbonSkin" && !player.unlockedSkins.includes("ribbon")) player.unlockedSkins.push("ribbon");
+      // Mở khóa skin nếu món đồ gắn với một skin.
+      if (item.skin && !player.unlockedSkins.includes(item.skin)) {
+        player.unlockedSkins.push(item.skin);
+        showToast(`Mở khóa skin: ${item.name} 🎀`);
+        if (player.unlockedSkins.length >= 5) unlockAchievement("fashionista");
+      }
       addLove(3, "mua đồ dễ thương");
       sfx("complete");
       renderShop();
@@ -2267,6 +2476,7 @@
           x: player.x, y: player.y, area: currentArea.id,
           energy: player.energy, pieces: player.pieces, townHearts: player.townHearts,
           memoriesRead: player.memoriesRead, gotPiece1: player.gotPiece1, gotPiece2: player.gotPiece2, gotPiece3: player.gotPiece3,
+          housePassed: player.housePassed, gotDiploma: player.gotDiploma, festivalReady: player.festivalReady, lanternsLit: player.lanternsLit, crittersMet: player.crittersMet,
           finalGiftOpened: player.finalGiftOpened, love: player.love, stars: player.stars, shield: player.shield,
           flawlessChallenge: player.flawlessChallenge, cakeBaked: player.cakeBaked, hasPet: player.hasPet, customTea: player.customTea, teaPerfect: player.teaPerfect,
           currentSkin: player.currentSkin, unlockedSkins: player.unlockedSkins, boughtItems: player.boughtItems,
@@ -2304,12 +2514,13 @@
         area.objects.forEach(item => {
           if (collectedIds.has(item.id)) {
             if (["heartItem", "candy", "bouquet", "starBit"].includes(item.type)) item.active = false;
-            if (["memory", "waterFlower", "clue", "happyCloud", "secret", "chest"].includes(item.type)) {
+            if (["memory", "waterFlower", "clue", "happyCloud", "secret", "chest", "lantern"].includes(item.type)) {
               item.state.read = true;
               item.state.watered = true;
               item.state.taken = true;
               item.state.happy = true;
               item.state.found = true;
+              item.state.lit = true;
               if (item.type === "chest") item.state.open = true;
             }
           }
@@ -2337,8 +2548,9 @@
         closePassword();
         showToast("Cánh cửa đã mở! 💗");
         addLove(6, "mở khóa nhà bí mật");
+        player.housePassed = true;
         sfx("unlock");
-        setArea("stars");
+        setArea("hall");
       } else {
         ui.passwordError.textContent = "Sai rồi nè, thử nghĩ ngọt hơn chút đi 😽";
         sfx("locked");
@@ -2796,7 +3008,7 @@
           else item.y = item.state.baseY + sway;
         }
 
-        if (["npc", "shopNpc", "gate", "memory", "chest", "door", "gift", "milkTea", "teaStand", "bouquet", "secret", "waterFlower", "happyCloud", "clue", "starBit", "critter"].includes(item.type)) {
+        if (["npc", "shopNpc", "gate", "memory", "chest", "door", "gift", "milkTea", "teaStand", "bouquet", "secret", "waterFlower", "happyCloud", "clue", "starBit", "critter", "podium", "lantern"].includes(item.type)) {
           const d = distance(player, item);
           if (d < 45 && d < nearestDist) {
             nearestDist = d;
@@ -3098,6 +3310,20 @@
         return;
       }
 
+      if (tile === "M") {
+        // Sàn đá hoa giảng đường: ô caro kem nhạt, viền sáng.
+        const checker = (tx + ty) % 2 === 0;
+        ctx.fillStyle = checker ? "#fbeede" : "#f3e0c9";
+        ctx.fillRect(sx, sy, TILE, TILE);
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.fillRect(sx, sy, TILE, 2);
+        ctx.fillRect(sx, sy, 2, TILE);
+        ctx.fillStyle = "rgba(150, 110, 80, 0.14)";
+        ctx.fillRect(sx, sy + TILE - 2, TILE, 2);
+        ctx.fillRect(sx + TILE - 2, sy, 2, TILE);
+        return;
+      }
+
       drawGrassTile(sx, sy, tx, ty);
       if (tile === "G") return;
 
@@ -3165,6 +3391,17 @@
         ctx.fillRect(sx + 9, sy + 13, 7, 6);
         ctx.fillStyle = "#54c77d";
         ctx.fillRect(sx + 8, sy + 15, 6, 3);
+      }
+      // Bụi cỏ cao kiểu Pokémon, đung đưa nhẹ.
+      if (hash(tx + 2, ty + 8) % 9 === 0) {
+        const sw = Math.round(Math.sin(visualClock * 2 + tx) * 1);
+        ctx.fillStyle = "#3f9b5a";
+        ctx.fillRect(sx + 6 + sw, sy + 18, 3, 8);
+        ctx.fillRect(sx + 11, sy + 16, 3, 10);
+        ctx.fillRect(sx + 16 - sw, sy + 19, 3, 7);
+        ctx.fillStyle = "#5cc56a";
+        ctx.fillRect(sx + 11, sy + 16, 1, 5);
+        ctx.fillRect(sx + 7 + sw, sy + 19, 1, 4);
       }
       // Hoa cúc trắng nhỏ rải rác.
       if (hash(tx + 5, ty + 1) % 11 === 0) {
@@ -3428,7 +3665,75 @@
         case "critter":
           drawCritter(x, y, item);
           break;
+        case "podium":
+          drawPodium(x, y, item);
+          break;
+        case "lantern":
+          drawLantern(x, y, item);
+          break;
+        case "seat":
+          drawSeat(x, y);
+          break;
       }
+    }
+
+    function drawPodium(x, y, item) {
+      drawBlobShadow(x + 2, y + 22, 26, 5);
+      // Bục gỗ trang trọng có thảm đỏ và huy hiệu.
+      ctx.fillStyle = "#7a4a22";
+      ctx.fillRect(x + 6, y + 6, 18, 20);
+      ctx.fillStyle = "#a96a32";
+      ctx.fillRect(x + 8, y + 8, 14, 16);
+      ctx.fillStyle = "#b64a7f";
+      ctx.fillRect(x + 4, y + 4, 22, 5);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(x + 13, y + 12, 4, 6);
+      ctx.fillStyle = "#fff3a3";
+      ctx.fillRect(x + 14, y + 13, 2, 2);
+      // Micro nhỏ.
+      ctx.fillStyle = "#3b2645";
+      ctx.fillRect(x + 14, y - 2, 2, 8);
+      ctx.fillStyle = "#8f8a98";
+      ctx.fillRect(x + 13, y - 4, 4, 3);
+      if (!player.gotDiploma) drawSparkle(x + 24, y - 2, "#fff3a3");
+    }
+
+    function drawLantern(x, y, item) {
+      const lit = item.state.lit;
+      const sway = Math.sin(visualClock * 2 + x * 0.1) * 1;
+      const lx = Math.floor(x + 8 + sway);
+      drawBlobShadow(x + 4, y + 22, 16, 4);
+      // Dây treo.
+      ctx.fillStyle = "#7a4a22";
+      ctx.fillRect(lx + 5, y - 4, 2, 6);
+      // Thân đèn lồng.
+      if (lit) drawCollectibleHalo(lx + 6, y + 10, CONFIG.colors.warm);
+      ctx.fillStyle = lit ? "#ff5a4f" : "#9b5e5a";
+      ctx.fillRect(lx, y + 2, 12, 14);
+      ctx.fillRect(lx + 2, y, 8, 18);
+      ctx.fillStyle = lit ? "#ffd166" : "#6f4a48";
+      ctx.fillRect(lx + 3, y + 5, 6, 8);
+      if (lit) {
+        ctx.fillStyle = "#fff3a3";
+        ctx.fillRect(lx + 5, y + 7, 2, 4);
+      }
+      ctx.fillStyle = "#b64a7f";
+      ctx.fillRect(lx + 2, y - 1, 8, 2);
+      ctx.fillRect(lx + 2, y + 16, 8, 2);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(lx + 4, y + 18, 4, 3);
+      if (!lit) drawSparkle(lx + 12, y, "#fff7fb");
+    }
+
+    function drawSeat(x, y) {
+      drawBlobShadow(x + 3, y + 20, 18, 4);
+      ctx.fillStyle = "#7a4f8a";
+      ctx.fillRect(x + 4, y + 6, 16, 12);
+      ctx.fillStyle = "#9d72ad";
+      ctx.fillRect(x + 4, y + 4, 16, 4);
+      ctx.fillStyle = "#5b3a66";
+      ctx.fillRect(x + 5, y + 17, 3, 4);
+      ctx.fillRect(x + 16, y + 17, 3, 4);
     }
 
     function drawCritter(x, y, item) {
@@ -3513,8 +3818,9 @@
       const clock = opts.clock || 0;
       const charDef = opts.charDef;
       const outfit = opts.outfit || charDef.outfit;
-      const hair = charDef.hair;
+      const hair = opts.hairOverride || charDef.hair;
       const skinTone = charDef.skinTone;
+      const accessory = opts.accessory || null;
 
       const bob = moving ? Math.sin(step) * 1.8 : Math.sin(clock * 2.2) * 0.35;
       const foot = moving ? Math.sign(Math.sin(step)) : 0;
@@ -3614,6 +3920,75 @@
       g.fillRect(x + 12, baseY + 23, 4, 3 + Math.max(0, -foot));
       g.fillStyle = "#fff7fb";
       if (moving) g.fillRect(x + (foot > 0 ? 5 : 12), baseY + 26, 4, 1);
+
+      // Phụ kiện skin anime (vẽ trên cùng, trên đầu nhân vật).
+      drawAccessory(g, x, baseY, accessory, clock);
+    }
+
+    function drawAccessory(g, x, baseY, acc, clock) {
+      if (!acc) return;
+      if (acc === "catears") {
+        g.fillStyle = "#3b2645";
+        g.fillRect(x + 4, baseY - 4, 4, 5);
+        g.fillRect(x + 13, baseY - 4, 4, 5);
+        g.fillStyle = "#ff9fcb";
+        g.fillRect(x + 5, baseY - 3, 2, 3);
+        g.fillRect(x + 14, baseY - 3, 2, 3);
+      } else if (acc === "foxears") {
+        g.fillStyle = "#e36a2a";
+        g.fillRect(x + 3, baseY - 5, 5, 6);
+        g.fillRect(x + 13, baseY - 5, 5, 6);
+        g.fillStyle = "#fff7fb";
+        g.fillRect(x + 4, baseY - 2, 3, 3);
+        g.fillRect(x + 14, baseY - 2, 3, 3);
+      } else if (acc === "halo") {
+        const glow = 0.5 + Math.sin(clock * 3) * 0.3;
+        g.save();
+        g.globalAlpha = glow;
+        g.fillStyle = "#fff3a3";
+        g.fillRect(x + 5, baseY - 5, 11, 2);
+        g.fillRect(x + 4, baseY - 4, 2, 2);
+        g.fillRect(x + 15, baseY - 4, 2, 2);
+        g.restore();
+      } else if (acc === "bow") {
+        g.fillStyle = "#ff4f8b";
+        g.fillRect(x + 3, baseY - 2, 4, 5);
+        g.fillRect(x + 14, baseY - 2, 4, 5);
+        g.fillStyle = "#ffd1e6";
+        g.fillRect(x + 9, baseY - 1, 3, 3);
+      } else if (acc === "blossom") {
+        g.fillStyle = "#ff7ab6";
+        g.fillRect(x + 3, baseY, 3, 3);
+        g.fillRect(x + 14, baseY + 2, 3, 3);
+        g.fillStyle = "#fff7fb";
+        g.fillRect(x + 4, baseY + 1, 1, 1);
+        // Cánh hoa rơi nhẹ.
+        g.fillStyle = "#ffd1e6";
+        g.fillRect(x + 18, Math.floor(baseY + (clock * 12 % 18)), 2, 2);
+      } else if (acc === "sailor") {
+        g.fillStyle = "#fff7fb";
+        g.fillRect(x + 5, baseY + 16, 11, 3);
+        g.fillStyle = "#5b8dd9";
+        g.fillRect(x + 5, baseY + 16, 11, 1);
+        g.fillStyle = "#ff4f8b";
+        g.fillRect(x + 9, baseY + 18, 3, 3);
+      } else if (acc === "star") {
+        const tw = 0.6 + Math.sin(clock * 4) * 0.4;
+        g.save();
+        g.globalAlpha = tw;
+        g.fillStyle = "#fff3a3";
+        g.fillRect(x + 9, baseY - 6, 2, 6);
+        g.fillRect(x + 7, baseY - 4, 6, 2);
+        g.restore();
+      } else if (acc === "gradcap") {
+        // Mũ cử nhân + tua rua vàng.
+        g.fillStyle = "#2d2d44";
+        g.fillRect(x + 2, baseY, 17, 3);
+        g.fillRect(x + 6, baseY - 3, 9, 4);
+        g.fillStyle = "#ffd166";
+        g.fillRect(x + 16, baseY, 2, 7);
+        g.fillRect(x + 15, baseY + 6, 4, 2);
+      }
     }
 
     function drawPlayer() {
@@ -3623,14 +3998,17 @@
 
       const charDef = getCharacter();
       const skin = getSkin();
-      const outfit = player.currentSkin === "classic" ? charDef.outfit : skin.primary;
+      const isClassic = player.currentSkin === "classic";
+      const outfit = isClassic ? charDef.outfit : skin.primary;
       drawHeroSprite(ctx, x, y, {
         dir: player.dir,
         moving: player.moving,
         step: player.step,
         clock: visualClock,
         charDef,
-        outfit
+        outfit,
+        hairOverride: isClassic ? null : skin.hair,
+        accessory: isClassic ? null : skin.acc
       });
     }
 
@@ -4059,7 +4437,21 @@
       const cycle = (worldTime / 38) % 1;
       const night = Math.max(0, Math.sin(cycle * Math.PI * 2 - Math.PI / 2));
       ctx.save();
-      if (currentArea.id !== "stars") {
+
+      // Lễ hội: hoàng hôn tím ấm cố định + ánh đèn lồng vàng.
+      if (currentArea.id === "festival") {
+        ctx.globalAlpha = 0.26;
+        ctx.fillStyle = "#3a2358";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = "#ffb04f";
+        ctx.fillRect(0, VIEW_H * 0.4, VIEW_W, VIEW_H * 0.6);
+      } else if (currentArea.id === "hall") {
+        // Giảng đường: ánh đèn vàng ấm trang trọng.
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      } else if (currentArea.id !== "stars") {
         ctx.globalAlpha = night * 0.18;
         ctx.fillStyle = "#2d1b4d";
         ctx.fillRect(0, 0, VIEW_W, VIEW_H);
@@ -4067,8 +4459,8 @@
         ctx.fillStyle = "#ffd166";
         ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
-      if (night > 0.15 || currentArea.id === "stars") {
-        ctx.globalAlpha = currentArea.id === "stars" ? 0.38 : night * 0.28;
+      if (night > 0.15 || currentArea.id === "stars" || currentArea.id === "festival") {
+        ctx.globalAlpha = (currentArea.id === "stars" || currentArea.id === "festival") ? 0.38 : night * 0.28;
         for (let i = 0; i < 28; i++) {
           const x = (hash(i, 7) % VIEW_W);
           const y = (hash(i, 11) % 160) + 12;
@@ -4089,7 +4481,7 @@
       const scale = Math.min(w / cols, h / rows);
       const ox = Math.floor((w - cols * scale) / 2);
       const oy = Math.floor((h - rows * scale) / 2);
-      const colors = { G: "#85d493", P: "#e7bd83", F: "#ff9fcb", T: "#2f8d61", W: "#2bb0c4", X: "#8f653d", H: "#ff7ab6", R: "#8f8a98", S: "#261844", L: "#fff3a3" };
+      const colors = { G: "#85d493", P: "#e7bd83", F: "#ff9fcb", T: "#2f8d61", W: "#2bb0c4", X: "#8f653d", H: "#ff7ab6", R: "#8f8a98", S: "#261844", L: "#fff3a3", M: "#fbeede" };
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           mctx.fillStyle = colors[currentArea.map[y][x]] || "#b8f7c1";
