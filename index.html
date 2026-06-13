@@ -87,7 +87,7 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       background: #b8f7c1;
-      filter: saturate(1.08) contrast(1.04);
+      filter: saturate(1.22) contrast(1.08) brightness(1.02);
     }
 
     /* Góc nhìn 2.5D: nghiêng nhẹ mặt bàn chơi như sa bàn thu nhỏ. */
@@ -3144,15 +3144,29 @@
 
     function drawGrassTile(sx, sy, tx, ty) {
       const h = hash(tx, ty);
-      ctx.fillStyle = h % 3 === 0 ? "#b8f7c1" : h % 3 === 1 ? "#aeeeb7" : "#a4e7ad";
+      // Nền cỏ nhiều tông, có loang sáng/tối tạo chiều sâu kiểu painterly.
+      ctx.fillStyle = h % 3 === 0 ? "#9be4a6" : h % 3 === 1 ? "#8fdc9c" : "#85d493";
       ctx.fillRect(sx, sy, TILE, TILE);
       ctx.fillStyle = "rgba(255,255,255,0.16)";
       if (h % 2 === 0) ctx.fillRect(sx, sy, TILE, 2);
-      ctx.fillStyle = "#7fd890";
+      // Vệt cỏ đậm loang nhẹ.
+      ctx.fillStyle = "rgba(54, 140, 86, 0.18)";
+      if (h % 4 === 0) ctx.fillRect(sx + 2, sy + 18, 16, 10);
+      if (hash(tx + 7, ty) % 4 === 0) ctx.fillRect(sx + 16, sy + 2, 14, 9);
+      // Cọng cỏ.
+      ctx.fillStyle = "#6fce86";
       if (h % 2 === 0) ctx.fillRect(sx + 5, sy + 7, 4, 2);
       if (hash(tx + 1, ty) % 3 === 0) ctx.fillRect(sx + 20, sy + 22, 5, 2);
       if (hash(tx + 3, ty + 2) % 5 === 0) ctx.fillRect(sx + 13, sy + 16, 3, 2);
-      // Hoa cúc trắng nhỏ rải rác cho nền cỏ sinh động.
+      // Bụi cây nhỏ tròn (giống tham chiếu).
+      if (hash(tx + 9, ty + 4) % 13 === 0) {
+        ctx.fillStyle = "#2f8d61";
+        ctx.fillRect(sx + 6, sy + 16, 12, 8);
+        ctx.fillRect(sx + 9, sy + 13, 7, 6);
+        ctx.fillStyle = "#54c77d";
+        ctx.fillRect(sx + 8, sy + 15, 6, 3);
+      }
+      // Hoa cúc trắng nhỏ rải rác.
       if (hash(tx + 5, ty + 1) % 11 === 0) {
         ctx.fillStyle = "#fff7fb";
         ctx.fillRect(sx + 22, sy + 9, 2, 2);
@@ -3162,8 +3176,15 @@
         ctx.fillStyle = "#ffd166";
         ctx.fillRect(sx + 22, sy + 11, 2, 2);
       }
-      ctx.fillStyle = "rgba(74, 154, 98, 0.12)";
+      ctx.fillStyle = "rgba(54, 120, 80, 0.16)";
       ctx.fillRect(sx, sy + TILE - 3, TILE, 3);
+
+      // Viền cát mềm ở phía đất giáp nước (mặt còn lại của bãi biển).
+      const sand = "#f3dca8", sandLo = "#e3c184";
+      if (isWaterTile(tx, ty - 1)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy, TILE, 6); ctx.fillStyle = sandLo; ctx.fillRect(sx, sy + 5, TILE, 2); }
+      if (isWaterTile(tx, ty + 1)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy + TILE - 6, TILE, 6); ctx.fillStyle = sandLo; ctx.fillRect(sx, sy + TILE - 7, TILE, 2); }
+      if (isWaterTile(tx - 1, ty)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy, 6, TILE); ctx.fillStyle = sandLo; ctx.fillRect(sx + 5, sy, 2, TILE); }
+      if (isWaterTile(tx + 1, ty)) { ctx.fillStyle = sand; ctx.fillRect(sx + TILE - 6, sy, 6, TILE); ctx.fillStyle = sandLo; ctx.fillRect(sx + TILE - 7, sy, 2, TILE); }
     }
 
     function drawPathTile(sx, sy, tx, ty) {
@@ -3186,40 +3207,115 @@
     function drawTreeTile(sx, sy, h) {
       // Tán cây đung đưa nhẹ theo gió.
       const sway = Math.round(Math.sin(visualClock * 1.6 + h % 7) * 1.2);
-      ctx.fillStyle = "rgba(59, 38, 69, 0.18)";
-      ctx.fillRect(sx + 6, sy + 25, 22, 5);
-      ctx.fillStyle = "#8b5a2b";
+      // Bóng đổ mềm hình elip dưới gốc.
+      ctx.fillStyle = "rgba(40, 80, 60, 0.22)";
+      ctx.fillRect(sx + 7, sy + 27, 20, 4);
+      ctx.fillStyle = "rgba(40, 80, 60, 0.14)";
+      ctx.fillRect(sx + 5, sy + 26, 24, 5);
+      // Thân cây có khối sáng tối.
+      ctx.fillStyle = "#7a4a22";
       ctx.fillRect(sx + 13, sy + 17, 7, 12);
-      ctx.fillStyle = "#b9793a";
-      ctx.fillRect(sx + 15, sy + 18, 2, 9);
-      // Viền tối quanh tán lá cho cây nổi khối hơn.
-      ctx.fillStyle = "#1f6b47";
-      ctx.fillRect(sx + 6 + sway, sy + 9, 20, 15);
-      ctx.fillRect(sx + 9 + sway, sy + 4, 15, 13);
-      ctx.fillRect(sx + 3 + sway, sy + 13, 26, 10);
+      ctx.fillStyle = "#a96a32";
+      ctx.fillRect(sx + 14, sy + 18, 3, 10);
+      ctx.fillStyle = "#c98a4a";
+      ctx.fillRect(sx + 15, sy + 19, 1, 8);
+      // Tán lá nhiều lớp tròn trịa: viền tối → thân lá → highlight.
+      ctx.fillStyle = "#1c6342";
+      ctx.fillRect(sx + 5 + sway, sy + 9, 22, 15);
+      ctx.fillRect(sx + 8 + sway, sy + 3, 16, 15);
+      ctx.fillRect(sx + 2 + sway, sy + 13, 28, 9);
       ctx.fillStyle = "#2f8d61";
-      ctx.fillRect(sx + 7 + sway, sy + 10, 18, 13);
-      ctx.fillRect(sx + 10 + sway, sy + 5, 13, 11);
-      ctx.fillRect(sx + 4 + sway, sy + 14, 24, 8);
-      ctx.fillStyle = "#54c77d";
-      ctx.fillRect(sx + 9 + sway, sy + 8, 8, 5);
-      ctx.fillRect(sx + 18 + sway, sy + 13, 5, 3);
-      ctx.fillStyle = h % 4 === 0 ? "#ff9fcb" : "#b8f7c1";
-      if (h % 3 === 0) ctx.fillRect(sx + 20 + sway, sy + 9, 3, 3);
+      ctx.fillRect(sx + 6 + sway, sy + 10, 20, 12);
+      ctx.fillRect(sx + 9 + sway, sy + 4, 14, 13);
+      ctx.fillRect(sx + 3 + sway, sy + 14, 26, 7);
+      ctx.fillStyle = "#46b377";
+      ctx.fillRect(sx + 8 + sway, sy + 7, 13, 9);
+      ctx.fillRect(sx + 5 + sway, sy + 15, 8, 5);
+      // Ánh sáng viền trên-trái.
+      ctx.fillStyle = "#7ee0a0";
+      ctx.fillRect(sx + 9 + sway, sy + 5, 7, 3);
+      ctx.fillRect(sx + 7 + sway, sy + 9, 3, 3);
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillRect(sx + 10 + sway, sy + 5, 4, 1);
+      // Quả/hoa điểm xuyết.
+      ctx.fillStyle = h % 4 === 0 ? "#ff9fcb" : "#fff3a3";
+      if (h % 3 === 0) { ctx.fillRect(sx + 20 + sway, sy + 11, 3, 3); ctx.fillRect(sx + 12 + sway, sy + 17, 2, 2); }
+    }
+
+    // Một ô có phải là nước (kể cả viền ngoài bản đồ tính là cạn).
+    function isWaterTile(tx, ty) {
+      return tileAt(tx, ty) === "W";
+    }
+
+    function drawLilyPad(sx, sy, cx, cy, flower) {
+      const wob = Math.sin(visualClock * 1.8 + cx) * 1;
+      const x = sx + cx, y = sy + cy + wob;
+      // Bóng dưới mặt nước.
+      ctx.fillStyle = "rgba(20, 70, 90, 0.25)";
+      ctx.fillRect(x - 7, y + 2, 16, 4);
+      // Lá sen tròn có khía.
+      ctx.fillStyle = "#3f9b4f";
+      ctx.fillRect(x - 8, y - 3, 16, 7);
+      ctx.fillRect(x - 6, y - 5, 12, 11);
+      ctx.fillStyle = "#5cc56a";
+      ctx.fillRect(x - 6, y - 4, 11, 4);
+      ctx.fillStyle = "#8fe39a";
+      ctx.fillRect(x - 4, y - 3, 5, 2);
+      // Khía chữ V.
+      ctx.fillStyle = "#2bb0c4";
+      ctx.fillRect(x + 4, y, 5, 2);
+      if (flower) {
+        // Hoa sen hồng nở trên lá.
+        ctx.fillStyle = "#ff7ab6";
+        ctx.fillRect(x - 3, y - 9, 6, 4);
+        ctx.fillRect(x - 5, y - 7, 3, 3);
+        ctx.fillRect(x + 2, y - 7, 3, 3);
+        ctx.fillStyle = "#ffd1e6";
+        ctx.fillRect(x - 2, y - 8, 4, 2);
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(x - 1, y - 7, 2, 2);
+      }
     }
 
     function drawWaterTile(sx, sy, tx, ty) {
-      const wave = Math.floor(Math.sin(visualClock * 3 + tx * 0.7 + ty) * 2);
-      ctx.fillStyle = "#70d7ee";
+      const h = hash(tx, ty);
+      const wave = Math.floor(Math.sin(visualClock * 2.6 + tx * 0.7 + ty) * 2);
+
+      // Nền nước xanh ngọc, có dải sâu hơn tạo cảm giác chiều sâu.
+      ctx.fillStyle = "#2bb0c4";
       ctx.fillRect(sx, sy, TILE, TILE);
-      ctx.fillStyle = "#4bb8d9";
-      ctx.fillRect(sx, sy + 8 + wave, TILE, 4);
-      ctx.fillRect(sx + 8, sy + 22 - wave, TILE - 8, 4);
-      ctx.fillStyle = "#dffaff";
-      if ((tx + ty) % 2 === 0) ctx.fillRect(sx + 7, sy + 14 + wave, 10, 2);
-      if (hash(tx, ty) % 5 === 0) ctx.fillRect(sx + 20, sy + 7 - wave, 5, 2);
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.fillRect(sx, sy, TILE, 2);
+      ctx.fillStyle = "#1f93ad";
+      if (h % 2 === 0) ctx.fillRect(sx, sy + 14, TILE, TILE - 14);
+      ctx.fillStyle = "#178099";
+      if (h % 3 === 0) ctx.fillRect(sx + 6, sy + 20, TILE - 6, 8);
+
+      // Gợn sóng sáng chạy ngang.
+      ctx.fillStyle = "#58cfe0";
+      ctx.fillRect(sx, sy + 7 + wave, TILE, 3);
+      ctx.fillRect(sx + 8, sy + 22 - wave, TILE - 10, 3);
+      ctx.fillStyle = "rgba(220, 250, 255, 0.7)";
+      if ((tx + ty) % 2 === 0) ctx.fillRect(sx + 7, sy + 13 + wave, 9, 2);
+      if (h % 5 === 0) ctx.fillRect(sx + 19, sy + 6 - wave, 6, 2);
+
+      // Viền cát mềm ở nơi nước giáp đất (bãi biển).
+      const sand = "#f3dca8", sandLo = "#e3c184";
+      if (!isWaterTile(tx, ty - 1)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy, TILE, 5); ctx.fillStyle = sandLo; ctx.fillRect(sx, sy + 4, TILE, 2); }
+      if (!isWaterTile(tx, ty + 1)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy + TILE - 5, TILE, 5); ctx.fillStyle = sandLo; ctx.fillRect(sx, sy + TILE - 6, TILE, 2); }
+      if (!isWaterTile(tx - 1, ty)) { ctx.fillStyle = sand; ctx.fillRect(sx, sy, 5, TILE); ctx.fillStyle = sandLo; ctx.fillRect(sx + 4, sy, 2, TILE); }
+      if (!isWaterTile(tx + 1, ty)) { ctx.fillStyle = sand; ctx.fillRect(sx + TILE - 5, sy, 5, TILE); ctx.fillStyle = sandLo; ctx.fillRect(sx + TILE - 6, sy, 2, TILE); }
+
+      // Lá sen / hoa sen chỉ mọc ở vùng nước hở (4 phía đều là nước).
+      const openWater = isWaterTile(tx - 1, ty) && isWaterTile(tx + 1, ty) && isWaterTile(tx, ty - 1) && isWaterTile(tx, ty + 1);
+      if (openWater) {
+        if (h % 6 === 0) drawLilyPad(sx, sy, 16, 16, false);
+        else if (h % 11 === 0) drawLilyPad(sx, sy, 15, 18, true);
+        else if (hash(tx + 2, ty + 5) % 9 === 0) {
+          // Đốm sáng lấp lánh mặt nước.
+          ctx.fillStyle = "rgba(255,255,255,0.35)";
+          ctx.fillRect(sx + 10, sy + 9, 3, 2);
+          ctx.fillRect(sx + 22, sy + 18, 2, 2);
+        }
+      }
     }
 
     function drawFenceTile(sx, sy) {
@@ -3993,7 +4089,7 @@
       const scale = Math.min(w / cols, h / rows);
       const ox = Math.floor((w - cols * scale) / 2);
       const oy = Math.floor((h - rows * scale) / 2);
-      const colors = { G: "#9fe6aa", P: "#d8a36d", F: "#ff9fcb", T: "#2f8d61", W: "#70d7ee", X: "#8f653d", H: "#ff7ab6", R: "#8f8a98", S: "#261844", L: "#fff3a3" };
+      const colors = { G: "#85d493", P: "#e7bd83", F: "#ff9fcb", T: "#2f8d61", W: "#2bb0c4", X: "#8f653d", H: "#ff7ab6", R: "#8f8a98", S: "#261844", L: "#fff3a3" };
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           mctx.fillStyle = colors[currentArea.map[y][x]] || "#b8f7c1";
