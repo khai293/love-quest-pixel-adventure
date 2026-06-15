@@ -1048,7 +1048,8 @@
     battle.soul = 0;
     battle.capturing = false;
     battle.menu = "root";
-    battle.fx = { shakeP: 0, shakeE: 0, flash: 0, soul: 0 };
+    battle.fx = { shakeP: 0, shakeE: 0, flash: 0, hit: { P: 0, E: 0, A: 0 }, lunge: { P: null, E: null, A: null } };
+    battle.anims = []; battle.dmgNums = [];
     canvas.classList.remove("tilt");
     $("battleUI").classList.add("on");
     $("enemyBox2").style.display = "none";
@@ -1213,31 +1214,37 @@
   }
 
   function applyMoveEffect(user, target, mv, side) {
+    const us = sideOf(user), ts = sideOf(target);
     if (mv.kind === "atk") {
       const { dmg, eff } = damageOf(user, target, mv);
       target.hp = clamp(target.hp - dmg, 0, target.maxHp);
       user.bond = clamp(user.bond + mv.bond, 0, 100);
-      if (side === "player" || side === "ally") { battle.fx.shakeE = 0.32; flash(); }
-      else battle.fx.shakeP = 0.32;
-      // Trong dream, đòn đánh vẫn nhích nhẹ Tâm Hồn (cho thấy mọi tương tác đều có ý nghĩa)
-      if (battle.mode === "dream" && (side === "player" || side === "ally")) battle.soul = clamp(battle.soul + 4, 0, 100);
+      if (battle.mode === "dream" && (us === "P" || us === "A")) battle.soul = clamp(battle.soul + 4, 0, 100);
+      setLunge(us, ts);
+      const tcol = mv.type ? TYPES[mv.type] : null;
+      const c1 = tcol ? tcol.c1 : "#ff9bcc", c2 = tcol ? tcol.c2 : "#fff7fb";
+      const tp = battlePos(ts);
+      const onHit = () => { impactBurst(tp, c1, c2, mv.type); impactOn(ts); dmgNumber(tp, dmg, eff); if (eff > 1) effPopup(tp); flash(0.18); };
+      const melee = !mv.type || mv.power <= 16;
+      if (melee) battle.anims.push({ type: "delayHit", t: 0, dur: 0.16, fn: onHit });
+      else battle.anims.push({ type: "proj", t: 0, dur: 0.32, from: battlePos(us), to: tp, c1, c2, onHit });
       setBattleMsg(`${user.name} dùng ${mv.name}! Gây ${dmg} sát thương.${effLabel(eff)}`);
     } else if (mv.kind === "heal") {
       const heal = Math.round(user.maxHp * mv.heal);
       user.hp = clamp(user.hp + heal, 0, user.maxHp);
       user.bond = clamp(user.bond + mv.bond, 0, 100);
-      burstAt(side === "enemy" ? "E" : "P", "#8af0a0", 12, "heart");
+      healFx(battlePos(us)); dmgNumber(battlePos(us), heal, 0, "#8af0a0", "+");
       setBattleMsg(`${user.name} dùng ${mv.name}, hồi ${heal} HP và gắn kết hơn 💞`);
     } else if (mv.kind === "status") {
       if (!target.status) target.status = mv.status;
       user.bond = clamp(user.bond + mv.bond, 0, 100);
-      burstAt(side === "player" || side === "ally" ? "E" : "P", "#cdbff0", 10, "spark");
+      statusFx(battlePos(ts), mv.status);
       setBattleMsg(`${user.name} dùng ${mv.name}! ${target.name} ${mv.status === "sleep" ? "thiu thiu ngủ 😴" : "bối rối 💫"}.`);
     } else if (mv.kind === "soul") {
       // chữa lành: lấp đầy Tâm Hồn của gai
       battle.soul = clamp(battle.soul + mv.soul, 0, 100);
       user.bond = clamp(user.bond + mv.bond, 0, 100);
-      burstAt("E", "#fff3d6", 14, "heart");
+      soulFx(battlePos(us), battlePos(ts));
       setBattleMsg(`${user.name} dùng ${mv.name} — gửi sự dịu dàng tới Gai Thủ Vệ. 💗`);
     }
   }
@@ -1271,7 +1278,8 @@
       const { dmg } = damageOf(e, target, MOVES.vine);
       const real = Math.round(dmg * 0.7);
       target.hp = clamp(target.hp - real, 0, target.maxHp);
-      battle.fx.shakeP = 0.3;
+      const ts = sideOf(target);
+      setLunge("E", ts); impactBurst(battlePos(ts), "#3b3346", "#9fe0ff", "nature"); impactOn(ts); dmgNumber(battlePos(ts), real, 0);
       setBattleMsg(`Gai Thủ Vệ vung gai vì hoảng sợ, ${target.name} chịu ${real} sát thương.`);
       return;
     }
@@ -1388,13 +1396,19 @@
     const rate = clamp(0.30 + hpFactor * 0.4 + statusBonus + empathyBonus, 0.06, 0.96);
     const wobbles = 3;
     const steps = [];
-    steps.push(() => { setBattleMsg("Bạn tung Bùa Kết Nối 💞 hình lá & trái tim pha lê..."); battle.fx.flash = 0.3; });
+    steps.push(() => {
+      setBattleMsg("Bạn tung Bùa Kết Nối 💞 hình lá & trái tim pha lê...");
+      flash(0.25);
+      battle.anims.push({ type: "proj", t: 0, dur: 0.42, from: battlePos("P"), to: battlePos("E"), c1: "#ff7ab6", c2: "#b8f7c1",
+        onHit: () => { ringAt(battlePos("E"), "#ffd1e6"); burstShaped(battlePos("E"), "#ffd1e6", "#b8f7c1", settings.noFlash ? 6 : 14, "heart"); } });
+    });
     let caught = true;
     for (let i = 0; i < wobbles; i++) {
       steps.push(() => {
         if (!caught) return;
-        if (Math.random() < rate) { setBattleMsg(`...lắc ${i + 1}...`); }
-        else { caught = false; setBattleMsg(`${e.name} vùng ra khỏi bùa!`); }
+        battle.fx.shakeE = 0.3;
+        if (Math.random() < rate) { setBattleMsg(`...lắc ${i + 1}...`); burstShaped(battlePos("E"), "#ffd1e6", "#fff3a3", 5, "star"); }
+        else { caught = false; setBattleMsg(`${e.name} vùng ra khỏi bùa!`); burstShaped(battlePos("E"), "#cdbff0", "#fff7fb", settings.noFlash ? 6 : 12, "spark"); }
       });
     }
     steps.push(() => {
@@ -1429,12 +1443,18 @@
     battle.busy = true; clearMenu();
     const p = battle.pMon, e = battle.eMon;
     p.bond = 0;
-    battle.fx.flash = 0.6; battle.fx.shakeE = 0.5;
+    flash(0.6); battle.fx.shakeE = 0.5;
     const steps = [];
     if (battle.mode === "dream") {
       steps.push(() => {
         setBattleMsg(`✨ ${p.name}${battle.allyMon ? " & " + battle.allyMon.name + " (của K)" : ""} cộng hưởng — ánh sáng đôi bao trùm Gai Thủ Vệ!`);
-        burstAt("E", "#fff3d6", 30, "heart"); burstAt("E", "#bfa2ff", 24, "spark");
+        const tp = battlePos("E");
+        battle.anims.push({ type: "beam", t: 0, dur: 0.6, from: battlePos("P"), to: tp, c1: "#fff3d6", c2: "#bfa2ff" });
+        if (battle.allyMon) battle.anims.push({ type: "beam", t: 0, dur: 0.6, from: battlePos("A"), to: tp, c1: "#e7d6ff", c2: "#fff3d6" });
+        ringAt(tp, "#fff3d6"); ringAt(tp, "#bfa2ff");
+        burstShaped(tp, "#fff3d6", "#bfa2ff", settings.noFlash ? 12 : 34, "star");
+        burstShaped(tp, "#ffd1e6", "#fff3d6", settings.noFlash ? 8 : 18, "heart");
+        flash(0.55); battle.fx.shakeE = 0.5;
         battle.soul = clamp(battle.soul + 42, 0, 100);
         if (battle.allyMon) battle.allyMon.bond = 0;
       });
@@ -1448,7 +1468,16 @@
         const total = Math.round(dmg * (battle.allyMon ? 1.4 : 1.15));
         e.hp = clamp(e.hp - total, 0, e.maxHp);
         const heal = Math.round(p.maxHp * 0.18); p.hp = clamp(p.hp + heal, 0, p.maxHp);
-        burstAt("E", TYPES[resoType].c1, 28, "spark"); burstAt("P", "#8af0a0", 14, "heart");
+        const tcol = TYPES[resoType], tp = battlePos("E");
+        setLunge("P", "E");
+        battle.anims.push({ type: "beam", t: 0, dur: 0.55, from: battlePos("P"), to: tp, c1: tcol.c1, c2: tcol.c2 });
+        if (battle.allyMon) battle.anims.push({ type: "beam", t: 0, dur: 0.55, from: battlePos("A"), to: tp, c1: tcol.c2, c2: "#fff7fb" });
+        ringAt(tp, tcol.c1); ringAt(tp, tcol.c2);
+        impactBurst(tp, tcol.c1, tcol.c2, resoType); impactOn("E");
+        burstShaped(tp, tcol.c1, tcol.c2, settings.noFlash ? 12 : 30, "star");
+        healFx(battlePos("P"));
+        dmgNumber(tp, total, 2); if (eff > 1) effPopup(tp);
+        flash(0.55);
         setBattleMsg(`✨ Skill Cộng Hưởng! ${p.name} bùng sáng, gây ${total} sát thương${effLabel(eff)} và tự hồi ${heal} HP.`);
       });
       steps.push(() => afterHitChecks("player"));
@@ -1546,7 +1575,7 @@
     next();
   }
   function clearMenu() { $("battleMenu").innerHTML = ""; }
-  function flash() { if (!settings.noFlash) battle.fx.flash = Math.max(battle.fx.flash, 0.25); }
+  function flash(v) { if (!settings.noFlash) battle.fx.flash = Math.max(battle.fx.flash, v || 0.25); }
   function burstAt(side, color, n, type) {
     const x = side === "E" ? VIEW_W * 0.7 : VIEW_W * 0.28;
     const y = side === "E" ? VIEW_H * 0.34 : VIEW_H * 0.6;
@@ -1860,6 +1889,7 @@
   function drawPlayer() {
     const x = Math.floor(player.x - camera.x), y = Math.floor(player.y - camera.y);
     drawBlobShadow(x + 1, y + 22, 20, 6);
+    if (player.moving && !settings.noFlash && Math.random() < 0.3) spawnParticle({ x: x + 10 + rand(-3, 3), y: y + 26, vx: rand(-10, 10), vy: -rand(4, 12), gravity: 22, life: 0.4, maxLife: 0.4, color: "#d8c8a0", shape: "spark", size: rand(2, 3) });
     drawHero(ctx, x, y, { dir: player.dir, moving: player.moving, step: player.step, clock: visualClock });
   }
 
@@ -1980,57 +2010,68 @@
    * 16) RENDER BATTLE SCENE (trên canvas)
    * ============================================================ */
   function drawBattle() {
-    // nền battle theo mode
-    let top, bot;
-    if (battle.mode === "dream") { top = "#2a2350"; bot = "#5b4a86"; }
-    else if (battle.mode === "gym") { top = "#ffd9b3"; bot = "#ffcaa3"; }
-    else { top = "#cdeeff"; bot = "#b8f7c1"; }
+    // nền battle theo mode — gradient 3 chặng cho chiều sâu
+    let top, mid, bot;
+    if (battle.mode === "dream") { top = "#1f1b3e"; mid = "#3a2f63"; bot = "#5b4a86"; }
+    else if (battle.mode === "gym") { top = "#ffe0b3"; mid = "#ffd0a0"; bot = "#ffb98a"; }
+    else { top = "#cdeeff"; mid = "#d9f3e6"; bot = "#b8f7c1"; }
     const grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-    grd.addColorStop(0, top); grd.addColorStop(1, bot);
+    grd.addColorStop(0, top); grd.addColorStop(0.55, mid); grd.addColorStop(1, bot);
     ctx.fillStyle = grd; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
-    // các dải sáng nền
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    for (let i = 0; i < 4; i++) ctx.fillRect(0, 60 + i * 70, VIEW_W, 24);
+    // dải sáng trôi chậm
+    ctx.save(); ctx.globalAlpha = settings.noFlash ? 0.05 : 0.10;
+    ctx.fillStyle = battle.mode === "dream" ? "#bfa2ff" : "#ffffff";
+    for (let i = 0; i < 5; i++) {
+      const yy = ((visualClock * 12 + i * 90) % (VIEW_H + 120)) - 60;
+      ctx.fillRect(0, yy, VIEW_W, 26);
+    }
+    ctx.restore();
 
-    // flash
+    const eX = VIEW_W * 0.7, eY = VIEW_H * 0.36, pX = VIEW_W * 0.28, pY = VIEW_H * 0.66;
+
+    // hào quang sau đối thủ
+    if (!settings.noFlash) {
+      const rg = ctx.createRadialGradient(eX, eY, 6, eX, eY, 120);
+      rg.addColorStop(0, battle.mode === "dream" ? "rgba(255,243,214,0.18)" : "rgba(255,255,255,0.20)");
+      rg.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = rg; ctx.fillRect(eX - 130, eY - 130, 260, 260);
+    }
+
+    // flash toàn màn (giảm dần)
     if (battle.fx.flash > 0) {
       ctx.fillStyle = `rgba(255,255,255,${battle.fx.flash})`;
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       battle.fx.flash = Math.max(0, battle.fx.flash - 0.05);
     }
 
-    // bục
-    const eX = VIEW_W * 0.7, eY = VIEW_H * 0.36;
-    const pX = VIEW_W * 0.28, pY = VIEW_H * 0.66;
-    drawPlatform(eX, eY + 26);
-    drawPlatform(pX, pY + 26);
+    // bục có quầng sáng theo hệ
+    drawPlatform(eX, eY + 28, TYPES[battle.eMon.type].c2);
+    drawPlatform(pX, pY + 28, TYPES[battle.pMon.type].c2);
 
-    // enemy
-    const esh = battle.fx.shakeE > 0 ? Math.sin(visualClock * 50) * battle.fx.shakeE * 8 : 0;
-    drawLumina(ctx, battle.eMon.species, eX - 32 + esh, eY - 32, 4, visualClock, { face: true, foe: true, big: battle.mode === "dream" });
-    battle.fx.shakeE = Math.max(0, battle.fx.shakeE - 0.04);
-
-    // player active
-    const psh = battle.fx.shakeP > 0 ? Math.sin(visualClock * 50) * battle.fx.shakeP * 8 : 0;
-    drawLumina(ctx, battle.pMon.species, pX - 32 + psh, pY - 32, 4, visualClock, { face: true });
-    battle.fx.shakeP = Math.max(0, battle.fx.shakeP - 0.04);
-
-    // ally (K's lumina) trong dream/double
+    // sinh vật (đối thủ trước cho chiều sâu) — kèm rung/lao/chớp sáng
+    drawMonFx("E", battle.eMon.species, eX - 32, eY - 32, 4, { face: true, foe: true, big: battle.mode === "dream", emit: true });
+    drawMonFx("P", battle.pMon.species, pX - 32, pY - 32, 4, { face: true, emit: true });
     if (battle.allyMon && battle.allyMon.hp > 0) {
-      drawLumina(ctx, battle.allyMon.species, pX + 18, pY - 18, 3, visualClock, { face: true });
-      // hình bóng K nhỏ phía sau
+      drawMonFx("A", battle.allyMon.species, pX + 14, pY - 18, 3, { face: true, emit: true });
       drawKShadow(pX + 56, pY - 30);
     }
 
     drawParticles();
+    drawBattleAnims();
 
-    // viền cảnh mơ
     if (battle.mode === "dream") { ctx.fillStyle = "rgba(191,162,255,0.10)"; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
   }
-  function drawPlatform(cx, cy) {
-    ctx.fillStyle = "rgba(59,38,69,0.18)";
+  function drawPlatform(cx, cy, glowColor) {
+    if (glowColor && !settings.noFlash) {
+      ctx.save(); ctx.globalAlpha = 0.28 + Math.sin(visualClock * 2.5 + cx) * 0.06;
+      ctx.fillStyle = glowColor;
+      ctx.beginPath(); ctx.ellipse(cx, cy - 2, 50, 15, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    ctx.fillStyle = "rgba(59,38,69,0.20)";
     ctx.beginPath(); ctx.ellipse(cx, cy, 44, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    ctx.beginPath(); ctx.ellipse(cx, cy - 1, 40, 9, 0, 0, Math.PI * 2); ctx.fill();
   }
   function drawKShadow(x, y) {
     // bóng dáng chàng trai K mờ ảo
@@ -2058,6 +2099,13 @@
     // bóng
     g.fillStyle = "rgba(59,38,69,0.16)";
     g.fillRect(Math.floor(x + 3 * s), Math.floor(y + 15 * s), 12 * s, 3 * s);
+
+    // quầng sáng + hạt phát theo hệ (chỉ khi ở battle, opts.emit = true)
+    if (opts.emit && !settings.noFlash) {
+      g.save(); g.globalAlpha = 0.12 + Math.sin(clock * 3 + x * 0.05) * 0.05;
+      g.fillStyle = c2; g.beginPath(); g.arc(x + 8 * s, oy + 8 * s, 11 * s, 0, 7); g.fill(); g.restore();
+      if (Math.random() < 0.28) emitType(sp.type, x + 8 * s, oy + 8 * s, c1, c2);
+    }
 
     // aura cảm xúc cho dạng tiến hóa
     if (evolved && !settings.noFlash) {
@@ -2146,28 +2194,219 @@
   /* ============================================================
    * 18) PARTICLES
    * ============================================================ */
+  function spawnParticle(o) {
+    if (particles.length > 460) particles.shift();
+    particles.push({
+      x: o.x, y: o.y, vx: o.vx || 0, vy: o.vy || 0,
+      gravity: o.gravity || 0, life: o.life || 0.7, maxLife: o.maxLife || o.life || 0.7,
+      color: o.color || "#fff7fb", shape: o.shape || "spark",
+      size: o.size || 3, rot: o.rot || 0, spin: o.spin || 0
+    });
+  }
   function burst(x, y, color, count, type = "spark") {
     for (let i = 0; i < count; i++) {
-      const a = Math.random() * Math.PI * 2, sp = 20 + Math.random() * 70;
-      particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20,
+      const a = Math.random() * Math.PI * 2, sp = 24 + Math.random() * 80;
+      spawnParticle({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20,
         gravity: type === "heart" ? -6 : 14, life: 0.5 + Math.random() * 0.7, maxLife: 1.2,
-        color, type, size: 3 + Math.random() * 4 });
+        color, shape: type, size: 3 + Math.random() * 4, spin: rand(-5, 5) });
+    }
+  }
+  function burstShaped(pos, c1, c2, n, shape) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 95;
+      let vx = Math.cos(a) * sp, vy = Math.sin(a) * sp, grav = 20;
+      if (shape === "ember") { vy = -Math.abs(vy) * 0.7 - 24; grav = -14; }
+      else if (shape === "bubble") { grav = -8; }
+      else if (shape === "snow") { grav = 12; vy = Math.abs(vy) * 0.4; }
+      else if (shape === "streak") { vx *= 1.7; grav = 4; }
+      else if (shape === "leaf") { grav = 16; }
+      spawnParticle({ x: pos.x, y: pos.y, vx, vy, gravity: grav,
+        life: 0.4 + Math.random() * 0.6, maxLife: 1.0, color: i % 2 ? c2 : c1,
+        shape, size: 2 + Math.random() * 4, spin: rand(-7, 7), rot: rand(0, 6) });
     }
   }
   function updateParticles(dt) {
     for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gravity * dt;
+      const p = particles[i];
+      p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gravity * dt;
+      p.rot += p.spin * dt;
       if (p.life <= 0) particles.splice(i, 1);
     }
   }
   function drawParticles() {
     for (const p of particles) {
-      const a = clamp(p.life / p.maxLife, 0, 1);
-      ctx.globalAlpha = a; ctx.fillStyle = p.color;
-      if (p.type === "heart") { const s = p.size; ctx.fillRect(p.x - s / 2, p.y, s, s * 0.7); ctx.fillRect(p.x - s, p.y - s * 0.3, s * 0.7, s * 0.6); ctx.fillRect(p.x + s * 0.3, p.y - s * 0.3, s * 0.7, s * 0.6); }
-      else ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      const a = clamp(p.life / p.maxLife, 0, 1), s = p.size;
+      ctx.save(); ctx.globalAlpha = a;
+      if (p.shape === "heart") {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - s / 2, p.y, s, s * 0.7);
+        ctx.fillRect(p.x - s, p.y - s * 0.3, s * 0.7, s * 0.6);
+        ctx.fillRect(p.x + s * 0.3, p.y - s * 0.3, s * 0.7, s * 0.6);
+      } else if (p.shape === "star") {
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+        ctx.fillRect(-s / 2, -s * 1.3, s, s * 2.6); ctx.fillRect(-s * 1.3, -s / 2, s * 2.6, s);
+        ctx.fillStyle = "#fff7fb"; ctx.fillRect(-1, -1, 2, 2);
+      } else if (p.shape === "leaf" || p.shape === "petal") {
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+        ctx.fillRect(-s / 2, -s * 0.9, s, s * 1.8);
+        ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.fillRect(-s / 2, -s * 0.9, Math.max(1, s * 0.4), s * 1.8);
+      } else if (p.shape === "bubble") {
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, s, 0, 7); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(p.x - s * 0.4, p.y - s * 0.4, 2, 2);
+      } else if (p.shape === "snow") {
+        ctx.fillStyle = p.color; ctx.fillRect(p.x - 1, p.y - s / 2, 2, s); ctx.fillRect(p.x - s / 2, p.y - 1, s, 2);
+      } else if (p.shape === "streak") {
+        ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.vy, p.vx)); ctx.fillStyle = p.color; ctx.fillRect(-s, -1, s * 2.6, 2);
+      } else if (p.shape === "glow") {
+        ctx.globalAlpha = a * 0.55; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, s, 0, 7); ctx.fill();
+      } else if (p.shape === "ember") {
+        ctx.fillStyle = p.color; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+        ctx.globalAlpha = a * 0.5; ctx.fillStyle = "#fff7fb"; ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
+      } else {
+        ctx.fillStyle = p.color; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+      }
+      ctx.restore();
     }
     ctx.globalAlpha = 1;
+  }
+
+  /* ===== Hiệu ứng chiêu thức & cảnh battle ===== */
+  let _ambT = 0;
+  function sideOf(mon) { return mon === battle.eMon ? "E" : mon === battle.allyMon ? "A" : "P"; }
+  function battlePos(side) {
+    const eX = VIEW_W * 0.7, eY = VIEW_H * 0.36, pX = VIEW_W * 0.28, pY = VIEW_H * 0.66;
+    if (side === "E") return { x: eX, y: eY };
+    if (side === "A") return { x: pX + 30, y: pY - 2 };
+    return { x: pX, y: pY };
+  }
+  function setLunge(us, ts) {
+    const a = battlePos(us), b = battlePos(ts);
+    battle.fx.lunge[us] = { t: 0, dur: 0.32, dx: Math.sign(b.x - a.x) || 1, dy: Math.sign(b.y - a.y) || 0 };
+  }
+  function setHit(side) { battle.fx.hit[side] = 1; }
+  function impactOn(side) {
+    setHit(side);
+    if (side === "E") battle.fx.shakeE = Math.max(battle.fx.shakeE, 0.36);
+    else if (side === "P") battle.fx.shakeP = Math.max(battle.fx.shakeP, 0.36);
+  }
+  function dmgNumber(pos, n, eff, color, prefix) {
+    battle.dmgNums.push({ x: pos.x + rand(-6, 6), y: pos.y - 8, t: 0, dur: 0.9,
+      text: (prefix || "") + Math.round(n), color: color || (eff > 1 ? "#ffd166" : "#fff7fb"), big: eff > 1 });
+  }
+  function effPopup(pos) { battle.anims.push({ type: "text", t: 0, dur: 1.0, x: pos.x, y: pos.y - 42, text: "Rất hiệu quả!", color: "#ffd166" }); }
+  function ringAt(pos, color) { if (settings.noFlash) return; battle.anims.push({ type: "ring", t: 0, dur: 0.5, x: pos.x, y: pos.y, c1: color }); }
+  function impactBurst(pos, c1, c2, type) {
+    const n = settings.noFlash ? 8 : 18;
+    ringAt(pos, c1);
+    if (type === "fire") burstShaped(pos, c1, c2, n, "ember");
+    else if (type === "water") burstShaped(pos, c1, c2, n, "bubble");
+    else if (type === "nature") burstShaped(pos, c1, c2, n, "leaf");
+    else if (type === "air") burstShaped(pos, c2, c1, n, "streak");
+    else if (type === "ice") burstShaped(pos, c1, "#ffffff", n, "snow");
+    else if (type === "light") burstShaped(pos, c1, c2, n, "star");
+    else burstShaped(pos, "#ff9bcc", "#fff7fb", n, "spark");
+  }
+  function healFx(pos) {
+    const n = settings.noFlash ? 6 : 14;
+    for (let i = 0; i < n; i++) spawnParticle({ x: pos.x + rand(-20, 20), y: pos.y + rand(0, 16),
+      vx: rand(-6, 6), vy: -rand(20, 52), gravity: -4, life: 0.7 + Math.random() * 0.5, maxLife: 1.2,
+      color: i % 2 ? "#8af0a0" : "#b8f7c1", shape: "heart", size: 3 + Math.random() * 3 });
+    ringAt(pos, "#8af0a0");
+  }
+  function statusFx(pos, status) {
+    if (status === "sleep") {
+      battle.anims.push({ type: "text", t: 0, dur: 1.3, x: pos.x + 14, y: pos.y - 16, text: "Z z z", color: "#cdbff0" });
+      for (let i = 0; i < 6; i++) spawnParticle({ x: pos.x, y: pos.y, vx: rand(-10, 10), vy: -rand(10, 30), gravity: -2, life: 0.8, maxLife: 0.8, color: "#cdbff0", shape: "glow", size: 4 });
+    } else {
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; spawnParticle({ x: pos.x + Math.cos(a) * 18, y: pos.y - 12 + Math.sin(a) * 6, vx: Math.cos(a) * 12, vy: Math.sin(a) * 12 - 10, gravity: 0, life: 0.7, maxLife: 0.7, color: "#ffe08a", shape: "star", size: 3, spin: rand(-6, 6) }); }
+      battle.anims.push({ type: "text", t: 0, dur: 1.0, x: pos.x, y: pos.y - 24, text: "?!", color: "#ffe08a" });
+    }
+  }
+  function soulFx(fp, tp) {
+    const n = settings.noFlash ? 8 : 18;
+    for (let i = 0; i < n; i++) { const k = i / n; spawnParticle({ x: fp.x + (tp.x - fp.x) * k + rand(-6, 6), y: fp.y + (tp.y - fp.y) * k + rand(-6, 6), vx: rand(-6, 6), vy: -rand(6, 18), gravity: -3, life: 0.9, maxLife: 0.9, color: i % 2 ? "#fff3d6" : "#e7d6ff", shape: "heart", size: 3 + Math.random() * 3 }); }
+    ringAt(tp, "#fff3d6");
+  }
+  function emitType(type, x, y, c1, c2) {
+    if (type === "fire") spawnParticle({ x: x + rand(-8, 8), y: y - 4, vx: rand(-6, 6), vy: -rand(18, 34), gravity: -6, life: 0.6, maxLife: 0.6, color: c1, shape: "ember", size: rand(2, 4) });
+    else if (type === "water") spawnParticle({ x: x + rand(-8, 8), y: y + 8, vx: rand(-4, 4), vy: -rand(6, 16), gravity: 18, life: 0.5, maxLife: 0.5, color: c2, shape: "bubble", size: rand(2, 3) });
+    else if (type === "nature") spawnParticle({ x: x + rand(-10, 10), y: y - 6, vx: rand(-8, 8), vy: rand(4, 12), gravity: 8, life: 0.9, maxLife: 0.9, color: c1, shape: "leaf", size: 3, spin: rand(-5, 5) });
+    else if (type === "ice") spawnParticle({ x: x + rand(-10, 10), y: y - 4, vx: rand(-5, 5), vy: rand(6, 14), gravity: 8, life: 0.8, maxLife: 0.8, color: "#e8fbff", shape: "snow", size: rand(2, 4) });
+    else if (type === "air") spawnParticle({ x: x - 10, y: y + rand(-8, 8), vx: rand(20, 40), vy: rand(-4, 4), gravity: 0, life: 0.5, maxLife: 0.5, color: c2, shape: "streak", size: rand(3, 5) });
+    else if (type === "light") spawnParticle({ x: x + rand(-10, 10), y: y + rand(-10, 6), vx: rand(-5, 5), vy: -rand(6, 16), gravity: -2, life: 0.7, maxLife: 0.7, color: "#fff3d6", shape: "star", size: rand(2, 3), spin: rand(-5, 5) });
+  }
+  function ambientOverworld(dt) {
+    if (settings.noFlash) return;
+    _ambT -= dt;
+    if (_ambT <= 0) {
+      _ambT = 0.45 + Math.random() * 0.7;
+      if (Math.random() < 0.55) spawnParticle({ x: rand(0, VIEW_W), y: rand(-10, VIEW_H * 0.5), vx: rand(-14, 2), vy: rand(8, 18), gravity: 0, life: rand(2.2, 4), maxLife: 4, color: Math.random() < 0.5 ? "#ffd1e6" : "#ffe3f0", shape: "petal", size: rand(3, 5), spin: rand(-3, 3) });
+      else spawnParticle({ x: rand(0, VIEW_W), y: rand(0, VIEW_H), vx: rand(-6, 6), vy: -rand(2, 9), gravity: 0, life: rand(1.6, 3), maxLife: 3, color: "#fff3a3", shape: "glow", size: rand(2, 4) });
+    }
+  }
+  function updateBattleFx(dt) {
+    battle.fx.shakeE = Math.max(0, battle.fx.shakeE - dt * 1.6);
+    battle.fx.shakeP = Math.max(0, battle.fx.shakeP - dt * 1.6);
+    for (const k of ["P", "E", "A"]) {
+      battle.fx.hit[k] = Math.max(0, (battle.fx.hit[k] || 0) - dt * 3.2);
+      const lg = battle.fx.lunge[k]; if (lg) lg.t += dt;
+    }
+    for (let i = battle.anims.length - 1; i >= 0; i--) {
+      const a = battle.anims[i]; a.t += dt;
+      if (a.type === "proj") {
+        const k = clamp(a.t / a.dur, 0, 1);
+        a.x = a.from.x + (a.to.x - a.from.x) * k;
+        a.y = a.from.y + (a.to.y - a.from.y) * k - Math.sin(k * Math.PI) * 28;
+        if (!settings.noFlash && Math.random() < 0.85) spawnParticle({ x: a.x, y: a.y, vx: rand(-10, 10), vy: rand(-10, 10), gravity: 0, life: 0.3, maxLife: 0.3, color: a.c2, shape: "glow", size: rand(2, 4) });
+        if (a.t >= a.dur) { if (a.onHit) a.onHit(); battle.anims.splice(i, 1); }
+      } else if (a.type === "delayHit") {
+        if (a.t >= a.dur) { if (a.fn) a.fn(); battle.anims.splice(i, 1); }
+      } else if (a.t >= a.dur) { battle.anims.splice(i, 1); }
+    }
+    for (let i = battle.dmgNums.length - 1; i >= 0; i--) { const d = battle.dmgNums[i]; d.t += dt; d.y -= 26 * dt; if (d.t >= d.dur) battle.dmgNums.splice(i, 1); }
+    if (!settings.noFlash && Math.random() < 0.25) {
+      const col = battle.mode === "dream" ? "#bfa2ff" : battle.mode === "gym" ? "#ffd166" : "#fff7fb";
+      spawnParticle({ x: rand(0, VIEW_W), y: rand(0, VIEW_H), vx: rand(-6, 6), vy: -rand(4, 14), gravity: 0, life: rand(1.4, 2.6), maxLife: 2.6, color: col, shape: "glow", size: rand(2, 4) });
+    }
+  }
+  function drawMonFx(side, species, x, y, s, opts) {
+    let ox = 0, oy = 0;
+    const shk = side === "E" ? battle.fx.shakeE : side === "P" ? battle.fx.shakeP : 0;
+    if (shk > 0) ox += Math.sin(visualClock * 50) * shk * 8;
+    const lg = battle.fx.lunge[side];
+    if (lg && lg.t < lg.dur) { const k = Math.sin((lg.t / lg.dur) * Math.PI); ox += lg.dx * k * 14; oy += lg.dy * k * 10; }
+    const dx = Math.round(x + ox), dy = Math.round(y + oy);
+    drawLumina(ctx, species, dx, dy, s, visualClock, opts);
+    const hf = battle.fx.hit[side] || 0;
+    if (hf > 0) { ctx.save(); ctx.globalAlpha = hf * 0.85; ctx.fillStyle = "#ffffff"; ctx.fillRect(dx + 2 * s, dy + 1 * s, 13 * s, 15 * s); ctx.restore(); }
+  }
+  function drawBattleAnims() {
+    for (const a of battle.anims) {
+      if (a.type === "proj") {
+        ctx.save();
+        ctx.globalAlpha = 0.5; ctx.fillStyle = a.c2; ctx.beginPath(); ctx.arc(a.x, a.y, 9, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1; ctx.fillStyle = a.c1; ctx.beginPath(); ctx.arc(a.x, a.y, 5, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fff7fb"; ctx.fillRect(a.x - 1, a.y - 1, 2, 2); ctx.restore();
+      } else if (a.type === "ring") {
+        const k = a.t / a.dur; ctx.save(); ctx.globalAlpha = (1 - k) * 0.8; ctx.strokeStyle = a.c1; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 6 + k * 44, 0, 7); ctx.stroke(); ctx.restore();
+      } else if (a.type === "beam") {
+        const k = Math.sin((a.t / a.dur) * Math.PI); ctx.save(); ctx.globalAlpha = k * 0.85; ctx.lineCap = "round";
+        ctx.strokeStyle = a.c2; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(a.from.x, a.from.y); ctx.lineTo(a.to.x, a.to.y); ctx.stroke();
+        ctx.strokeStyle = a.c1; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+      } else if (a.type === "text") {
+        const k = a.t / a.dur; ctx.save(); ctx.globalAlpha = clamp(1.4 - k * 1.4, 0, 1);
+        ctx.fillStyle = a.color || "#ffd166"; ctx.font = "bold 15px 'Courier New', monospace"; ctx.textAlign = "center";
+        ctx.fillText(a.text, a.x, a.y - k * 14); ctx.restore();
+      }
+    }
+    for (const d of battle.dmgNums) {
+      const k = d.t / d.dur; ctx.save(); ctx.globalAlpha = clamp(1.3 - k * 1.3, 0, 1);
+      ctx.fillStyle = "#3b2645"; ctx.font = "bold " + (d.big ? 21 : 16) + "px 'Courier New', monospace"; ctx.textAlign = "center";
+      ctx.fillText(d.text, d.x + 1, d.y + 1);
+      ctx.fillStyle = d.color; ctx.fillText(d.text, d.x, d.y); ctx.restore();
+    }
+    ctx.textAlign = "left";
   }
 
   /* ============================================================
@@ -2298,6 +2537,7 @@
       movePlayer(dt);
       if (!battle.active) updateCamera();
       updateParticles(dt);
+      if (battle.active) updateBattleFx(dt); else ambientOverworld(dt);
       updateCompass();
       // gợi ý tương tác
       const near = !battle.active && !dialog.active && !anyOverlayOpen() ? nearestInteractable() : null;
@@ -2309,6 +2549,7 @@
           : near.type === "castle" ? "Nhấn E: Tới cổng lâu đài"
           : near.type === "sign" ? "Nhấn E để đọc" : "Nhấn E để nói chuyện";
       } else hint.classList.add("hidden");
+      if (near && !settings.noFlash && Math.random() < 0.16) spawnParticle({ x: near.x - camera.x + 14 + rand(-8, 8), y: near.y - camera.y + rand(-4, 10), vx: rand(-4, 4), vy: -rand(6, 16), gravity: -2, life: 0.6, maxLife: 0.6, color: "#fff3a3", shape: "star", size: rand(2, 3), spin: rand(-5, 5) });
       draw();
     }
     requestAnimationFrame(loop);
