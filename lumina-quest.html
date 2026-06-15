@@ -550,7 +550,10 @@
     lull:     { id: "lull",     name: "Ru Ngủ",      type: null,     kind: "status", status: "sleep", bond: 12, desc: "Ru đối thủ ngủ — dễ thu phục hơn." },
     dazzle:   { id: "dazzle",   name: "Lấp Lánh",    type: "light",  kind: "status", status: "dazed", bond: 12, desc: "Làm đối thủ bối rối, hay đánh trượt." },
     cuddle:   { id: "cuddle",   name: "Ôm An Ủi",    type: null,     kind: "heal",  heal: 0.32, bond: 18, desc: "Hồi máu cho bản thân + tăng Đồng Điệu nhiều." },
-    soothe:   { id: "soothe",   name: "Vỗ Về",       type: "light",  kind: "soul",  soul: 20, bond: 16, desc: "Xoa dịu nỗi sợ (chữa lành)." }
+    soothe:   { id: "soothe",   name: "Vỗ Về",       type: "light",  kind: "soul",  soul: 20, bond: 16, desc: "Xoa dịu nỗi sợ (chữa lành)." },
+    tempest:  { id: "tempest",  name: "Cuồng Phong", type: "air",    kind: "atk",   power: 32, bond: 14, desc: "Lốc gió mạnh." },
+    blizzard: { id: "blizzard", name: "Bão Tuyết",   type: "ice",    kind: "atk",   power: 32, bond: 14, desc: "Cơn bão băng giá." },
+    chomp:    { id: "chomp",    name: "Ngoạm Yêu",   type: null,     kind: "atk",   power: 20, bond: 8,  desc: "Đớp nhẹ đầy tình cảm." }
   };
 
   /* ============================================================
@@ -568,10 +571,23 @@
     zephy:    { id: "zephy",    name: "Zephy",    type: "air",    shape: "gale",   base: { hp: 50, atk: 58, def: 40, spd: 70 }, moves: ["tackle", "gust", "dazzle", "cuddle"], dex: "Lumina gió tự do, không thích bị gò bó. Bay vòng quanh người nó tin tưởng." },
     lumi:     { id: "lumi",     name: "Lumi",     type: "light",  shape: "luna",   base: { hp: 56, atk: 60, def: 50, spd: 58 }, moves: ["tackle", "moonray", "dazzle", "cuddle"], evolveTo: "lumielle", evolveLv: 14, dex: "Lumina ánh sáng/bóng tối hiếm gặp. Phát sáng theo cảm xúc người bên cạnh." },
     lumielle: { id: "lumielle", name: "Lumielle", type: "light",  shape: "luna2",  base: { hp: 78, atk: 80, def: 66, spd: 72 }, moves: ["moonray", "soothe", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Lumi. Ánh trăng của nó được cho là có thể phá lời nguyền cô độc." },
+    // Lumina mới — nhiều loài hơn để sưu tầm
+    windpup:  { id: "windpup",  name: "Windpup",  type: "air",    shape: "pup",    base: { hp: 54, atk: 58, def: 44, spd: 64 }, moves: ["tackle", "gust", "dazzle", "cuddle"], evolveTo: "windwolf", evolveLv: 14, dex: "Sói gió con tinh nghịch, chạy nhanh như cơn lốc nhỏ." },
+    windwolf: { id: "windwolf", name: "Windwolf", type: "air",    shape: "pup2",   base: { hp: 76, atk: 82, def: 60, spd: 86 }, moves: ["gust", "tempest", "chomp", "cuddle"], dex: "Dạng tiến hóa của Windpup. Tiếng hú gọi được gió ngàn." },
+    tortle:   { id: "tortle",   name: "Tortle",   type: "water",  shape: "turtle", base: { hp: 64, atk: 46, def: 68, spd: 34 }, moves: ["tackle", "bubble", "cuddle", "lull"], evolveTo: "tortank", evolveLv: 16, dex: "Rùa biển hiền lành, mai cứng như san hô." },
+    tortank:  { id: "tortank",  name: "Tortank",  type: "water",  shape: "turtle2",base: { hp: 94, atk: 62, def: 94, spd: 40 }, moves: ["bubble", "tide", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Tortle. Mai nó chắn được cả sóng thần." },
+    fawnly:   { id: "fawnly",   name: "Fawnly",   type: "nature", shape: "deer",   base: { hp: 60, atk: 54, def: 52, spd: 56 }, moves: ["tackle", "vine", "cuddle", "lull"], evolveTo: "florastag", evolveLv: 16, dex: "Hươu non đội nhành lá, bước đi làm hoa cỏ nảy mầm." },
+    florastag:{ id: "florastag",name: "Florastag",type: "nature", shape: "deer2",  base: { hp: 84, atk: 74, def: 72, spd: 66 }, moves: ["vine", "bloom", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Fawnly. Gạc nó nở đầy hoa bốn mùa." },
+    owlux:    { id: "owlux",    name: "Owlux",    type: "ice",    shape: "owl",    base: { hp: 58, atk: 56, def: 54, spd: 60 }, moves: ["tackle", "frostpin", "dazzle", "cuddle"], evolveTo: "owlura", evolveLv: 16, dex: "Cú tuyết trầm tĩnh, đôi mắt thấu được nỗi buồn người khác." },
+    owlura:   { id: "owlura",   name: "Owlura",   type: "ice",    shape: "owl2",   base: { hp: 80, atk: 78, def: 72, spd: 78 }, moves: ["frostpin", "blizzard", "dazzle", "cuddle"], dex: "Dạng tiến hóa của Owlux. Lông vũ phủ sương, bay không một tiếng động." },
+    mothia:   { id: "mothia",   name: "Mothia",   type: "light",  shape: "moth",   base: { hp: 56, atk: 58, def: 50, spd: 62 }, moves: ["tackle", "moonray", "dazzle", "cuddle"], dex: "Bướm đêm phát quang, dẫn đường cho lữ khách lạc lối." },
+    drakin:   { id: "drakin",   name: "Drakin",   type: "fire",   shape: "drake",  base: { hp: 62, atk: 64, def: 54, spd: 58 }, moves: ["tackle", "emberSpark", "chomp", "cuddle"], evolveTo: "infernyx", evolveLv: 18, dex: "Rồng lửa con hiếm gặp, trái tim nóng nhưng rất trung thành." },
+    infernyx: { id: "infernyx", name: "Infernyx", type: "fire",   shape: "drake2", base: { hp: 90, atk: 92, def: 72, spd: 78 }, moves: ["emberSpark", "flameHug", "chomp", "dazzle"], dex: "Dạng tiến hóa của Drakin. Đôi cánh lửa rạch ngang trời đêm." },
     // Đối thủ của Thủ Lĩnh Vùng Can Đảm
     pyrofox:  { id: "pyrofox",  name: "Pyrofox",  type: "fire",   shape: "ember2", base: { hp: 74, atk: 72, def: 56, spd: 70 }, moves: ["emberSpark", "flameHug", "dazzle"], dex: "Lumina lửa của Thủ Lĩnh Can Đảm — bốc đồng nhưng nghĩa khí." },
     // Hộ vệ gai của lâu đài (giấc mơ)
-    thornward:{ id: "thornward",name: "Gai Thủ Vệ", type: "nature", shape: "thorn", base: { hp: 120, atk: 40, def: 60, spd: 30 }, moves: ["vine"], dex: "Không phải kẻ thù — chỉ là nỗi sợ hóa gai. Cần được chữa lành, không phải đánh bại." }
+    thornward:{ id: "thornward",name: "Gai Thủ Vệ", type: "nature", shape: "thorn", base: { hp: 120, atk: 40, def: 60, spd: 30 }, moves: ["vine"], dex: "Không phải kẻ thù — chỉ là nỗi sợ hóa gai. Cần được chữa lành, không phải đánh bại." },
+    king:     { id: "king",     name: "Vua Quái Vật", type: "nature", shape: "king", base: { hp: 170, atk: 44, def: 72, spd: 34 }, moves: ["vine"], dex: "Hiện thân của nỗi sợ bị tổn thương và sự cô độc. Không cần đánh bại — cần được thấu hiểu và chữa lành." }
   };
 
   /* ============================================================
@@ -605,6 +621,22 @@
       { name: "", text: "Đêm đó, {name} mơ một giấc mơ về K — một Gai Thủ Vệ chắn đường, mọc lên từ nỗi sợ bị tổn thương." },
       { name: "K", text: "Đừng đánh nó đau. Nó cũng đang sợ giống tớ thôi. Mình chữa lành cho nó nhé — cùng nhau." },
       { name: "", text: "Lumina của K hiện ra bên cạnh Lumina của {name}. Hãy lấp đầy thanh Đồng Điệu rồi dùng Cộng Hưởng để CHỮA LÀNH (không tiêu diệt)." }
+    ],
+    castleInfiltrate: [
+      { name: "", text: "Bốn Chìa Khóa Cảm Xúc cùng phát sáng. Bức tường gai trước cổng lâu đài rẽ ra một lối nhỏ." },
+      { name: "", text: "{name} bước qua mê cung gai góc, qua cây cầu treo lắc lư, qua căn phòng gương phản chiếu mọi nỗi sợ của chính mình..." },
+      { name: "K (vọng lại)", text: "{name}? Cậu tới thật rồi... Cẩn thận! Vua Quái Vật không xấu — hắn chỉ sợ bị bỏ rơi thôi." }
+    ],
+    bossIntro: [
+      { name: "Vua Quái Vật", text: "Lại một kẻ nữa đến để rồi rời đi... Ta đã quá mỏi mệt với những lời tạm biệt." },
+      { name: "{name}", text: "Tôi không tới để đánh bại ngài. Tôi tới để hiểu ngài — và đưa K về nhà." },
+      { name: "", text: "Hãy lấp đầy thanh Tâm Hồn bằng các chiêu CHỮA LÀNH (cùng Lumina của K), đừng cố hạ gục. Đồng Điệu đầy thì Cộng Hưởng để chữa lành thật mạnh!" }
+    ],
+    rescue: [
+      { name: "", text: "Gai góc tan thành mưa cánh hoa. Lâu đài u tối bừng nở rực rỡ. Vua Quái Vật khẽ mỉm cười lần đầu sau bao năm, rồi hóa thành ánh sáng dịu dàng." },
+      { name: "K", text: "{name}... cậu thật sự đã tới vì tớ." },
+      { name: "{name}", text: "Đi thôi K. Mình về nhà — cùng nhau." },
+      { name: "", text: "Trên đường trở về, hai người đi qua từng vùng đất kỷ niệm. K kể chuyện, cùng {name} chiến đấu, cùng cười. (💗 Nhịp Đập Trái Tim dâng cao). Hãy tới Đồi Sao Băng ✨ phía trên làng." }
     ]
   };
 
@@ -629,12 +661,13 @@
     playerName: "Bạn",
     empathy: 12,          // Đồng Cảm — ảnh hưởng tỉ lệ thu phục
     kHeart: 24,           // Nhịp Đập Trái Tim với K (0..100)
+    chapter: 1,           // chương hiện tại (1..6)
     badges: [],           // ["courage"]
     keys: [],             // Chìa Khóa Cảm Xúc
     party: [],            // [LuminaInstance]
     bag: { charm: 8, grassRing: 1, letter: 0, courageBadge: 0, potion: 4 },
     dex: {},              // {speciesId: "seen"|"caught"}
-    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false, trainerDone: false, tutDone: false }
+    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false, trainerDone: false, tutDone: false, rescued: false, confessed: false }
   };
 
   const settings = { contrast: false, noFlash: false, font: 1, music: false };
@@ -778,8 +811,11 @@
       obj("mem2", "memory", 32, 15, { idx: 1 }),
       // Bảng chỉ dẫn
       obj("sign1", "sign", 7, 12, { text: "🪧 Đông → Sân Đấu Can Đảm & Lâu đài. Cỏ cao 🌾 có Lumina hoang." }),
-      // Thủ Lĩnh Vùng
+      // Thủ Lĩnh Vùng: Can Đảm (gym) + 3 vùng còn lại
       obj("gym", "gym", 26, 8, { color: "#ff8a4d" }),
+      obj("lead_patience", "leader", 8, 19, { id: "patience", color: "#4db5ff" }),
+      obj("lead_empathy", "leader", 22, 17, { id: "empathy", color: "#5fd07a" }),
+      obj("lead_trust", "leader", 33, 13, { id: "trust", color: "#bfa2ff" }),
       // Cổng lâu đài
       obj("castle", "castle", 36, 10, {})
     ];
@@ -790,9 +826,13 @@
       wild: [
         { sp: "embo", min: 3, max: 5 }, { sp: "tidi", min: 3, max: 5 },
         { sp: "sprou", min: 3, max: 5 }, { sp: "frostle", min: 4, max: 6 },
-        { sp: "zephy", min: 4, max: 6 }, { sp: "lumi", min: 5, max: 7 }
+        { sp: "zephy", min: 4, max: 6 }, { sp: "lumi", min: 5, max: 7 },
+        { sp: "windpup", min: 4, max: 6 }, { sp: "tortle", min: 4, max: 6 },
+        { sp: "fawnly", min: 4, max: 6 }, { sp: "owlux", min: 5, max: 7 },
+        { sp: "mothia", min: 5, max: 7 }, { sp: "drakin", min: 6, max: 8 }
       ]
     };
+    if (game.flags.rescued) spawnStarHill();
   }
   function obj(id, type, tx, ty, data = {}) {
     return { id, type, x: tx * TILE, y: ty * TILE, tx, ty, data, t: 0 };
@@ -880,7 +920,7 @@
     let best = null, bestD = 9999;
     const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
     for (const o of world.objects) {
-      if (!["npc", "gym", "castle", "sign", "item", "memory"].includes(o.type)) continue;
+      if (!["npc", "gym", "castle", "sign", "item", "memory", "leader", "starhill"].includes(o.type)) continue;
       const ox = o.x + 14, oy = o.y + 16;
       const d = Math.hypot(cx - ox, cy - oy);
       if (d < 46 && d < bestD) { bestD = d; best = o; }
@@ -898,6 +938,8 @@
     if (o.type === "sign") { openDialog([{ name: "Bảng chỉ dẫn", text: o.data.text }]); return; }
     if (o.type === "npc") { talkNpc(o); return; }
     if (o.type === "gym") { startGym(); return; }
+    if (o.type === "leader") { startLeader(o.data.id); return; }
+    if (o.type === "starhill") { startConfession(); return; }
     if (o.type === "castle") { approachCastle(); return; }
   }
 
@@ -1068,16 +1110,89 @@
       ], begin);
     } else begin();
   }
-  function startGym() {
-    if (!game.flags.gotStarter) { openDialog([{ name: "Thủ Lĩnh Hạ", text: "Con chưa có Lumina nào sao? Hãy ghé Giáo Sư Tơ ở làng trước đã." }]); return; }
-    if (game.flags.gymDone) {
-      openDialog([{ name: "Thủ Lĩnh Hạ", text: "Con đã có Huy Hiệu Can Đảm rồi. Hãy đi tiếp về phía cổng lâu đài phía Đông!" }]);
-      return;
-    }
-    openDialog(STORY.gymBefore, () => {
-      const team = [makeMon("embo", 7), makeMon("pyrofox", 9)];
-      enterBattle({ mode: "gym", enemyTeam: team, canRun: false, foeName: "Thủ Lĩnh Hạ" });
+  /* ===== Hệ 6 chương · 4 Thủ Lĩnh · Boss · Tỏ tình ===== */
+  const CHAPTERS = {
+    1: "Chương 1 · Khởi Hành", 2: "Chương 2 · Bốn Thử Thách", 3: "Chương 3 · Đột Nhập Lâu Đài",
+    4: "Chương 4 · Trận Vua Quái Vật", 5: "Chương 5 · Hành Trình Trở Về", 6: "Chương Cuối · Lời Tỏ Tình"
+  };
+  const LEADERS = {
+    courage: { name: "Hạ", emotion: "Can Đảm", color: "#ff8a4d", team: [["embo", 8], ["pyrofox", 10]],
+      before: [{ name: "Thủ Lĩnh Hạ", text: "Ta là Hạ, Thủ Lĩnh Vùng Can Đảm. Can đảm không phải là không sợ — mà là vẫn bước tới dù tim đang run. Lại đây nào!" }],
+      win: [{ name: "Thủ Lĩnh Hạ", text: "Hay lắm! Con đánh không phải để thắng — mà để bảo vệ điều con thương. Đó mới là can đảm." }] },
+    patience: { name: "Vũ", emotion: "Kiên Nhẫn", color: "#4db5ff", team: [["tortle", 10], ["tortank", 12]],
+      before: [{ name: "Thủ Lĩnh Vũ", text: "Ta là Vũ của Vùng Kiên Nhẫn. Sóng dữ rồi cũng tan; ai biết chờ đợi mới giữ được điều mình yêu. Thử sức nào!" }],
+      win: [{ name: "Thủ Lĩnh Vũ", text: "Con điềm tĩnh thật đáng nể. Kiên nhẫn sẽ đưa con tới cuối hành trình." }] },
+    empathy: { name: "Thu", emotion: "Thấu Hiểu", color: "#5fd07a", team: [["fawnly", 11], ["florastag", 13]],
+      before: [{ name: "Thủ Lĩnh Thu", text: "Ta là Thu của Vùng Thấu Hiểu. Lumina không nghe kẻ mạnh — chúng theo người hiểu chúng. Cho ta xem trái tim con nào." }],
+      win: [{ name: "Thủ Lĩnh Thu", text: "Con và Lumina hiểu nhau sâu sắc. Sự thấu hiểu này rồi sẽ chạm tới cả K." }] },
+    trust: { name: "Đông", emotion: "Tin Tưởng", color: "#bfa2ff", team: [["mothia", 12], ["owlura", 14]],
+      before: [{ name: "Thủ Lĩnh Đông", text: "Ta là Đông, thử thách cuối. Tin tưởng là dám trao trái tim dù biết có thể đau. Con sẵn sàng chưa?" }],
+      win: [{ name: "Thủ Lĩnh Đông", text: "Con có lòng tin vững vàng. Giờ cả 4 Chìa Khóa đã đủ — lâu đài Vua Quái Vật chờ con." }] }
+  };
+  function advanceChapter(n, cb) {
+    if (game.chapter < n) { game.chapter = n; saveGame(true); bannerThen(CHAPTERS[n], cb); }
+    else if (cb) cb();
+  }
+  function startLeader(id) {
+    const L = LEADERS[id];
+    if (!game.flags.gotStarter) { openDialog([{ name: L.name, text: "Con chưa có Lumina nào — ghé Giáo Sư Tơ ở làng trước nhé!" }]); return; }
+    if (game.keys.includes(id)) { openDialog([{ name: L.name, text: "Con đã có Chìa Khóa " + L.emotion + " rồi. Cảm ơn vì trận đấu hay!" }]); return; }
+    openDialog(L.before, () => {
+      const team = L.team.map(function (p) { return makeMon(p[0], p[1]); });
+      enterBattle({ mode: "gym", enemyTeam: team, canRun: false, foeName: "Thủ Lĩnh " + L.name, keyId: id });
     });
+  }
+  function startGym() { startLeader("courage"); }
+  function startBoss() {
+    const king = makeMon("king", 16);
+    const ally = makeMon("lumielle", 15); ally.fromK = true;
+    enterBattle({ mode: "dream", enemy: king, ally, canRun: false, foeName: "Vua Quái Vật" });
+  }
+  function spawnStarHill() {
+    if (!world.objects.some(o => o.type === "starhill")) world.objects.push(obj("starhill", "starhill", 20, 3, {}));
+  }
+  const confession = { active: false, t: 0 };
+  function startConfession() {
+    if (game.flags.confessed) { showEnding(); return; }
+    advanceChapter(6, () => {
+      confession.active = true; confession.t = 0;
+      openDialog(confessionLines(), () => { confession.active = false; game.flags.confessed = true; saveGame(true); showEnding(); });
+    });
+  }
+  function confessionLines() {
+    const tier = endingTier();
+    const base = [
+      { name: "", text: "Hoàng hôn nhuộm tím Đồi Sao Băng. Lumina của {name} và của K khẽ phát sáng, hòa chung một nhịp." },
+      { name: "K", text: "{name} này... cảm ơn cậu. Cậu đã không bỏ cuộc, kể cả khi cả thế giới bảo cậu quay về." },
+      { name: "", text: "K hít một hơi thật sâu, đôi tay khẽ run..." }
+    ];
+    if (tier === "true") {
+      base.push({ name: "K", text: "Tớ... tớ thích cậu. Không phải từ hôm nay — mà từ rất, rất lâu rồi. Cậu chịu nắm tay tớ đi hết quãng đường còn lại chứ?" });
+      base.push({ name: "{name}", text: "...Ừ. Tớ cũng vậy mà, đồ ngốc." });
+    } else if (tier === "gentle") {
+      base.push({ name: "K", text: "Tớ thương cậu nhiều lắm. Nhưng tớ vừa qua biến cố... cho tớ thêm chút thời gian để lành lại, rồi mình cùng đi tiếp nhé?" });
+      base.push({ name: "{name}", text: "Tớ đợi được. Mình cứ từ từ thôi." });
+    } else {
+      base.push({ name: "K", text: "Cậu là người bạn quý giá nhất đời tớ. Dù sau này thế nào, tớ vẫn luôn biết ơn vì có cậu." });
+      base.push({ name: "{name}", text: "Mình sẽ luôn là bạn của nhau, K." });
+    }
+    return base;
+  }
+  function drawConfession() {
+    confession.t += 0.016;
+    const grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    grd.addColorStop(0, "#3a2a5e"); grd.addColorStop(0.5, "#c46a8a"); grd.addColorStop(1, "#ffc27a");
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    for (let i = 0; i < 40; i++) { const sx = (i * 97) % VIEW_W, sy = (i * 53) % Math.floor(VIEW_H * 0.6); ctx.fillStyle = "rgba(255,247,251," + (0.35 + 0.4 * Math.abs(Math.sin(confession.t * 2 + i))) + ")"; ctx.fillRect(sx, sy, 2, 2); }
+    if (!settings.noFlash && Math.random() < 0.25) spawnParticle({ x: rand(0, VIEW_W), y: rand(0, VIEW_H * 0.4), vx: rand(20, 50), vy: rand(10, 24), gravity: 0, life: 0.6, maxLife: 0.6, color: "#fff7fb", shape: "streak", size: rand(3, 6) });
+    ctx.fillStyle = "#2a2342"; ctx.beginPath(); ctx.moveTo(0, VIEW_H); ctx.lineTo(0, VIEW_H * 0.72); ctx.quadraticCurveTo(VIEW_W / 2, VIEW_H * 0.6, VIEW_W, VIEW_H * 0.72); ctx.lineTo(VIEW_W, VIEW_H); ctx.closePath(); ctx.fill();
+    const gx = VIEW_W / 2 - 26, gy = Math.floor(VIEW_H * 0.62);
+    drawHero(ctx, Math.floor(gx), gy, { dir: "right", moving: false, step: 0, clock: visualClock });
+    drawBoy(ctx, Math.floor(gx + 24), gy, { clock: visualClock });
+    if (game.party[0]) drawLumina(ctx, game.party[0].species, gx - 30, gy + 6, 3, visualClock, { emit: true });
+    drawLumina(ctx, "lumielle", gx + 52, gy + 6, 3, visualClock, { emit: true });
+    drawParticles();
+    if (!settings.noFlash && Math.random() < 0.3) spawnParticle({ x: VIEW_W / 2 + rand(-20, 20), y: gy, vx: rand(-6, 6), vy: -rand(12, 26), gravity: -4, life: 1.0, maxLife: 1.0, color: "#ff7ab6", shape: "heart", size: rand(3, 5) });
   }
   function startTrainer() {
     const team = [makeMon("zephy", 5), makeMon("sprou", 6)];
@@ -1085,18 +1200,18 @@
   }
   function approachCastle() {
     game.flags.sawCastle = true;
-    if (!game.flags.gymDone) {
+    if (game.flags.confessed) { showEnding(); return; }
+    if (game.flags.rescued) { openDialog([{ name: "", text: "Lâu đài giờ nở đầy hoa. K đang đợi {name} ở Đồi Sao Băng ✨ phía trên làng." }]); return; }
+    if (game.keys.length < 4) {
       openDialog([
-        { name: "", text: "Cổng lâu đài phủ đầy gai đen. Một sức ép vô hình đẩy {name} lùi lại." },
-        { name: "", text: "Có lẽ cần chứng tỏ lòng can đảm trước — hãy thắng Thủ Lĩnh Hạ ở Sân Đấu Can Đảm đã." }
+        { name: "", text: "Cổng lâu đài phủ gai đen. Một sức ép vô hình đẩy {name} lùi lại." },
+        { name: "", text: "Cần đủ 4 Chìa Khóa Cảm Xúc để phá lời nguyền cổng (đang có " + game.keys.length + "/4). Hãy thắng cả 4 Thủ Lĩnh Vùng." }
       ]);
       return;
     }
-    if (game.flags.dreamDone) { showEnding(); return; }
-    openDialog(STORY.castleGate, () => {
-      // Đêm xuống → giấc mơ về K
-      bannerThen("🌙 Màn đêm buông xuống...", () => {
-        openDialog(STORY.dreamIntro, () => startDreamBattle());
+    advanceChapter(3, () => {
+      openDialog(STORY.castleInfiltrate, () => {
+        advanceChapter(4, () => { openDialog(STORY.bossIntro, () => startBoss()); });
       });
     });
   }
@@ -1121,6 +1236,7 @@
     if (battle.allyMon) battle.allyMon.bond = 0;
     battle.canRun = !!opts.canRun;
     battle.foeName = opts.foeName || (opts.mode === "gym" ? "Thủ Lĩnh Hạ" : opts.mode === "trainer" ? "Người Lữ Hành" : "");
+    battle.keyId = opts.keyId || null;
     battle.soul = 0;
     battle.capturing = false;
     battle.menu = "root";
@@ -1135,7 +1251,7 @@
     const intro = battle.mode === "wild"
       ? `Một ${battle.eMon.name} hoang ${TYPES[battle.eMon.type].emoji} xuất hiện!`
       : battle.mode === "dream"
-        ? `Gai Thủ Vệ trỗi dậy từ nỗi sợ...`
+        ? (battle.eMon.species === "king" ? `Vua Quái Vật trỗi dậy từ nỗi cô độc...` : `Gai Thủ Vệ trỗi dậy từ nỗi sợ...`)
         : `${battle.foeName} tung ra ${battle.eMon.name}!`;
     setBattleMsg(intro);
     renderBattleBoxes();
@@ -1618,18 +1734,16 @@
   function winDream() {
     battle.busy = true; battle.seq++; clearMenu();
     battle.fx.flash = 0.8;
-    setBattleMsg("💗 Tâm Hồn đầy! Gai Thủ Vệ ngừng vùng vẫy...");
+    setBattleMsg("💗 Tâm Hồn đầy! Lời nguyền cô độc tan dần...");
     burstAt("E", "#b8f7c1", 40, "spark"); burstAt("E", "#ffd1e6", 30, "heart");
     setTimeout(() => {
-      game.flags.dreamDone = true;
+      game.flags.dreamDone = true; game.flags.rescued = true;
       game.kHeart = clamp(game.kHeart + 18, 0, 100);
       battle.active = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
       refreshMusic();
-      openDialog([
-        { name: "", text: "Gai góc tan thành cánh hoa. Một con đường sáng hiện ra phía lâu đài." },
-        { name: "K", text: "Cậu thấy chưa? Mình không cần đánh bại nỗi sợ — chỉ cần hiểu nó. Cảm ơn cậu... vì đã tới." },
-        { name: "", text: "Nhịp Đập Trái Tim của hai người gần nhau hơn bao giờ hết. (Còn tiếp ở Chương sau...)" }
-      ], () => { saveGame(true); showEnding(); });
+      advanceChapter(5, () => {
+        openDialog(STORY.rescue, () => { spawnStarHill(); updateHud(); saveGame(true); });
+      });
     }, 1500);
   }
 
@@ -1647,14 +1761,19 @@
     if (battle.mode === "gym" && victory) {
       battle.active = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
       refreshMusic();
+      const id = battle.keyId || "courage";
+      const L = LEADERS[id] || LEADERS.courage;
       game.flags.gymDone = true;
-      if (!game.badges.includes("courage")) game.badges.push("courage");
-      if (!game.keys.includes("courage")) game.keys.push("courage");
-      game.bag.courageBadge = (game.bag.courageBadge || 0) + 1;
+      if (!game.keys.includes(id)) game.keys.push(id);
+      game.bag.courageBadge = game.keys.length;
       game.empathy = clamp(game.empathy + 5, 0, 60);
-      game.kHeart = clamp(game.kHeart + 10, 0, 100);
+      game.kHeart = clamp(game.kHeart + 8, 0, 100);
       game.party.forEach(m => { m.hp = m.maxHp; m.status = null; });
-      openDialog(STORY.gymWin, () => { updateHud(); saveGame(true); });
+      const after = () => { updateHud(); saveGame(true); };
+      const lines = L.win.concat([{ name: "Thủ Lĩnh " + L.name, text: "Nhận Chìa Khóa Cảm Xúc " + L.emotion + "! (" + game.keys.length + "/4)" }]);
+      if (game.keys.length >= 4) openDialog(lines.concat([{ name: "", text: "Đủ 4 Chìa Khóa! Lời nguyền cổng lâu đài đã lung lay — hãy tới cổng phía Đông cứu K." }]), after);
+      else if (game.keys.length === 1) advanceChapter(2, () => openDialog(lines, after));
+      else openDialog(lines, after);
       return;
     }
     battle.active = false; battle.busy = false;
@@ -1788,7 +1907,7 @@
   }
 
   function openDex() {
-    const ids = Object.keys(SPECIES).filter(id => !["pyrofox", "thornward"].includes(id));
+    const ids = Object.keys(SPECIES).filter(id => !["pyrofox", "thornward", "king"].includes(id));
     const caught = ids.filter(id => game.dex[id] === "caught").length;
     $("dexCount").textContent = `Đã gặp/thu phục ${Object.keys(game.dex).length}/${ids.length} loài · Đã thu phục ${caught}`;
     const grid = $("dexGrid"); grid.innerHTML = "";
@@ -1846,11 +1965,13 @@
    * 14) HUD + LA BÀN + NHỊP ĐẬP
    * ============================================================ */
   function updateHud() {
-    $("areaName").textContent = "🗺️ Vùng Khởi Hành";
-    let quest = "Gặp Giáo Sư Tơ nhận Lumina";
-    if (game.flags.gotStarter && !game.flags.gymDone) quest = "Tới Sân Đấu Can Đảm (phía Đông)";
-    else if (game.flags.gymDone && !game.flags.dreamDone) quest = "Tới cổng Lâu Đài phía Đông";
-    else if (game.flags.dreamDone) quest = "Chương 1 hoàn tất ✨";
+    $("areaName").textContent = "🗺️ " + (CHAPTERS[game.chapter] || "Vùng Khởi Hành");
+    let quest;
+    if (!game.flags.gotStarter) quest = "Gặp Giáo Sư Tơ nhận Lumina";
+    else if (game.keys.length < 4) quest = "Thắng 4 Thủ Lĩnh Vùng · Chìa Khóa " + game.keys.length + "/4";
+    else if (!game.flags.rescued) quest = "Tới cổng Lâu Đài phía Đông cứu K";
+    else if (!game.flags.confessed) quest = "Tới Đồi Sao Băng ✨ cùng K";
+    else quest = "Hoàn thành hành trình 💖";
     $("quest").textContent = "🎯 " + quest;
     const lead = game.party[0];
     $("stats").textContent = lead ? `👑 ${lead.name} Lv${lead.level} ${TYPES[lead.type].emoji} · Đội ${game.party.length}/6` : "Chưa có Lumina";
@@ -1874,6 +1995,7 @@
     let sx = 0, sy = 0;
     if (screenShake > 0) { sx = (Math.random() * 2 - 1) * screenShake; sy = (Math.random() * 2 - 1) * screenShake; screenShake = Math.max(0, screenShake - 0.6); }
     ctx.setTransform(SCALE, 0, 0, SCALE, sx * SCALE, sy * SCALE);
+    if (confession.active) { drawConfession(); return; }
     if (battle.active) { drawBattle(); return; }
     drawOverworld();
   }
@@ -2084,6 +2206,8 @@
     else if (o.type === "sign") drawSign(x, y);
     else if (o.type === "item") drawCharmItem(x, y);
     else if (o.type === "memory") drawMemoryOrb(x, y);
+    else if (o.type === "leader") drawLeader(x, y, o);
+    else if (o.type === "starhill") drawStarHill(x, y);
   }
 
   function drawBlobShadow(x, y, w, h) {
@@ -2191,6 +2315,30 @@
     ctx.fillStyle = "#fff7fb"; ctx.fillRect(x + 8, b + 11, 1, 1); ctx.fillRect(x + 15, b + 11, 1, 1);
     ctx.fillStyle = "#ffb3d6"; ctx.fillRect(x + 4, b + 14, 2, 2); ctx.fillRect(x + 15, b + 14, 2, 2);
     ctx.fillStyle = "#b64a7f"; ctx.fillRect(x + 9, b + 15, 3, 1);
+  }
+  function drawLeader(x, y, o) {
+    const id = o.data.id;
+    const b = Math.floor(y + Math.sin(visualClock * 2.2 + x * 0.01) * 0.8);
+    const O = "rgba(45,26,52,0.8)";
+    drawBlobShadow(x + 2, y + 22, 20, 6);
+    g_npcBody(x, b, O, o.data.color || "#bfa2ff", "#7a4f8a");
+    ctx.fillStyle = "#4a3a5a"; ctx.fillRect(x + 4, b + 1, 13, 7); ctx.fillRect(x + 3, b + 5, 15, 3);
+    drawNpcFace(x, b, "#ffe0c8");
+    if (!game.keys.includes(id)) {
+      const yy = Math.floor(b - 9 + Math.sin(visualClock * 4) * 1.5);
+      ctx.fillStyle = o.data.color || "#bfa2ff"; ctx.fillRect(x + 8, yy, 7, 7);
+      ctx.fillStyle = "#fff7fb"; ctx.fillRect(x + 10, yy + 2, 3, 3);
+    } else { ctx.fillStyle = "#ffd166"; ctx.fillRect(x + 9, b - 8, 5, 5); }
+  }
+  function drawStarHill(x, y) {
+    const fl = Math.sin(visualClock * 2.5) * 2;
+    drawBlobShadow(x + 6, y + 22, 18, 5);
+    ctx.fillStyle = "#7fce8e"; ctx.beginPath(); ctx.ellipse(x + 14, y + 20, 16, 8, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = "#caa06a"; ctx.fillRect(x + 12, y + 8, 4, 12);
+    ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(visualClock * 4) * 0.2; ctx.fillStyle = "#fff3a3";
+    ctx.fillRect(x + 10, Math.floor(y + 2 + fl), 8, 8); ctx.restore();
+    ctx.fillStyle = "#ffd166"; ctx.fillRect(x + 13, Math.floor(y + fl), 2, 12); ctx.fillRect(x + 8, Math.floor(y + 5 + fl), 12, 2);
+    if (!settings.noFlash && Math.random() < 0.25) spawnParticle({ x: x + 14, y: y + 4 + fl, vx: rand(-6, 6), vy: -rand(6, 16), gravity: -2, life: 0.8, maxLife: 0.8, color: "#fff3a3", shape: "star", size: rand(2, 3) });
   }
   function drawSign(x, y) {
     drawBlobShadow(x + 6, y + 24, 16, 5);
@@ -2468,6 +2616,72 @@
       if (evolved) { px(3, -2, 10, 1, c2); px(2, -1, 1, 1, c2); px(13, -1, 1, 1, c2); } // hào quang
       if (!settings.noFlash) { px(0, 2, 1, 1, "#fff3d6"); px(15, 5, 1, 1, "#fff3d6"); }
       drawFace(px, 5, 6, opts.foe);
+    } else if (shape === "pup" || shape === "pup2") {
+      // 🐺 SÓI GIÓ — tai dựng, mõm dài, đuôi xù
+      px(2, -2, 3, 4, c1); px(11, -2, 3, 4, c1);
+      px(3, -1, 1, 2, c2); px(12, -1, 1, 2, c2);
+      ol(2, 3, 12, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 9, 8, 4, c2);
+      px(5, 10, 5, 3, "#fff7fb"); px(8, 11, 1, 1, "#3b2645");
+      px(12, 6, 4, 5, c1); px(14, 5, 2, 3, c2);            // đuôi xù
+      px(4, 13, 3, 2, "#5a5a6a"); px(9, 13, 3, 2, "#5a5a6a");
+      if (evolved) { px(2, 1, 12, 2, c2); px(13, 4, 3, 3, c2); }
+      drawFace(px, 5, 6, opts.foe);
+    } else if (shape === "turtle" || shape === "turtle2") {
+      // 🐢 RÙA — mai tròn có vân, đầu thò ra
+      ol(2, 5, 12, 9);
+      px(2, 5, 12, 9, c1);
+      px(4, 6, 8, 4, c2); px(5, 7, 2, 2, "#fff7fb"); px(9, 7, 2, 2, "#fff7fb");
+      px(10, 2, 5, 6, c2);                                 // đầu
+      px(1, 8, 2, 3, c2); px(14, 11, 2, 2, c2);            // chân chèo
+      px(4, 13, 3, 2, c2); px(9, 13, 3, 2, c2);
+      if (evolved) { px(2, 3, 3, 3, "#fff7fb"); px(11, 11, 3, 3, "#fff7fb"); }
+      drawFace(px, 10, 4, opts.foe);
+    } else if (shape === "deer" || shape === "deer2") {
+      // 🦌 HƯƠU — gạc lá, chân thon
+      px(3, -3, 2, 4, "#7a5230"); px(12, -3, 2, 4, "#7a5230");
+      px(2, -2, 2, 2, "#52b86a"); px(13, -2, 2, 2, "#52b86a");
+      ol(3, 3, 10, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 9, 8, 4, c2);
+      px(6, 10, 4, 2, "#fff7fb");
+      px(4, 13, 2, 3, "#6a4a2a"); px(10, 13, 2, 3, "#6a4a2a");
+      if (evolved) drawFlowerPix(px, 3, -3, "#ff7ab6");
+      drawFace(px, 5, 6, opts.foe);
+    } else if (shape === "owl" || shape === "owl2") {
+      // 🦉 CÚ — chỏm tai, mắt to, cánh ốp
+      px(3, -1, 2, 3, c1); px(11, -1, 2, 3, c1);
+      ol(2, 2, 12, 11);
+      px(3, 2, 10, 11, c1);
+      px(4, 8, 8, 4, c2);
+      px(0, 5, 3, 6, c1); px(13, 5, 3, 6, c1);
+      px(7, 9, 2, 2, "#ffd166");
+      px(4, 5, 3, 3, "#fff7fb"); px(9, 5, 3, 3, "#fff7fb");
+      px(5, 6, 2, 2, "#3b2645"); px(10, 6, 2, 2, "#3b2645");
+      if (evolved) { px(2, 0, 12, 1, c2); }
+    } else if (shape === "moth") {
+      // 🦋 BƯỚM ĐÊM — cánh phát quang, râu
+      const fl = Math.round(Math.sin(clock * 5) * 1.5);
+      px(0, 4 + fl, 5, 7, c2); px(11, 4 - fl, 5, 7, c2);
+      px(1, 9 + fl, 4, 4, c1); px(11, 9 - fl, 4, 4, c1);
+      ol(5, 3, 6, 10);
+      px(5, 3, 6, 10, c1);
+      px(6, 1, 1, 3, c2); px(9, 1, 1, 3, c2);
+      if (!settings.noFlash) { px(1, 6, 1, 1, "#fff7fb"); px(13, 6, 1, 1, "#fff7fb"); }
+      drawFace(px, 5, 5, opts.foe);
+    } else if (shape === "drake" || shape === "drake2") {
+      // 🐉 RỒNG CON — sừng, cánh, đuôi gai
+      px(4, -2, 2, 3, c2); px(10, -2, 2, 3, c2);
+      ol(2, 3, 12, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 9, 8, 4, c2);
+      px(0, 4, 3, 5, c1); px(13, 4, 3, 5, c1);             // cánh
+      px(12, 10, 4, 2, c1); px(15, 9, 1, 2, c2);           // đuôi
+      px(6, 10, 4, 2, "#fff7fb"); px(8, 11, 1, 1, "#3b2645");
+      px(4, 13, 3, 2, "#7a4a3a"); px(9, 13, 3, 2, "#7a4a3a");
+      if (evolved) { px(0, 3, 3, 2, c2); px(13, 3, 3, 2, c2); px(5, 1, 6, 1, c2); }
+      drawFace(px, 5, 6, opts.foe);
     } else if (shape === "thorn") {
       // Gai Thủ Vệ — to, gai góc, mắt buồn
       g.fillStyle = "rgba(28,23,38,0.85)"; g.fillRect(Math.floor(x + 1 * s), Math.floor(oy + 2 * s), 14 * s, 13 * s);
@@ -2480,6 +2694,17 @@
       g.fillStyle = "#fff7fb"; g.fillRect(Math.floor(x + 4 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s); g.fillRect(Math.floor(x + 10 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s);
       // miệng run rẩy
       g.fillStyle = "#1c1726"; g.fillRect(Math.floor(x + 6 * s), Math.floor(oy + 10 * s), 4 * s, 1 * s);
+    } else if (shape === "king") {
+      // 👑 VUA QUÁI VẬT — to lớn, sừng cong, vương miện, mắt buồn phát sáng
+      g.fillStyle = "rgba(20,15,30,0.9)"; g.fillRect(Math.floor(x), Math.floor(oy + 1 * s), 16 * s, 14 * s);
+      px(1, 2, 14, 12, "#3a2f4e");
+      px(0, 0, 3, 4, "#241d33"); px(13, 0, 3, 4, "#241d33");        // sừng
+      px(2, 3, 12, 3, "#4a3a5e");
+      px(4, -1, 8, 2, "#ffd166"); px(5, -3, 1, 2, "#ffd166"); px(8, -3, 1, 2, "#ffd166"); px(11, -3, 1, 2, "#ffd166"); // vương miện
+      g.fillStyle = "#9fe0ff"; g.fillRect(Math.floor(x + 4 * s), Math.floor(oy + 6 * s), 2 * s, 2 * s); g.fillRect(Math.floor(x + 10 * s), Math.floor(oy + 6 * s), 2 * s, 2 * s);
+      g.fillStyle = "#fff7fb"; g.fillRect(Math.floor(x + 4 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s); g.fillRect(Math.floor(x + 10 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s);
+      g.fillStyle = "#1c1726"; g.fillRect(Math.floor(x + 6 * s), Math.floor(oy + 11 * s), 4 * s, 1 * s);
+      px(0, 7, 2, 3, "#241d33"); px(14, 7, 2, 3, "#241d33");        // gai vai
     }
   }
   function drawFace(px, fx, fy, foe) {
