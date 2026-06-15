@@ -368,6 +368,7 @@
         <button class="tinyBtn" id="saveBtn" title="Lưu">💾</button>
         <button class="tinyBtn" id="setBtn" title="Tùy chỉnh">⚙️</button>
         <button class="tinyBtn" id="musicBtn" title="Nhạc">♪</button>
+        <button class="tinyBtn" id="helpBtn" title="Hướng dẫn">❓</button>
       </div>
 
       <div id="dialog" class="pixel-panel hidden">
@@ -465,6 +466,21 @@
             <button class="ghostBtn" id="resetBtn">Xóa bản lưu & chơi lại</button>
             <button class="primaryBtn" id="closeSet">Xong</button>
           </div>
+        </div>
+      </div>
+
+      <div id="helpOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>❓ Hướng dẫn tân thủ</h2>
+          <p><b>🕹️ Di chuyển:</b> WASD / phím mũi tên (điện thoại: D-pad). Nhấn <b>E</b> / nút Tương tác để nói chuyện, đọc bảng, nhặt đồ.</p>
+          <p><b>🌾 Cỏ cao:</b> bước vào có thể gặp <b>Lumina hoang</b> để thu phục.</p>
+          <p><b>⚔️ Chiến đấu:</b> Chiến (dùng chiêu) · 🧪 Túi (Trà Hồi Sức) · 🔁 Đổi Lumina · 🏃 Bỏ chạy. Đánh đúng hệ khắc → "Rất hiệu quả!".</p>
+          <p><b>💞 Thu phục:</b> dùng <b>Bùa Kết Nối</b> — HP đối thủ càng thấp + bị 💤 ngủ / 💫 bối rối thì tỉ lệ càng cao.</p>
+          <p><b>✨ Đồng Điệu &amp; Cộng Hưởng:</b> mỗi đòn làm đầy thanh Đồng Điệu; đầy thì bấm <b>Cộng Hưởng</b> để tung đòn / chữa lành cực mạnh (đôi với K).</p>
+          <p><b>💚 Hồi sức:</b> về <b>Trạm Hồi Sức</b> (Cô Y Tá Lá) ở làng để hồi đầy cả đội — miễn phí.</p>
+          <p><b>🌟 Tiến hóa:</b> Lumina lên cấp + thân thiết đủ sẽ tiến hóa; hoặc dùng Kỷ Vật (Nhẫn Cỏ) trong menu Đội 👥.</p>
+          <p><b>💗 Nhịp Đập Trái Tim:</b> đối xử dịu dàng với Lumina, đọc Mảnh Ký Ức, chiến đấu cùng K → quyết định cái kết với K.</p>
+          <div class="modalActions"><button class="primaryBtn" id="closeHelp">Đã hiểu! 💪</button></div>
         </div>
       </div>
 
@@ -595,6 +611,16 @@
   /* ============================================================
    * 5) TRẠNG THÁI GAME (state)
    * ============================================================ */
+  const MEMORIES = [
+    { lines: [
+      { name: "Mảnh Ký Ức 🕊️", text: "...Hồi nhỏ, K dúi vào tay {name} chiếc la bàn cũ: 'Để sau này dù lạc nhau, cậu vẫn tìm được tớ.'" },
+      { name: "", text: "Tim {name} ấm lên một nhịp. (💗 Nhịp Đập Trái Tim +8)" }
+    ] },
+    { lines: [
+      { name: "Mảnh Ký Ức 🍬", text: "...K luôn nhường phần kẹo ngọt nhất rồi cười: 'Thấy cậu vui là tớ no rồi.'" },
+      { name: "", text: "{name} mỉm cười giữa đồng cỏ. (💗 Nhịp Đập Trái Tim +8)" }
+    ] }
+  ];
   const SAVE_KEY = "luminaQuestSave_v1";
   const SET_KEY = "luminaQuestSettings_v1";
 
@@ -608,7 +634,7 @@
     party: [],            // [LuminaInstance]
     bag: { charm: 8, grassRing: 1, letter: 0, courageBadge: 0, potion: 4 },
     dex: {},              // {speciesId: "seen"|"caught"}
-    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false, trainerDone: false }
+    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false, trainerDone: false, tutDone: false }
   };
 
   const settings = { contrast: false, noFlash: false, font: 1, music: false };
@@ -747,6 +773,9 @@
       // Bùa nhặt thêm
       obj("charm1", "item", 21, 12, { item: "charm", amount: 3 }),
       obj("charm2", "item", 31, 20, { item: "charm", amount: 3 }),
+      // Mảnh Ký Ức về K (cốt truyện + Nhịp Đập)
+      obj("mem1", "memory", 19, 11, { idx: 0 }),
+      obj("mem2", "memory", 32, 15, { idx: 1 }),
       // Bảng chỉ dẫn
       obj("sign1", "sign", 7, 12, { text: "🪧 Đông → Sân Đấu Can Đảm & Lâu đài. Cỏ cao 🌾 có Lumina hoang." }),
       // Thủ Lĩnh Vùng
@@ -851,7 +880,7 @@
     let best = null, bestD = 9999;
     const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
     for (const o of world.objects) {
-      if (!["npc", "gym", "castle", "sign", "item"].includes(o.type)) continue;
+      if (!["npc", "gym", "castle", "sign", "item", "memory"].includes(o.type)) continue;
       const ox = o.x + 14, oy = o.y + 16;
       const d = Math.hypot(cx - ox, cy - oy);
       if (d < 46 && d < bestD) { bestD = d; best = o; }
@@ -865,6 +894,7 @@
     const o = nearestInteractable();
     if (!o) return;
     if (o.type === "item") { pickupItem(o); return; }
+    if (o.type === "memory") { readMemory(o); return; }
     if (o.type === "sign") { openDialog([{ name: "Bảng chỉ dẫn", text: o.data.text }]); return; }
     if (o.type === "npc") { talkNpc(o); return; }
     if (o.type === "gym") { startGym(); return; }
@@ -878,6 +908,13 @@
     sfx("pickup"); burst(o.x + 14 - camera.x, o.y + 14 - camera.y, "#ffd166", 12, "spark");
     showToast("Nhặt được " + amt + " " + itemName(o.data.item) + "!");
     saveGame(true);
+  }
+  function readMemory(o) {
+    const mem = MEMORIES[(o.data.idx || 0) % MEMORIES.length];
+    game.kHeart = clamp(game.kHeart + 8, 0, 100);
+    world.objects = world.objects.filter(x => x !== o);
+    sfx("memory"); burst(o.x + 12 - camera.x, o.y + 10 - camera.y, "#e7d6ff", 16, "heart");
+    openDialog(mem.lines, () => { updateHud(); saveGame(true); });
   }
 
   /* ============================================================
@@ -1021,7 +1058,15 @@
   function startWildBattle(speciesId, level) {
     const e = makeMon(speciesId, level);
     markDex(speciesId, "seen");
-    enterBattle({ mode: "wild", enemy: e, canRun: true });
+    const begin = () => enterBattle({ mode: "wild", enemy: e, canRun: true });
+    if (!game.flags.tutDone) {
+      game.flags.tutDone = true; saveGame(true);
+      openDialog([
+        { name: "Hướng dẫn", text: "Một Lumina hoang xuất hiện! Đây là trận đầu của {name} — bình tĩnh nào, dễ thôi." },
+        { name: "Hướng dẫn", text: "⚔️ Chiến để dùng chiêu (đánh đúng hệ khắc sẽ 'Rất hiệu quả!'). 🧪 Túi để hồi máu, 🔁 Đổi để thay Lumina, 🏃 để bỏ chạy." },
+        { name: "Hướng dẫn", text: "Đánh cho đối thủ yếu (hoặc 💤 Ru Ngủ) rồi dùng 💞 Bùa Kết Nối để thu phục. Thanh Đồng Điệu đầy thì bấm ✨ Cộng Hưởng cho đòn cực mạnh!" }
+      ], begin);
+    } else begin();
   }
   function startGym() {
     if (!game.flags.gotStarter) { openDialog([{ name: "Thủ Lĩnh Hạ", text: "Con chưa có Lumina nào sao? Hãy ghé Giáo Sư Tơ ở làng trước đã." }]); return; }
@@ -1675,7 +1720,7 @@
    * 13) MENU: party / bag / dex / settings
    * ============================================================ */
   function anyOverlayOpen() {
-    return ["starterOverlay", "partyOverlay", "bagOverlay", "dexOverlay", "setOverlay", "endingOverlay"]
+    return ["starterOverlay", "partyOverlay", "bagOverlay", "dexOverlay", "setOverlay", "endingOverlay", "helpOverlay"]
       .some(id => !$(id).classList.contains("hidden"));
   }
   function showOverlay(id) { $(id).classList.remove("hidden"); }
@@ -2038,6 +2083,7 @@
     else if (o.type === "castle") drawCastleObj(x, y, o);
     else if (o.type === "sign") drawSign(x, y);
     else if (o.type === "item") drawCharmItem(x, y);
+    else if (o.type === "memory") drawMemoryOrb(x, y);
   }
 
   function drawBlobShadow(x, y, w, h) {
@@ -2200,6 +2246,14 @@
     ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(x + 9, Math.floor(y + 9 + fl), 2, 1);
     if (!settings.noFlash) { ctx.fillStyle = "rgba(255,243,163,0.5)"; ctx.fillRect(x + 6, Math.floor(y + 6 + fl), 1, 1); ctx.fillRect(x + 17, Math.floor(y + 11 + fl), 1, 1); }
   }
+  function drawMemoryOrb(x, y) {
+    const fl = Math.sin(visualClock * 3) * 2;
+    drawBlobShadow(x + 8, y + 20, 12, 4);
+    if (!settings.noFlash) { ctx.save(); ctx.globalAlpha = 0.4 + Math.sin(visualClock * 4) * 0.15; ctx.fillStyle = "#bfa2ff"; ctx.beginPath(); ctx.arc(x + 12, Math.floor(y + 10 + fl), 9, 0, 7); ctx.fill(); ctx.restore(); }
+    ctx.fillStyle = "#fff7fb"; ctx.fillRect(x + 9, Math.floor(y + 8 + fl), 6, 5);
+    ctx.fillStyle = "#ff7ab6"; ctx.fillRect(x + 11, Math.floor(y + 7 + fl), 2, 2);
+    if (!settings.noFlash && Math.random() < 0.2) spawnParticle({ x: x + 12, y: y + 8 + fl, vx: rand(-5, 5), vy: -rand(6, 14), gravity: -2, life: 0.7, maxLife: 0.7, color: "#e7d6ff", shape: "star", size: rand(2, 3) });
+  }
 
   function drawDayNight() {
     // overworld ban ngày nhẹ; khi đã thấy castle & chưa dreamDone, tạo chút âm u phía Đông
@@ -2339,56 +2393,81 @@
     }
 
     const shape = sp.shape;
+    const ol = (X, Y, W, H) => px(X, Y, W, H, "rgba(45,26,52,0.72)");
     if (shape === "ember" || shape === "ember2") {
-      // tai/tua lửa
-      px(3, 0, 3, 4, c1); px(10, 0, 3, 4, c1);
-      // viền tối
-      g.fillStyle = "rgba(59,38,69,0.7)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
-      px(3, 3, 10, 10, c2);            // thân
-      px(3, 3, 10, 3, c1);             // đỉnh lửa
-      // đuôi lửa
-      px(13, 8, 3, 4, c1); if (evolved) px(15, 6, 2, 4, c2);
-      drawFace(px, 5, 7, opts.foe);
-      if (evolved) { px(6, 0, 4, 2, c2); }
+      // 🦊 CÁO LỬA — tai nhọn, mõm trắng, đuôi bông cháy
+      px(2, -1, 4, 4, c1); px(10, -1, 4, 4, c1);
+      px(3, 0, 2, 2, c2); px(11, 0, 2, 2, c2);
+      ol(2, 3, 12, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 9, 8, 4, c2);                       // bụng sáng
+      px(6, 10, 4, 3, "#fff7fb");               // mõm
+      px(8, 11, 1, 1, "#3b2645");               // mũi
+      px(12, 6, 4, 6, c1); px(14, 5, 2, 4, c2); px(15, 8, 1, 2, "#fff3a3"); // đuôi lửa
+      px(4, 13, 3, 2, "#a85a3a"); px(9, 13, 3, 2, "#a85a3a"); // chân
+      if (evolved) { px(2, 1, 12, 2, c2); px(1, 4, 2, 4, c1); px(13, 4, 2, 4, c1); } // bờm
+      drawFace(px, 5, 6, opts.foe);
     } else if (shape === "drop" || shape === "drop2") {
-      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 2 * s), 12 * s, 12 * s);
-      px(3, 2, 10, 11, c1);
-      px(4, 2, 8, 4, c2);              // sáng đỉnh giọt
-      px(2, 6, 2, 4, c2); px(12, 6, 2, 4, c2); // vây
-      drawFace(px, 5, 7, opts.foe);
-      if (evolved) { px(1, 10, 2, 2, c2); px(13, 10, 2, 2, c2); }
+      // 🦦 RÁI CÁ BIỂN — tai tròn, giọt nước trên trán, chân chèo
+      px(3, 1, 3, 3, c1); px(10, 1, 3, 3, c1);
+      ol(2, 3, 12, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 8, 8, 5, c2);                       // bụng
+      px(7, 1, 2, 2, c2); px(7, 1, 1, 1, "#fff7fb"); // giọt nước
+      px(1, 8, 2, 4, c1); px(13, 8, 2, 4, c1);  // chân chèo
+      px(13, 11, 3, 2, c1);                     // đuôi
+      px(5, 13, 3, 2, "#3a6a8a"); px(9, 13, 3, 2, "#3a6a8a");
+      if (evolved) { px(0, 6, 2, 3, c2); px(14, 6, 2, 3, c2); px(6, -1, 4, 1, c2); } // vây
+      drawFace(px, 5, 6, opts.foe);
     } else if (shape === "sprout" || shape === "sprout2") {
-      // lá trên đầu
-      px(7, 0, 2, 3, "#3f9a55"); px(5, 1, 3, 2, "#52b86a"); px(8, 1, 3, 2, "#52b86a");
-      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
-      px(3, 3, 10, 10, c1);
-      px(4, 4, 8, 3, c2);
+      // 🐰 THỎ-LÁ — tai lá dài, đuôi bông
+      px(4, -3, 2, 6, "#3f9a55"); px(11, -3, 2, 6, "#3f9a55");
+      px(4, -2, 1, 4, "#7ee08a"); px(11, -2, 1, 4, "#7ee08a");
+      ol(2, 4, 12, 10);
+      px(3, 4, 10, 9, c1);
+      px(4, 9, 8, 4, c2);                       // bụng
+      px(13, 9, 2, 3, "#fff7fb");               // đuôi bông
+      px(4, 12, 3, 3, "#3f7a4a"); px(9, 12, 3, 3, "#3f7a4a");
+      if (evolved) drawFlowerPix(px, 6, -1, "#ff7ab6"); // vương miện hoa
       drawFace(px, 5, 7, opts.foe);
-      if (evolved) { drawFlowerPix(px, 6, -1, "#ff7ab6"); }
     } else if (shape === "frost") {
-      px(3, 0, 2, 4, c2); px(11, 0, 2, 4, c2); // tai băng
-      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
+      // 🦊 CÁO TUYẾT — tai băng đầu pha lê, đuôi trắng
+      px(2, -1, 4, 4, c2); px(10, -1, 4, 4, c2);
+      px(2, -1, 4, 1, "#cdeeff"); px(10, -1, 4, 1, "#cdeeff");
+      ol(2, 3, 12, 11);
       px(3, 3, 10, 10, c1);
-      px(4, 4, 8, 3, c2);
-      px(7, 8, 2, 2, "#fff7fb");
+      px(4, 9, 8, 4, "#ffffff");
+      px(6, 10, 4, 3, "#eaf6ff"); px(8, 11, 1, 1, "#3b2645");
+      px(12, 7, 4, 5, c2); px(15, 8, 1, 2, "#ffffff"); // đuôi
+      px(4, 13, 3, 2, "#6a8aa0"); px(9, 13, 3, 2, "#6a8aa0");
+      if (!settings.noFlash) { px(1, 7, 1, 1, "#ffffff"); px(14, 10, 1, 1, "#ffffff"); }
       drawFace(px, 5, 6, opts.foe);
     } else if (shape === "gale") {
-      // cánh gió
-      px(0, 6, 3, 3, c2); px(13, 6, 3, 3, c2);
-      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 3 * s), Math.floor(oy + 3 * s), 10 * s, 10 * s);
-      px(4, 3, 8, 9, c1);
-      px(5, 3, 6, 3, c2);
-      px(6, 0, 4, 3, c2); // chỏm
-      drawFace(px, 5, 6, opts.foe);
+      // 🐦 CHIM GIÓ — mào, mỏ vàng, cánh vỗ
+      px(6, -2, 3, 3, c2);
+      ol(3, 1, 10, 12);
+      px(4, 2, 8, 9, c1);
+      px(5, 8, 6, 4, c2);                       // bụng
+      px(12, 4, 3, 2, "#ffd166");               // mỏ
+      var _fl = Math.round(Math.sin(clock * 6) * 1.5);
+      px(0, 6 + _fl, 4, 4, c2); px(12, 6 - _fl, 4, 4, c2); // cánh
+      px(5, 12, 2, 3, c2); px(9, 12, 2, 3, c2); // đuôi
+      px(6, 13, 2, 2, "#ffd166"); px(9, 13, 2, 2, "#ffd166");
+      drawFace(px, 5, 5, opts.foe);
     } else if (shape === "luna" || shape === "luna2") {
-      // vầng trăng/sao
-      g.fillStyle = "rgba(59,38,69,0.5)"; g.fillRect(Math.floor(x + 3 * s), Math.floor(oy + 2 * s), 10 * s, 11 * s);
-      px(3, 2, 10, 11, c1);
-      px(4, 2, 7, 4, c2);
-      px(6, -1, 4, 2, c2); // chỏm sáng
+      // 🐱 MÈO-TRĂNG — tai mèo, trăng lưỡi liềm, đuôi cong sao, ria
+      px(3, 0, 3, 4, c1); px(10, 0, 3, 4, c1);
+      px(4, 1, 1, 2, "#ffd1e6"); px(11, 1, 1, 2, "#ffd1e6");
+      px(6, -3, 1, 3, c2); px(7, -4, 2, 1, c2); px(5, -2, 1, 1, c2); // trăng
+      ol(2, 3, 12, 11);
+      px(3, 3, 10, 10, c1);
+      px(4, 9, 8, 4, c2);
+      px(1, 10, 2, 1, "#fff7fb"); px(13, 10, 2, 1, "#fff7fb"); // ria
+      px(13, 5, 2, 6, c1); px(14, 4, 2, 2, c2);  // đuôi + sao
+      px(4, 13, 3, 2, "#5b4a82"); px(9, 13, 3, 2, "#5b4a82");
+      if (evolved) { px(3, -2, 10, 1, c2); px(2, -1, 1, 1, c2); px(13, -1, 1, 1, c2); } // hào quang
+      if (!settings.noFlash) { px(0, 2, 1, 1, "#fff3d6"); px(15, 5, 1, 1, "#fff3d6"); }
       drawFace(px, 5, 6, opts.foe);
-      if (!settings.noFlash) { px(0, 1, 1, 1, "#fff3d6"); px(14, 4, 1, 1, "#fff3d6"); }
-      if (evolved) { px(1, 6, 1, 4, c2); px(14, 6, 1, 4, c2); }
     } else if (shape === "thorn") {
       // Gai Thủ Vệ — to, gai góc, mắt buồn
       g.fillStyle = "rgba(28,23,38,0.85)"; g.fillRect(Math.floor(x + 1 * s), Math.floor(oy + 2 * s), 14 * s, 13 * s);
@@ -2717,7 +2796,7 @@
     const notes = {
       pickup: [720, 960], piece: [640, 860, 1120], complete: [523, 659, 784, 1046],
       hurt: [160, 110], warp: [330, 660],
-      caught: [659, 784, 988, 1319], levelup: [523, 659, 784, 1047, 1319], heal: [784, 988, 1175], lowhp: [880]
+      caught: [659, 784, 988, 1319], levelup: [523, 659, 784, 1047, 1319], heal: [784, 988, 1175], lowhp: [880], memory: [880, 1175, 1319]
     }[type] || [440];
     notes.forEach((freq, i) => {
       const osc = audio.ctx.createOscillator(), g = audio.ctx.createGain();
@@ -2735,11 +2814,11 @@
       chords: [[261.63, 329.63, 392], [196, 246.94, 392], [220, 261.63, 329.63], [174.61, 220, 261.63]],
       bass: [65.41, 49, 55, 43.65],
       melody: [523.25, null, 659.25, 784, 659.25, null, 523.25, null, 493.88, null, 587.33, null, 784, null, 587.33, null] },
-    battle: { tempo: 200, lead: "square",
-      chords: [[220, 277.18, 329.63], [246.94, 311.13, 369.99], [261.63, 329.63, 392], [196, 246.94, 392]],
-      bass: [55, 61.74, 65.41, 49],
-      melody: [659.25, 659.25, null, 587.33, 523.25, null, 587.33, null, 659.25, null, 784, null, 659.25, 587.33, 523.25, null] },
-    dream: { tempo: 340, lead: "sine",
+    battle: { tempo: 165, lead: "square", energetic: true,
+      chords: [[220, 261.63, 329.63], [174.61, 220, 261.63], [261.63, 329.63, 392], [196, 246.94, 293.66]],
+      bass: [110, 87.31, 130.81, 98],
+      melody: [659.25, 659.25, 784, 659.25, 587.33, null, 523.25, null, 523.25, 587.33, 659.25, null, 784, null, 880, null, 784, 659.25, 587.33, 659.25, 523.25, null, 440, null, 587.33, 659.25, 784, null, 659.25, null, null, null] },
+    dream: { tempo: 330, lead: "sine",
       chords: [[220, 261.63, 329.63], [174.61, 220, 261.63], [261.63, 329.63, 392], [196, 246.94, 293.66]],
       bass: [55, 43.65, 65.41, 49],
       melody: [659.25, null, null, 523.25, null, null, 440, null, 523.25, null, null, 659.25, null, null, 880, null] }
@@ -2760,11 +2839,17 @@
     if (!audio.enabled || !audio.ctx) return;
     const song = currentSong(), now = audio.ctx.currentTime, step = audio.beat;
     const ci = Math.floor(step / 8) % song.chords.length, chord = song.chords[ci];
-    if (step % 4 === 0) playNote(song.bass[ci], "triangle", 0.06, 0.5, now);
+    const energetic = !!song.energetic;
+    if (step % (energetic ? 2 : 4) === 0) playNote(song.bass[ci], "triangle", energetic ? 0.075 : 0.06, energetic ? 0.26 : 0.5, now);
+    if (energetic) {
+      if (step % 4 === 0) playNote(73, "square", 0.05, 0.08, now);    // trống cái
+      if (step % 4 === 2) playNote(196, "square", 0.03, 0.06, now);   // trống lửng
+      if (step % 2 === 1) playNote(1320, "square", 0.007, 0.03, now); // hi-hat lấp lánh
+    }
     playNote(chord[step % 3], "square", 0.012, 0.22, now);
     if (step % 8 === 0) chord.forEach(f => playNote(f / 2, "sine", 0.02, 1.6, now));
     const m = song.melody[step % song.melody.length];
-    if (m) playNote(m, song.lead, 0.045, 0.42, now);
+    if (m) playNote(m, song.lead, energetic ? 0.055 : 0.045, 0.4, now);
     audio.beat++;
   }
   function startMusic() { stopMusic(); audio.beat = 0; audio.timer = setInterval(musicStep, currentSong().tempo); }
@@ -2799,7 +2884,8 @@
         hint.textContent = near.type === "item" ? "Nhấn E để nhặt"
           : near.type === "gym" ? "Nhấn E: Thử thách Thủ Lĩnh"
           : near.type === "castle" ? "Nhấn E: Tới cổng lâu đài"
-          : near.type === "sign" ? "Nhấn E để đọc" : "Nhấn E để nói chuyện";
+          : near.type === "sign" ? "Nhấn E để đọc"
+          : near.type === "memory" ? "Nhấn E: Đọc Mảnh Ký Ức 💗" : "Nhấn E để nói chuyện";
       } else hint.classList.add("hidden");
       if (near && !settings.noFlash && Math.random() < 0.16) spawnParticle({ x: near.x - camera.x + 14 + rand(-8, 8), y: near.y - camera.y + rand(-4, 10), vx: rand(-4, 4), vy: -rand(6, 16), gravity: -2, life: 0.6, maxLife: 0.6, color: "#fff3a3", shape: "star", size: rand(2, 3), spin: rand(-5, 5) });
       draw();
@@ -2838,6 +2924,8 @@
   $("saveBtn").onclick = () => saveGame(false);
   $("setBtn").onclick = openSettings;
   $("musicBtn").onclick = () => setMusic(!settings.music);
+  $("helpBtn").onclick = () => showOverlay("helpOverlay");
+  $("closeHelp").onclick = () => hideOverlay("helpOverlay");
 
   $("closeParty").onclick = () => hideOverlay("partyOverlay");
   $("closeBag").onclick = () => hideOverlay("bagOverlay");
@@ -2879,8 +2967,11 @@
     if (fresh) {
       bannerThen("Chương 1 · Khởi Hành", () => {
         openDialog([
-          { name: "", text: "Bình minh ở Vùng Khởi Hành. Chiếc la bàn ký ức của {name} khẽ rung — chỉ thẳng về phía Đông, nơi K đang bị giam." },
-          { name: "", text: "Hãy tới Phòng Thí Nghiệm của Giáo Sư Tơ (dấu ❗) để nhận Lumina đầu tiên nhé. (Nhấn E cạnh Giáo Sư.)" }
+          { name: "", text: "Ngày xưa, cảm xúc của muôn loài hóa thành những sinh linh ánh sáng gọi là Lumina, sống cùng con người trong yêu thương." },
+          { name: "", text: "Nhưng có một Vua Quái Vật cô độc — sợ bị tổn thương đến mức tự giam mình sau bức tường gai. Hắn bắt đi K, người mang 'Trái Tim Thuần Khiết' có thể phá vỡ lời nguyền cô độc." },
+          { name: "", text: "Bình minh nay ở Vùng Khởi Hành, chiếc la bàn ký ức của {name} khẽ rung — kim chỉ thẳng về phía Đông, nơi K đang chờ." },
+          { name: "{name}", text: "Đợi mình nhé, K... Mình nhất định sẽ tới." },
+          { name: "", text: "Hãy tới Phòng Thí Nghiệm của Giáo Sư Tơ (dấu ❗) để nhận Lumina đầu tiên. Mẹo: bấm nút ❓ ở góc phải bất cứ lúc nào để xem hướng dẫn nhé!" }
         ]);
       });
     }
