@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Lumina Quest · Hành Trình Tìm K</title>
+  <style>
+    :root {
+      --primary: #ff7ab6;
+      --primary-2: #ffd1e6;
+      --accent: #bfa2ff;
+      --warm: #ffd166;
+      --mint: #b8f7c1;
+      --ink: #3b2645;
+      --panel: rgba(255, 246, 252, 0.94);
+      --shadow: rgba(59, 38, 69, 0.28);
+      --fontScale: 1;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255, 209, 230, 0.9), transparent 34%),
+        radial-gradient(circle at 80% 10%, rgba(191, 162, 255, 0.65), transparent 32%),
+        linear-gradient(135deg, #fff0f7, #effcf3 52%, #f2edff);
+      color: var(--ink);
+      font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    #app { position: fixed; inset: 0; display: grid; place-items: center; }
+
+    #gameShell {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.82), transparent 28%),
+        linear-gradient(135deg, #ffeaf4, #f3efff);
+      overflow: hidden;
+    }
+
+    /* Lớp scanline + ánh nền giúp đạt look HD-2D pixel mềm mại. */
+    #gameShell::before {
+      content: "";
+      position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      opacity: 0.18;
+      background:
+        linear-gradient(rgba(255,255,255,0.18) 50%, rgba(255,122,182,0.10) 50%),
+        radial-gradient(circle at 18% 20%, rgba(255,255,255,0.75), transparent 18%),
+        radial-gradient(circle at 86% 10%, rgba(255,209,230,0.65), transparent 20%);
+      background-size: 100% 4px, 100% 100%, 100% 100%;
+      mix-blend-mode: soft-light;
+    }
+    #gameShell.noFlash::before { display: none; }
+
+    #gameShell::after {
+      content: "";
+      position: absolute; inset: 0; z-index: 3; pointer-events: none;
+      box-shadow: inset 0 0 80px rgba(59, 38, 69, 0.16);
+    }
+
+    canvas#game {
+      width: 100%; height: 100%;
+      display: block;
+      image-rendering: pixelated; image-rendering: crisp-edges;
+      background: #b8f7c1;
+      filter: saturate(1.22) contrast(1.08) brightness(1.02);
+    }
+    /* Góc nhìn 2.5D nghiêng nhẹ — chỉ áp cho overworld, battle để phẳng. */
+    canvas#game.tilt { transform: perspective(900px) rotateX(12deg) scale(1.1, 1.18); transform-origin: 50% 66%; }
+    #gameShell.highContrast canvas#game { filter: saturate(1.35) contrast(1.28) brightness(1.04); }
+
+    .pixel-panel {
+      border: 4px solid #5b3a66;
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 8px 0 rgba(91, 58, 102, 0.2), inset 0 0 0 3px rgba(255, 255, 255, 0.8);
+    }
+    #gameShell.highContrast .pixel-panel { border-color: #2a1632; }
+
+    /* ===== HUD overworld ===== */
+    #hud {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 10px;
+      pointer-events: none; z-index: 4; font-weight: 800;
+      text-shadow: 1px 1px 0 #fff;
+      font-size: calc(13px * var(--fontScale));
+    }
+    #hud .box {
+      padding: 8px 10px;
+      border: 3px solid rgba(91, 58, 102, 0.88);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255, 247, 252, 0.84));
+      box-shadow: 0 5px 0 rgba(91, 58, 102, 0.13), inset 0 0 0 2px rgba(255,255,255,0.62);
+      line-height: 1.25;
+    }
+    #quest { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    #compassBox {
+      position: absolute; right: 12px; top: 78px; z-index: 5;
+      width: 86px; padding: 6px;
+      text-align: center; font-weight: 900; pointer-events: none;
+      font-size: calc(11px * var(--fontScale));
+    }
+    #compassArrow { font-size: 24px; display: inline-block; transition: transform .25s ease; }
+
+    #heartBox {
+      position: absolute; left: 12px; top: 78px; z-index: 5;
+      width: min(240px, calc(100vw - 120px)); padding: 8px 10px;
+      font-size: calc(11px * var(--fontScale));
+    }
+    .meterTrack { height: 12px; background: rgba(91,58,102,.16); border: 2px solid rgba(91,58,102,.28);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.45); overflow: hidden; border-radius: 4px; }
+    #heartFill { height: 100%; width: 0%;
+      background: repeating-linear-gradient(90deg, var(--primary), var(--primary) 8px, #ffd166 8px, #ffd166 12px);
+      transition: width .4s ease; }
+
+    #hint {
+      position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%);
+      padding: 8px 12px; border: 3px solid #5b3a66; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92); font-weight: 800; z-index: 6;
+      animation: bob 0.8s ease-in-out infinite alternate; pointer-events: none;
+      font-size: calc(13px * var(--fontScale));
+    }
+    #gameShell.noFlash #hint { animation: none; }
+    @keyframes bob { from { transform: translate(-50%, 0); } to { transform: translate(-50%, -5px); } }
+
+    #toolbar { position: absolute; right: 12px; bottom: 130px; display: grid;
+      grid-template-columns: repeat(2, 40px); gap: 8px; z-index: 7; }
+    .tinyBtn {
+      width: 40px; height: 36px; border: 2px solid rgba(91,58,102,.8);
+      border-radius: 9px; background: rgba(255,247,252,.94); color: var(--ink);
+      font-weight: 900; box-shadow: 0 4px 0 rgba(91,58,102,.2); cursor: pointer; font-size: 16px;
+    }
+    .tinyBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(91,58,102,.2); }
+
+    /* ===== Dialog ===== */
+    #dialog {
+      position: absolute; left: 16px; right: 16px; bottom: 16px; min-height: 92px;
+      padding: 14px 16px 12px; z-index: 9; display: grid;
+      grid-template-columns: 1fr auto; gap: 10px; align-items: end;
+    }
+    #dialogName { grid-column: 1 / -1; font-weight: 900; color: #b64a7f; margin-bottom: 2px;
+      font-size: calc(13px * var(--fontScale)); }
+    #dialogText { font-size: calc(16px * var(--fontScale)); line-height: 1.45; font-weight: 800; }
+    #dialogChoices { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .choiceBtn {
+      border: 3px solid #5b3a66; border-radius: 12px; padding: 9px 12px;
+      background: linear-gradient(180deg, #fff7fc, #ffe7f2); color: var(--ink);
+      font-family: inherit; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 0 rgba(91,58,102,.2); font-size: calc(13px * var(--fontScale));
+    }
+    .choiceBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(91,58,102,.2); }
+    #nextBtn {
+      align-self: end; border: 0; border-radius: 12px; padding: 9px 12px;
+      background: linear-gradient(180deg, #ff9bcc, #ff6ead); color: white;
+      font-family: inherit; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #b64a7f;
+      font-size: calc(14px * var(--fontScale));
+    }
+    #nextBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b64a7f; }
+
+    #toast {
+      position: absolute; top: 120px; left: 50%; transform: translateX(-50%); z-index: 12;
+      padding: 10px 16px; background: linear-gradient(180deg, #fff7fb, #ffe1ef);
+      border: 4px solid #5b3a66; border-radius: 16px; font-weight: 900;
+      box-shadow: 0 8px 0 rgba(91, 58, 102, 0.18); pointer-events: none; white-space: nowrap;
+      animation: toastIn 2.1s ease forwards; font-size: calc(14px * var(--fontScale));
+    }
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translate(-50%, -12px) scale(0.96); }
+      12% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      82% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+    }
+
+    /* ===== Mobile controls ===== */
+    #mobileControls {
+      position: absolute; left: 0; right: 0; bottom: 10px; z-index: 7;
+      display: none; justify-content: space-between; align-items: end; padding: 0 16px;
+      pointer-events: none;
+    }
+    .dpad { display: grid; grid-template-columns: 52px 52px 52px; grid-template-rows: 52px 52px 52px;
+      gap: 5px; pointer-events: auto; }
+    .dpad button, #interactTouch {
+      border: 4px solid #5b3a66; border-radius: 16px; background: rgba(255, 247, 252, 0.92);
+      color: var(--ink); font-family: inherit; font-weight: 900; font-size: 18px;
+      box-shadow: 0 5px 0 rgba(91, 58, 102, 0.24); touch-action: none; user-select: none;
+    }
+    .dpad button:active, #interactTouch:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(91, 58, 102, 0.24); }
+    .up { grid-column: 2; grid-row: 1; } .left { grid-column: 1; grid-row: 2; }
+    .down { grid-column: 2; grid-row: 3; } .right { grid-column: 3; grid-row: 2; }
+    #interactTouch { width: 104px; height: 62px; pointer-events: auto;
+      background: linear-gradient(180deg, #fff7fb, #ffd1e6); }
+
+    /* ===== Overlays / modal ===== */
+    .overlay {
+      position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px;
+      background: radial-gradient(circle at 50% 15%, rgba(255, 209, 230, 0.88), transparent 30%), rgba(42, 22, 50, 0.42);
+      backdrop-filter: blur(5px);
+    }
+    .modal {
+      width: min(640px, 100%); max-height: min(88vh, 88vw, 680px);
+      overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+      overscroll-behavior: contain; padding: 22px;
+    }
+    .modal h1, .modal h2 { margin: 0 0 12px; color: #b64a7f; text-shadow: 2px 2px 0 #fff;
+      font-size: calc(24px * var(--fontScale)); }
+    .modal h2 { font-size: calc(20px * var(--fontScale)); }
+    .modal p { margin: 10px 0; line-height: 1.55; font-weight: 800; font-size: calc(15px * var(--fontScale)); }
+    .modal input {
+      width: 100%; margin: 10px 0; padding: 14px; border: 4px solid #5b3a66; border-radius: 14px;
+      background: #fff; color: var(--ink); font-family: inherit; font-size: 16px; font-weight: 900; outline: none;
+    }
+    .nameLabel { display: block; text-align: left; font-weight: 900; margin-top: 8px; color: #7a4f8a;
+      font-size: calc(14px * var(--fontScale)); }
+    .modalActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .primaryBtn, .ghostBtn {
+      border: 4px solid #5b3a66; border-radius: 14px; padding: 12px 16px;
+      font-family: inherit; font-weight: 900; cursor: pointer;
+      box-shadow: 0 6px 0 rgba(91, 58, 102, 0.22); font-size: calc(14px * var(--fontScale));
+    }
+    .primaryBtn { background: linear-gradient(180deg, #ff9bcc, #ff6ead); color: #fff; }
+    .ghostBtn { background: #fff7fb; color: var(--ink); }
+    .primaryBtn:active, .ghostBtn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(91, 58, 102, 0.22); }
+    .primaryBtn:disabled { opacity: .45; cursor: not-allowed; }
+    .hidden { display: none !important; }
+
+    /* Lưới thẻ chọn (starter, party, dex) */
+    .cardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 12px 0; }
+    .pickCard {
+      border: 3px solid rgba(91, 58, 102, 0.55); border-radius: 14px;
+      background: linear-gradient(180deg, #fff7fc, #ffe7f2); padding: 10px 8px;
+      cursor: pointer; text-align: center; font-weight: 900; color: var(--ink);
+      font-family: inherit; box-shadow: 0 5px 0 rgba(91, 58, 102, 0.16); transition: transform .12s ease;
+    }
+    .pickCard:hover { transform: translateY(-2px); }
+    .pickCard.selected { border-color: #ff6ead; background: linear-gradient(180deg, #fff1b8, #ffd1e6);
+      box-shadow: 0 0 0 3px rgba(255, 122, 182, 0.35), 0 5px 0 rgba(91, 58, 102, 0.16); }
+    .pickCard canvas { width: 80px; height: 80px; image-rendering: pixelated; image-rendering: crisp-edges; }
+    .pickCard small { display: block; font-weight: 700; opacity: .8; font-size: calc(11px * var(--fontScale)); line-height: 1.35; margin-top: 4px; }
+    .typeChip { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: calc(11px * var(--fontScale));
+      font-weight: 900; border: 2px solid rgba(59,38,69,.5); margin: 2px; color: #2a1632; }
+
+    /* ===== Battle UI ===== */
+    #battleUI { position: absolute; inset: 0; z-index: 14; display: none; pointer-events: none; }
+    #battleUI.on { display: block; }
+    .monBox {
+      position: absolute; pointer-events: none; padding: 8px 10px; min-width: 188px;
+      border: 3px solid #5b3a66; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,247,252,0.9));
+      box-shadow: 0 6px 0 rgba(91,58,102,.18); font-weight: 900; font-size: calc(12px * var(--fontScale));
+    }
+    #enemyBox { top: 16px; left: 16px; }
+    #enemyBox2 { top: 16px; left: 220px; display: none; }
+    #playerBox { bottom: 168px; right: 16px; }
+    #allyBox { bottom: 168px; right: 220px; display: none; }
+    .monBox .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .hpTrack { height: 9px; margin-top: 5px; background: rgba(91,58,102,.18); border: 2px solid rgba(91,58,102,.35);
+      border-radius: 4px; overflow: hidden; }
+    .hpFill { height: 100%; width: 100%; background: linear-gradient(90deg,#5fd07a,#8af0a0); transition: width .45s ease; }
+    .hpFill.mid { background: linear-gradient(90deg,#ffd166,#ffe9a3); }
+    .hpFill.low { background: linear-gradient(90deg,#ff6b6b,#ff9b9b); }
+    .bondTrack { height: 7px; margin-top: 4px; background: rgba(91,58,102,.16); border: 2px solid rgba(191,162,255,.5);
+      border-radius: 4px; overflow: hidden; }
+    .bondFill { height: 100%; width: 0%; background: repeating-linear-gradient(90deg,#bfa2ff,#bfa2ff 6px,#ff9bcc 6px,#ff9bcc 12px);
+      transition: width .35s ease; }
+    .expTrack { height: 5px; margin-top: 4px; background: rgba(91,58,102,.14); border-radius: 3px; overflow: hidden; }
+    .expFill { height: 100%; width: 0%; background: #7bdff2; transition: width .35s ease; }
+    .statusTag { font-size: calc(10px * var(--fontScale)); padding: 0 6px; border-radius: 8px; margin-left: 4px;
+      border: 1px solid rgba(59,38,69,.4); }
+
+    #battleMsg {
+      position: absolute; left: 12px; right: 12px; bottom: 92px; min-height: 52px;
+      padding: 12px 14px; pointer-events: none; font-weight: 800; font-size: calc(15px * var(--fontScale));
+      line-height: 1.4;
+    }
+    #battleMenu {
+      position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 8px;
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; pointer-events: auto;
+    }
+    #battleMenu.moves { grid-template-columns: repeat(2, 1fr); }
+    .battleBtn {
+      border: 3px solid #5b3a66; border-radius: 12px; padding: 12px 10px; text-align: left;
+      background: linear-gradient(180deg, #fff7fc, #ffe7f2); color: var(--ink);
+      font-family: inherit; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 rgba(91,58,102,.2);
+      font-size: calc(14px * var(--fontScale));
+    }
+    .battleBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(91,58,102,.2); }
+    .battleBtn small { display:block; font-weight:700; opacity:.78; font-size: calc(11px * var(--fontScale)); margin-top:3px; }
+    .battleBtn.reso { background: linear-gradient(180deg,#fff1b8,#ffd1e6); border-color:#ff6ead;
+      box-shadow: 0 5px 0 rgba(255,110,173,.4); animation: glowReso 1s ease-in-out infinite alternate; }
+    #gameShell.noFlash .battleBtn.reso { animation: none; }
+    @keyframes glowReso { from { filter: brightness(1); } to { filter: brightness(1.18); } }
+    .battleBtn:disabled { opacity:.4; cursor:not-allowed; }
+
+    #fadeLayer {
+      position: absolute; inset: 0; z-index: 16; pointer-events: none;
+      background: #2a1632; opacity: 0; transition: opacity 0.45s ease;
+    }
+    #banner {
+      position: absolute; top: 36%; left: 50%; transform: translate(-50%, -50%) scale(0.94);
+      z-index: 17; padding: 14px 26px; border: 4px solid #5b3a66; border-radius: 18px;
+      background: linear-gradient(180deg, #fff7fb, #ffd1e6); font-weight: 900;
+      font-size: calc(20px * var(--fontScale)); color: #b64a7f; text-shadow: 1px 1px 0 #fff;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease; white-space: nowrap; text-align:center;
+    }
+    #banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    .settingRow { display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:10px 0; border-bottom:1px dashed rgba(91,58,102,.2); font-weight:800; font-size: calc(14px * var(--fontScale)); }
+    .toggle { border:3px solid #5b3a66; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:900;
+      background:#fff7fb; font-family:inherit; }
+    .toggle.on { background:linear-gradient(180deg,#b8f7c1,#8af0a0); }
+
+    @media (max-width: 760px) {
+      #hud { grid-template-columns: 1fr 1fr; right: 8px; left: 8px; top: 8px; gap: 6px; }
+      #quest { grid-column: 1 / -1; }
+      #mobileControls { display: flex; }
+      #dialog { left: 8px; right: 8px; bottom: 84px; min-height: 104px; }
+      #hint { bottom: 188px; }
+      #toolbar { right: 8px; bottom: 200px; }
+      #compassBox { top: 92px; width: 70px; }
+      #heartBox { top: 92px; width: calc(100vw - 96px); }
+      #playerBox { bottom: 250px; }
+      #allyBox { bottom: 250px; right: 8px; }
+      #enemyBox2 { left: 8px; top: 84px; }
+      #battleMsg { bottom: 188px; }
+      .monBox { min-width: 150px; }
+    }
+    @media (max-width: 760px) and (orientation: portrait) {
+      #gameShell { position: fixed; top: 0; left: 100dvw; width: 100dvh; height: 100dvw;
+        transform-origin: 0 0; transform: rotate(90deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="gameShell">
+      <canvas id="game" class="tilt" width="640" height="384" aria-label="Lumina Quest"></canvas>
+      <div id="fadeLayer"></div>
+      <div id="banner"></div>
+
+      <div id="hud">
+        <div class="box" id="areaName">Khu vực</div>
+        <div class="box" id="quest">Nhiệm vụ</div>
+        <div class="box" id="stats">Đội: -</div>
+      </div>
+
+      <div class="box pixel-panel" id="heartBox">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>💗 Nhịp Đập Trái Tim (với K)</b><span id="heartText">0%</span></div>
+        <div class="meterTrack"><div id="heartFill"></div></div>
+      </div>
+      <div class="box pixel-panel" id="compassBox">
+        🧭 La bàn ký ức<br><span id="compassArrow">➜</span><br><small>hướng về K</small>
+      </div>
+
+      <div id="hint" class="hidden">Nhấn E để tương tác</div>
+
+      <div id="toolbar">
+        <button class="tinyBtn" id="partyBtn" title="Đội Lumina">👥</button>
+        <button class="tinyBtn" id="bagBtn" title="Túi đồ">🎒</button>
+        <button class="tinyBtn" id="dexBtn" title="Lumina-dex">📖</button>
+        <button class="tinyBtn" id="saveBtn" title="Lưu">💾</button>
+        <button class="tinyBtn" id="setBtn" title="Tùy chỉnh">⚙️</button>
+        <button class="tinyBtn" id="musicBtn" title="Nhạc">♪</button>
+      </div>
+
+      <div id="dialog" class="pixel-panel hidden">
+        <div id="dialogName"></div>
+        <div id="dialogText"></div>
+        <button id="nextBtn">Tiếp ▶</button>
+        <div id="dialogChoices"></div>
+      </div>
+
+      <div id="mobileControls">
+        <div class="dpad" aria-label="Di chuyển">
+          <button class="up" data-dir="up">▲</button>
+          <button class="left" data-dir="left">◀</button>
+          <button class="right" data-dir="right">▶</button>
+          <button class="down" data-dir="down">▼</button>
+        </div>
+        <button id="interactTouch">Tương tác</button>
+      </div>
+
+      <!-- ===== Battle UI ===== -->
+      <div id="battleUI">
+        <div class="monBox pixel-panel" id="enemyBox"></div>
+        <div class="monBox pixel-panel" id="enemyBox2"></div>
+        <div class="monBox pixel-panel" id="playerBox"></div>
+        <div class="monBox pixel-panel" id="allyBox"></div>
+        <div id="battleMsg" class="pixel-panel"></div>
+        <div id="battleMenu" class="pixel-panel"></div>
+      </div>
+
+      <!-- ===== Overlays ===== -->
+      <div id="startOverlay" class="overlay">
+        <div class="modal pixel-panel">
+          <h1>Lumina Quest 🌙</h1>
+          <p>Một thế giới pixel nơi cảm xúc hóa thành <b>Lumina</b> — những sinh vật ánh sáng. Người bạn thuở nhỏ tên <b>K</b> đã bị Vua Quái Vật bắt đi, vì trong tim K có thứ ánh sáng phá được lời nguyền cô độc.</p>
+          <p>Chiếc <b>la bàn ký ức</b> của bạn luôn chỉ về hướng K. Hãy thu phục Lumina, kết Đồng Điệu, và lên đường.</p>
+          <label class="nameLabel" for="playerNameInput">✏️ Tên nữ huấn luyện viên:</label>
+          <input id="playerNameInput" type="text" maxlength="14" autocomplete="off" placeholder="vd: Linh, chị bé..." />
+          <p style="font-size:calc(13px * var(--fontScale));opacity:.85;"><b>Điều khiển:</b> WASD/phím mũi tên để đi, E để tương tác. Cỏ cao 🌾 có thể gặp Lumina hoang. Trên điện thoại dùng nút cảm ứng.</p>
+          <div class="modalActions">
+            <button class="primaryBtn" id="startBtn">Bắt đầu hành trình</button>
+            <button class="ghostBtn" id="continueBtn">Tải bản đã lưu</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="starterOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>🌱 Chọn Lumina khởi đầu</h2>
+          <p id="starterIntro">Giáo Sư Tơ trao bạn ba Lumina non. Hãy chọn người bạn đồng hành đầu tiên — bạn sẽ cùng nhau lớn lên qua từng Đồng Điệu.</p>
+          <div id="starterGrid" class="cardGrid"></div>
+          <div class="modalActions">
+            <button class="primaryBtn" id="confirmStarter" disabled>Chọn bạn này 💞</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="partyOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>👥 Đội Lumina</h2>
+          <p style="font-size:calc(12px*var(--fontScale));opacity:.8;">Nhấn một Lumina để xem chi tiết, đặt làm dẫn đầu, hoặc thử tiến hóa bằng Kỷ Vật.</p>
+          <div id="partyGrid" class="cardGrid"></div>
+          <div id="partyDetail"></div>
+          <div class="modalActions"><button class="ghostBtn" id="closeParty">Đóng</button></div>
+        </div>
+      </div>
+
+      <div id="bagOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>🎒 Túi đồ</h2>
+          <div id="bagList"></div>
+          <div class="modalActions"><button class="ghostBtn" id="closeBag">Đóng</button></div>
+        </div>
+      </div>
+
+      <div id="dexOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>📖 Lumina-dex</h2>
+          <p id="dexCount" style="font-size:calc(13px*var(--fontScale));"></p>
+          <div id="dexGrid" class="cardGrid"></div>
+          <div class="modalActions"><button class="ghostBtn" id="closeDex">Đóng</button></div>
+        </div>
+      </div>
+
+      <div id="setOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h2>⚙️ Tùy chỉnh & Hỗ trợ tiếp cận</h2>
+          <div class="settingRow"><span>🔆 Độ tương phản cao</span><button class="toggle" id="tgContrast">Tắt</button></div>
+          <div class="settingRow"><span>⚡ Tắt hiệu ứng chớp/scanline</span><button class="toggle" id="tgFlash">Tắt</button></div>
+          <div class="settingRow"><span>🅰️ Cỡ chữ</span>
+            <span><button class="toggle" data-font="0.9">A-</button>
+            <button class="toggle" data-font="1">A</button>
+            <button class="toggle" data-font="1.18">A+</button></span></div>
+          <div class="settingRow"><span>🎵 Nhạc nền</span><button class="toggle" id="tgMusic">Tắt</button></div>
+          <div class="modalActions">
+            <button class="ghostBtn" id="resetBtn">Xóa bản lưu & chơi lại</button>
+            <button class="primaryBtn" id="closeSet">Xong</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="endingOverlay" class="overlay hidden">
+        <div class="modal pixel-panel">
+          <h1 id="endingTitle">Kết</h1>
+          <div id="endingBody"></div>
+          <div class="modalActions">
+            <button class="ghostBtn" id="endingRestart">Chơi lại từ đầu</button>
+            <button class="primaryBtn" id="endingContinue">Tiếp tục khám phá</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  "use strict";
+  /* ============================================================
+   *  LUMINA QUEST — Thành phần 2 của Love Quest Pixel Adventure
+   *  Cùng phong cách đồ họa pixel HD-2D, nhưng là một game kiểu
+   *  Pokémon: thu phục Lumina, battle turn-based với thanh Đồng
+   *  Điệu (Bond) & Skill Cộng Hưởng, tiến hóa, gym, và hành trình
+   *  cứu K khỏi Vua Quái Vật bằng cách "chữa lành" thay vì tiêu diệt.
+   * ============================================================ */
+
+  /* ---------- Tiện ích nhỏ ---------- */
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const randi = (a, b) => Math.floor(rand(a, b + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const $ = id => document.getElementById(id);
+
+  /* ============================================================
+   * 1) HỆ LUMINA — 6 hệ, tương khắc đôi
+   * ============================================================ */
+  const TYPES = {
+    fire:   { key: "fire",   name: "Lửa Ấm",      emoji: "🔥", chip: "#ffd166", c1: "#ff8a4d", c2: "#ffd166", rival: "water" },
+    water:  { key: "water",  name: "Biển Sâu",    emoji: "💧", chip: "#aef0ff", c1: "#4db5ff", c2: "#aef0ff", rival: "fire" },
+    nature: { key: "nature", name: "Thiên Nhiên", emoji: "🌿", chip: "#b8f7c1", c1: "#5fd07a", c2: "#b8f7c1", rival: "air" },
+    air:    { key: "air",    name: "Gió Tự Do",   emoji: "⚡", chip: "#fff3a3", c1: "#9fe0ff", c2: "#fff3a3", rival: "nature" },
+    ice:    { key: "ice",    name: "Băng Tĩnh",   emoji: "❄️", chip: "#e8fbff", c1: "#8fd6ff", c2: "#e8fbff", rival: "light" },
+    light:  { key: "light",  name: "Ánh Sáng",    emoji: "🌙", chip: "#e7d6ff", c1: "#c9a3ff", c2: "#fff3d6", rival: "ice" }
+  };
+  // Tương khắc đôi: mỗi cặp khắc lẫn nhau (super-effective hai chiều).
+  // fire⇄water, nature⇄air, ice⇄light
+  function effectiveness(atkType, defType) {
+    if (!atkType) return 1;
+    if (TYPES[atkType] && TYPES[atkType].rival === defType) return 1.75; // rất hiệu quả
+    return 1;
+  }
+
+  /* ============================================================
+   * 2) CHIÊU THỨC (MOVES)
+   * ============================================================ */
+  const MOVES = {
+    tackle:   { id: "tackle",   name: "Húc Yêu",     type: null,     kind: "atk",  power: 16, bond: 6,  desc: "Đòn thân thiện cơ bản." },
+    emberSpark:{ id:"emberSpark",name: "Tia Lửa Ấm", type: "fire",   kind: "atk",  power: 22, bond: 10, desc: "Đốm lửa ấm áp." },
+    flameHug: { id: "flameHug", name: "Ôm Lửa",      type: "fire",   kind: "atk",  power: 32, bond: 14, desc: "Cái ôm rực sáng." },
+    bubble:   { id: "bubble",   name: "Bong Bóng",   type: "water",  kind: "atk",  power: 22, bond: 10, desc: "Bắn bong bóng dịu mát." },
+    tide:     { id: "tide",     name: "Sóng Vỗ",     type: "water",  kind: "atk",  power: 32, bond: 14, desc: "Con sóng vỗ về." },
+    vine:     { id: "vine",     name: "Dây Lá",      type: "nature", kind: "atk",  power: 22, bond: 10, desc: "Quấn dây lá mềm." },
+    bloom:    { id: "bloom",    name: "Nở Rộ",       type: "nature", kind: "atk",  power: 32, bond: 14, desc: "Bung nở rực rỡ." },
+    gust:     { id: "gust",     name: "Gió Vút",     type: "air",    kind: "atk",  power: 22, bond: 10, desc: "Luồng gió nhanh." },
+    frostpin: { id: "frostpin", name: "Kim Băng",    type: "ice",    kind: "atk",  power: 22, bond: 10, desc: "Tinh thể băng tĩnh." },
+    moonray:  { id: "moonray",  name: "Tia Trăng",   type: "light",  kind: "atk",  power: 24, bond: 12, desc: "Ánh trăng dịu dàng." },
+    lull:     { id: "lull",     name: "Ru Ngủ",      type: null,     kind: "status", status: "sleep", bond: 12, desc: "Ru đối thủ ngủ — dễ thu phục hơn." },
+    dazzle:   { id: "dazzle",   name: "Lấp Lánh",    type: "light",  kind: "status", status: "dazed", bond: 12, desc: "Làm đối thủ bối rối, hay đánh trượt." },
+    cuddle:   { id: "cuddle",   name: "Ôm An Ủi",    type: null,     kind: "heal",  heal: 0.32, bond: 18, desc: "Hồi máu cho bản thân + tăng Đồng Điệu nhiều." },
+    soothe:   { id: "soothe",   name: "Vỗ Về",       type: "light",  kind: "soul",  soul: 20, bond: 16, desc: "Xoa dịu nỗi sợ (chữa lành)." }
+  };
+
+  /* ============================================================
+   * 3) DANH SÁCH LOÀI LUMINA (Lumina-dex)
+   *    base{hp,atk,def,spd}; shape quyết định cách vẽ pixel.
+   * ============================================================ */
+  const SPECIES = {
+    embo:     { id: "embo",     name: "Embo",     type: "fire",   shape: "ember",  base: { hp: 52, atk: 56, def: 42, spd: 50 }, moves: ["tackle", "emberSpark", "cuddle", "lull"], evolveTo: "emberlyn", evolveLv: 12, dex: "Lumina lửa ấm, đuôi cháy nhẹ như nến. Càng thân thiết, ngọn lửa càng dịu và sáng." },
+    emberlyn: { id: "emberlyn", name: "Emberlyn", type: "fire",   shape: "ember2", base: { hp: 72, atk: 78, def: 58, spd: 66 }, moves: ["emberSpark", "flameHug", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Embo. Mang vầng aura ấm áp, sưởi lòng người buồn." },
+    tidi:     { id: "tidi",     name: "Tidi",     type: "water",  shape: "drop",   base: { hp: 56, atk: 48, def: 50, spd: 48 }, moves: ["tackle", "bubble", "cuddle", "lull"], evolveTo: "tidalune", evolveLv: 12, dex: "Giọt biển sâu biết lắng nghe. Thân mình trong veo phản chiếu tâm trạng chủ." },
+    tidalune: { id: "tidalune", name: "Tidalune", type: "water",  shape: "drop2",  base: { hp: 78, atk: 64, def: 70, spd: 60 }, moves: ["bubble", "tide", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Tidi. Sóng quanh mình ru êm mọi cơn giận." },
+    sprou:    { id: "sprou",    name: "Sprou",    type: "nature", shape: "sprout", base: { hp: 58, atk: 50, def: 52, spd: 44 }, moves: ["tackle", "vine", "cuddle", "lull"], evolveTo: "bloomara", evolveLv: 12, dex: "Mầm thiên nhiên đội chiếc lá non. Mọc nhanh hơn khi được khen." },
+    bloomara: { id: "bloomara", name: "Bloomara", type: "nature", shape: "sprout2",base: { hp: 80, atk: 66, def: 72, spd: 54 }, moves: ["vine", "bloom", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Sprou. Hoa trên đầu nở theo nhịp tim của chủ." },
+    frostle:  { id: "frostle",  name: "Frostle",  type: "ice",    shape: "frost",  base: { hp: 60, atk: 54, def: 60, spd: 46 }, moves: ["tackle", "frostpin", "lull", "cuddle"], dex: "Lumina băng tĩnh, lặng lẽ nhưng trung thành. Hơi thở tạo hoa tuyết." },
+    zephy:    { id: "zephy",    name: "Zephy",    type: "air",    shape: "gale",   base: { hp: 50, atk: 58, def: 40, spd: 70 }, moves: ["tackle", "gust", "dazzle", "cuddle"], dex: "Lumina gió tự do, không thích bị gò bó. Bay vòng quanh người nó tin tưởng." },
+    lumi:     { id: "lumi",     name: "Lumi",     type: "light",  shape: "luna",   base: { hp: 56, atk: 60, def: 50, spd: 58 }, moves: ["tackle", "moonray", "dazzle", "cuddle"], evolveTo: "lumielle", evolveLv: 14, dex: "Lumina ánh sáng/bóng tối hiếm gặp. Phát sáng theo cảm xúc người bên cạnh." },
+    lumielle: { id: "lumielle", name: "Lumielle", type: "light",  shape: "luna2",  base: { hp: 78, atk: 80, def: 66, spd: 72 }, moves: ["moonray", "soothe", "cuddle", "dazzle"], dex: "Dạng tiến hóa của Lumi. Ánh trăng của nó được cho là có thể phá lời nguyền cô độc." },
+    // Đối thủ của Thủ Lĩnh Vùng Can Đảm
+    pyrofox:  { id: "pyrofox",  name: "Pyrofox",  type: "fire",   shape: "ember2", base: { hp: 74, atk: 72, def: 56, spd: 70 }, moves: ["emberSpark", "flameHug", "dazzle"], dex: "Lumina lửa của Thủ Lĩnh Can Đảm — bốc đồng nhưng nghĩa khí." },
+    // Hộ vệ gai của lâu đài (giấc mơ)
+    thornward:{ id: "thornward",name: "Gai Thủ Vệ", type: "nature", shape: "thorn", base: { hp: 120, atk: 40, def: 60, spd: 30 }, moves: ["vine"], dex: "Không phải kẻ thù — chỉ là nỗi sợ hóa gai. Cần được chữa lành, không phải đánh bại." }
+  };
+
+  /* ============================================================
+   * 4) CẤU HÌNH CỐT TRUYỆN / LỜI THOẠI
+   * ============================================================ */
+  const STORY = {
+    starterIntro: "Giáo Sư Tơ: \"{name} à, ba bé Lumina này đang chờ một người bạn. Hãy chọn bằng trái tim nhé — vì Lumina lớn lên nhờ Đồng Điệu, không phải nhờ sức mạnh.\"",
+    profAfter: [
+      { name: "Giáo Sư Tơ", text: "Tuyệt! {mon} hợp với {name} lắm. Đây là vài Bùa Kết Nối — bùa hình lá & trái tim pha lê để thu phục Lumina hoang." },
+      { name: "Giáo Sư Tơ", text: "Và đây, một Nhẫn Cỏ — một loại Kỷ Vật. Khi Lumina đủ thân thiết, Kỷ Vật giúp nó tiến hóa." },
+      { name: "Giáo Sư Tơ", text: "Tin dữ: K đã bị Vua Quái Vật bắt đi. Người ta nói trong tim K có 'Trái Tim Thuần Khiết' phá được lời nguyền cô độc của hắn." },
+      { name: "Giáo Sư Tơ", text: "La bàn ký ức của con luôn chỉ về hướng K. Hãy đi qua cỏ cao về phía Đông, ghé Sân Đấu Vùng Can Đảm trước nhé." }
+    ],
+    townsfolk: [
+      { name: "Cụ Già Bên Suối", text: "Cỏ cao có Lumina hoang đó cháu. HP đối thủ càng thấp, ru ngủ được thì Bùa Kết Nối càng dễ ăn." },
+      { name: "Bé Gái Tết Tóc", text: "Chị ơi, khi thanh Đồng Điệu đầy, chị bấm Cộng Hưởng đi! Lumina với chị sẽ phát sáng cùng nhau, mạnh lắm!" }
+    ],
+    gymBefore: [
+      { name: "Thủ Lĩnh Hạ", text: "Ta là Hạ, Thủ Lĩnh Vùng Can Đảm. Muốn đi cứu K à? Trước hết hãy cho ta thấy con dám đối mặt." },
+      { name: "Thủ Lĩnh Hạ", text: "Can đảm không phải là không sợ — mà là vẫn bước tới dù tim đang run. Lại đây nào!" }
+    ],
+    gymWin: [
+      { name: "Thủ Lĩnh Hạ", text: "Hay lắm! Con không đánh để thắng — con đánh để bảo vệ điều con thương. Đó mới là can đảm." },
+      { name: "Thủ Lĩnh Hạ", text: "Nhận lấy Huy Hiệu Can Đảm và Chìa Khóa Cảm Xúc đầu tiên. Lâu đài Vua Quái Vật ở cuối con đường phía Đông." }
+    ],
+    castleGate: [
+      { name: "???", text: "Một giọng vọng ra từ sau cánh cổng gai: \"Quay về đi... ở đây chỉ có nỗi sợ thôi.\"" },
+      { name: "K (vọng lại)", text: "{name}... là cậu phải không? Tớ vẫn ổn. Đừng liều... nhưng nếu cậu tới, tớ tin cậu." }
+    ],
+    dreamIntro: [
+      { name: "", text: "Đêm đó, {name} mơ một giấc mơ về K — một Gai Thủ Vệ chắn đường, mọc lên từ nỗi sợ bị tổn thương." },
+      { name: "K", text: "Đừng đánh nó đau. Nó cũng đang sợ giống tớ thôi. Mình chữa lành cho nó nhé — cùng nhau." },
+      { name: "", text: "Lumina của K hiện ra bên cạnh Lumina của {name}. Hãy lấp đầy thanh Đồng Điệu rồi dùng Cộng Hưởng để CHỮA LÀNH (không tiêu diệt)." }
+    ]
+  };
+
+  /* ============================================================
+   * 5) TRẠNG THÁI GAME (state)
+   * ============================================================ */
+  const SAVE_KEY = "luminaQuestSave_v1";
+  const SET_KEY = "luminaQuestSettings_v1";
+
+  const game = {
+    started: false,
+    playerName: "Bạn",
+    empathy: 12,          // Đồng Cảm — ảnh hưởng tỉ lệ thu phục
+    kHeart: 24,           // Nhịp Đập Trái Tim với K (0..100)
+    badges: [],           // ["courage"]
+    keys: [],             // Chìa Khóa Cảm Xúc
+    party: [],            // [LuminaInstance]
+    bag: { charm: 5, grassRing: 1, letter: 0, courageBadge: 0 },
+    dex: {},              // {speciesId: "seen"|"caught"}
+    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false }
+  };
+
+  const settings = { contrast: false, noFlash: false, font: 1, music: false };
+
+  /* Tạo một thực thể Lumina từ loài + level */
+  function makeMon(speciesId, level) {
+    const sp = SPECIES[speciesId];
+    const stats = statBlock(sp, level);
+    return {
+      species: speciesId,
+      name: sp.name,
+      type: sp.type,
+      level,
+      exp: 0,
+      friendship: 30,
+      moves: sp.moves.slice(0, 4),
+      maxHp: stats.maxHp,
+      hp: stats.maxHp,
+      atk: stats.atk,
+      def: stats.def,
+      spd: stats.spd,
+      bond: 0,            // Đồng Điệu trong trận (0..100)
+      status: null        // "sleep" | "dazed" | null
+    };
+  }
+  function statBlock(sp, level) {
+    const b = sp.base;
+    return {
+      maxHp: Math.floor(b.hp * 0.42 + level * 3 + 14),
+      atk: Math.floor(b.atk * 0.34 + level * 1.7 + 5),
+      def: Math.floor(b.def * 0.32 + level * 1.3 + 4),
+      spd: Math.floor(b.spd * 0.32 + level * 1.5 + 4)
+    };
+  }
+  function recalcStats(mon) {
+    const s = statBlock(SPECIES[mon.species], mon.level);
+    const ratio = mon.hp / mon.maxHp;
+    mon.maxHp = s.maxHp; mon.atk = s.atk; mon.def = s.def; mon.spd = s.spd;
+    mon.hp = Math.max(1, Math.round(s.maxHp * ratio));
+  }
+  function expNeeded(level) { return 16 + level * 12; }
+  function leadMon() { return game.party.find(m => m.hp > 0) || game.party[0]; }
+
+  /* ============================================================
+   * 6) CANVAS / KHUNG NHÌN
+   * ============================================================ */
+  const canvas = $("game");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const TILE = 32;
+  const SCALE = 2;
+  let VIEW_W = 640, VIEW_H = 384;
+
+  function isPortraitPhone() {
+    return window.matchMedia("(max-width: 760px) and (orientation: portrait)").matches;
+  }
+  function resizeCanvas() {
+    const w = isPortraitPhone() ? window.innerHeight : window.innerWidth;
+    const h = isPortraitPhone() ? window.innerWidth : window.innerHeight;
+    const aspect = w / Math.max(1, h);
+    VIEW_H = 384;
+    VIEW_W = Math.round(clamp(384 * aspect, 480, 960) / 2) * 2;
+    canvas.width = VIEW_W * SCALE;
+    canvas.height = VIEW_H * SCALE;
+    ctx.imageSmoothingEnabled = false;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 60));
+  resizeCanvas();
+
+  /* ============================================================
+   * 7) BẢN ĐỒ THẾ GIỚI (1 vùng liền, kiểu lưới ô)
+   * ============================================================ */
+  const SOLID = new Set(["T", "W", "R", "L", "B", "C"]);
+  function makeMap(w, h, fill = "G") {
+    const m = [];
+    for (let y = 0; y < h; y++) { const row = []; for (let x = 0; x < w; x++) row.push(fill); m.push(row); }
+    return m;
+  }
+  function fillRect(m, x, y, w, h, t) {
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++)
+      if (m[yy] && m[yy][xx] !== undefined) m[yy][xx] = t;
+  }
+  function setT(m, x, y, t) { if (m[y] && m[y][x] !== undefined) m[y][x] = t; }
+
+  let world = null;
+  function buildWorld() {
+    const W = 40, H = 26;
+    const m = makeMap(W, H, "G");
+    // Viền cây bao quanh
+    fillRect(m, 0, 0, W, 1, "T"); fillRect(m, 0, H - 1, W, 1, "T");
+    fillRect(m, 0, 0, 1, H, "T"); fillRect(m, W - 1, 0, 1, H, "T");
+
+    // --- Làng Khởi Hành (góc trên trái) ---
+    fillRect(m, 3, 2, 5, 3, "L");      // Phòng thí nghiệm Giáo Sư Tơ
+    fillRect(m, 10, 2, 3, 2, "B");     // nhà 1 (dùng B làm tường gạch)
+    fillRect(m, 14, 2, 3, 2, "B");     // nhà 2
+    // hoa trang trí
+    setT(m, 9, 5, "F"); setT(m, 13, 5, "F"); setT(m, 17, 4, "F"); setT(m, 4, 6, "F");
+
+    // --- Đường đi (path) ---
+    fillRect(m, 5, 5, 2, 9, "P");      // dọc xuống từ làng
+    fillRect(m, 5, 13, 22, 2, "P");    // ngang sang phải
+    fillRect(m, 25, 9, 2, 6, "P");     // lên Sân Đấu
+    fillRect(m, 27, 13, 10, 2, "P");   // tiếp sang cổng lâu đài
+
+    // --- Cỏ cao (gặp Lumina) ---
+    fillRect(m, 9, 8, 5, 4, "g");
+    fillRect(m, 15, 16, 6, 4, "g");
+    fillRect(m, 20, 7, 4, 4, "g");
+    fillRect(m, 30, 17, 5, 4, "g");
+
+    // --- Hồ nước + đá ---
+    fillRect(m, 2, 18, 5, 4, "W");
+    setT(m, 7, 19, "F"); setT(m, 7, 20, "F");
+    setT(m, 18, 10, "R"); setT(m, 12, 22, "R"); setT(m, 33, 8, "R");
+
+    // --- Cây rải rác ---
+    setT(m, 16, 8, "T"); setT(m, 22, 16, "T"); setT(m, 28, 18, "T"); setT(m, 10, 16, "T"); setT(m, 24, 22, "T");
+
+    // --- Sân Đấu Vùng Can Đảm ---
+    fillRect(m, 24, 5, 5, 3, "B");
+
+    // --- Lâu đài Vua Quái Vật (phía Đông) + gai ---
+    fillRect(m, 35, 4, 4, 6, "C");
+    setT(m, 34, 5, "R"); setT(m, 34, 7, "R"); setT(m, 34, 9, "R"); setT(m, 39, 11, "R");
+
+    const objects = [
+      // NPC làng
+      obj("prof", "npc", 5, 5, { color: "#bfa2ff", who: "prof" }),
+      obj("folk1", "npc", 11, 5, { color: "#9fe0ff", who: "folk1" }),
+      obj("folk2", "npc", 15, 6, { color: "#ffd166", who: "folk2" }),
+      // Bùa nhặt thêm
+      obj("charm1", "item", 21, 12, { item: "charm", amount: 3 }),
+      obj("charm2", "item", 31, 20, { item: "charm", amount: 3 }),
+      // Bảng chỉ dẫn
+      obj("sign1", "sign", 7, 12, { text: "🪧 Đông → Sân Đấu Can Đảm & Lâu đài. Cỏ cao 🌾 có Lumina hoang." }),
+      // Thủ Lĩnh Vùng
+      obj("gym", "gym", 26, 8, { color: "#ff8a4d" }),
+      // Cổng lâu đài
+      obj("castle", "castle", 36, 10, {})
+    ];
+
+    world = {
+      map: m, w: W, h: H, objects,
+      spawn: { tx: 6, ty: 6 },
+      wild: [
+        { sp: "embo", min: 3, max: 5 }, { sp: "tidi", min: 3, max: 5 },
+        { sp: "sprou", min: 3, max: 5 }, { sp: "frostle", min: 4, max: 6 },
+        { sp: "zephy", min: 4, max: 6 }, { sp: "lumi", min: 5, max: 7 }
+      ]
+    };
+  }
+  function obj(id, type, tx, ty, data = {}) {
+    return { id, type, x: tx * TILE, y: ty * TILE, tx, ty, data, t: 0 };
+  }
+
+  /* ============================================================
+   * 8) NGƯỜI CHƠI + CAMERA + INPUT
+   * ============================================================ */
+  const player = {
+    x: 0, y: 0, w: 20, h: 22, speed: 116,
+    dir: "down", moving: false, step: 0, lastTile: { tx: -1, ty: -1 }, stepsSinceBattle: 0
+  };
+  const camera = { x: 0, y: 0 };
+  const keys = Object.create(null);
+  const mobile = { up: false, down: false, left: false, right: false };
+  let visualClock = 0, worldTime = 0;
+  const particles = [];
+
+  function tileAt(tx, ty) {
+    if (!world || ty < 0 || tx < 0 || ty >= world.h || tx >= world.w) return "T";
+    return world.map[ty][tx];
+  }
+  function tileAtWorld(x, y) { return tileAt(Math.floor(x / TILE), Math.floor(y / TILE)); }
+  function isSolidRect(x, y, w, h) {
+    const pts = [[x, y], [x + w, y], [x, y + h], [x + w, y + h], [x + w / 2, y + h]];
+    for (const [px, py] of pts) {
+      const t = tileAtWorld(px, py);
+      if (SOLID.has(t)) return true;
+      // chặn object dạng npc/gym/castle (đứng cản)
+    }
+    return false;
+  }
+  function objSolidAt(x, y, w, h) {
+    for (const o of world.objects) {
+      if (!["npc", "gym", "castle", "sign"].includes(o.type)) continue;
+      if (x < o.x + 26 && x + w > o.x + 4 && y < o.y + 28 && y + h > o.y + 12) return true;
+    }
+    return false;
+  }
+
+  function movePlayer(dt) {
+    if (dialog.active || battle.active || anyOverlayOpen()) { player.moving = false; return; }
+    let dx = 0, dy = 0;
+    if (keys["arrowup"] || keys["w"] || mobile.up) dy -= 1;
+    if (keys["arrowdown"] || keys["s"] || mobile.down) dy += 1;
+    if (keys["arrowleft"] || keys["a"] || mobile.left) dx -= 1;
+    if (keys["arrowright"] || keys["d"] || mobile.right) dx += 1;
+
+    player.moving = dx !== 0 || dy !== 0;
+    if (player.moving) {
+      if (Math.abs(dx) > Math.abs(dy)) player.dir = dx > 0 ? "right" : "left";
+      else player.dir = dy > 0 ? "down" : "up";
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = player.x + (dx / len) * player.speed * dt;
+      const ny = player.y + (dy / len) * player.speed * dt;
+      if (!isSolidRect(nx, player.y + 8, player.w, player.h - 8) && !objSolidAt(nx, player.y + 8, player.w, player.h - 8)) player.x = nx;
+      if (!isSolidRect(player.x, ny + 8, player.w, player.h - 8) && !objSolidAt(player.x, ny + 8, player.w, player.h - 8)) player.y = ny;
+      player.step += dt * 9;
+      checkEncounter();
+    }
+  }
+  function checkEncounter() {
+    const tx = Math.floor((player.x + player.w / 2) / TILE);
+    const ty = Math.floor((player.y + player.h) / TILE);
+    if (tx === player.lastTile.tx && ty === player.lastTile.ty) return;
+    if (!game.party.length) return; // chưa có Lumina thì không thể gặp trận hoang
+    player.lastTile = { tx, ty };
+    player.stepsSinceBattle++;
+    if (tileAt(tx, ty) === "g" && player.stepsSinceBattle > 2) {
+      if (Math.random() < 0.22) {
+        player.stepsSinceBattle = 0;
+        const w = pick(world.wild);
+        const lvl = randi(w.min, w.max);
+        startWildBattle(w.sp, lvl);
+      }
+    }
+  }
+  function updateCamera() {
+    const mapW = world.w * TILE, mapH = world.h * TILE;
+    camera.x = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, Math.max(0, mapW - VIEW_W));
+    camera.y = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H));
+  }
+
+  function nearestInteractable() {
+    let best = null, bestD = 9999;
+    const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
+    for (const o of world.objects) {
+      if (!["npc", "gym", "castle", "sign", "item"].includes(o.type)) continue;
+      const ox = o.x + 14, oy = o.y + 16;
+      const d = Math.hypot(cx - ox, cy - oy);
+      if (d < 46 && d < bestD) { bestD = d; best = o; }
+    }
+    return best;
+  }
+
+  function interact() {
+    if (dialog.active) { dialog.advance(); return; }
+    if (battle.active) return;
+    const o = nearestInteractable();
+    if (!o) return;
+    if (o.type === "item") { pickupItem(o); return; }
+    if (o.type === "sign") { openDialog([{ name: "Bảng chỉ dẫn", text: o.data.text }]); return; }
+    if (o.type === "npc") { talkNpc(o); return; }
+    if (o.type === "gym") { startGym(); return; }
+    if (o.type === "castle") { approachCastle(); return; }
+  }
+
+  function pickupItem(o) {
+    const amt = o.data.amount || 1;
+    game.bag[o.data.item] = (game.bag[o.data.item] || 0) + amt;
+    world.objects = world.objects.filter(x => x !== o);
+    sfx("pickup"); burst(o.x + 14 - camera.x, o.y + 14 - camera.y, "#ffd166", 12, "spark");
+    showToast("Nhặt được " + amt + " " + itemName(o.data.item) + "!");
+    saveGame(true);
+  }
+
+  /* ============================================================
+   * 9) HỘI THOẠI (dialog) + lựa chọn
+   * ============================================================ */
+  const dialog = { active: false, lines: [], i: 0, onDone: null, choices: null };
+  function fmt(s) {
+    return (s || "").replaceAll("{name}", game.playerName)
+      .replaceAll("{mon}", game.party[0] ? game.party[0].name : "Lumina");
+  }
+  function openDialog(lines, onDone = null) {
+    dialog.active = true; dialog.lines = lines.slice(); dialog.i = 0; dialog.onDone = onDone; dialog.choices = null;
+    $("dialog").classList.remove("hidden");
+    renderDialog();
+  }
+  function renderDialog() {
+    const line = dialog.lines[dialog.i];
+    $("dialogName").textContent = line.name ? fmt(line.name) : "";
+    $("dialogName").style.display = line.name ? "block" : "none";
+    $("dialogText").textContent = fmt(line.text);
+    const choicesEl = $("dialogChoices");
+    choicesEl.innerHTML = "";
+    if (line.choices) {
+      $("nextBtn").style.display = "none";
+      line.choices.forEach(c => {
+        const b = document.createElement("button");
+        b.className = "choiceBtn"; b.textContent = c.label;
+        b.onclick = () => { sfx("pickup"); if (c.action) c.action(); };
+        choicesEl.appendChild(b);
+      });
+    } else {
+      $("nextBtn").style.display = "block";
+    }
+  }
+  dialog.advance = function () {
+    if (dialog.lines[dialog.i] && dialog.lines[dialog.i].choices) return; // chờ chọn
+    dialog.i++;
+    if (dialog.i >= dialog.lines.length) {
+      dialog.active = false;
+      $("dialog").classList.add("hidden");
+      const cb = dialog.onDone; dialog.onDone = null;
+      if (cb) cb();
+    } else renderDialog();
+  };
+  $("nextBtn").addEventListener("click", () => dialog.advance());
+
+  function talkNpc(o) {
+    const who = o.data.who;
+    if (who === "prof") {
+      if (!game.flags.gotStarter) { openStarter(); return; }
+      openDialog([{ name: "Giáo Sư Tơ", text: "Đi về phía Đông qua cỏ cao, gặp Thủ Lĩnh Hạ ở Sân Đấu Can Đảm nhé. La bàn của con đang chỉ về K đó." }]);
+    } else if (who === "folk1") {
+      openDialog([STORY.townsfolk[0]]);
+    } else if (who === "folk2") {
+      openDialog([STORY.townsfolk[1]]);
+    }
+  }
+
+  /* ============================================================
+   * 10) STARTER
+   * ============================================================ */
+  const STARTERS = ["embo", "tidi", "sprou"];
+  let starterPick = null;
+  function openStarter() {
+    starterPick = null;
+    const grid = $("starterGrid"); grid.innerHTML = "";
+    $("starterIntro").textContent = fmt(STORY.starterIntro);
+    STARTERS.forEach(id => {
+      const sp = SPECIES[id], t = TYPES[sp.type];
+      const card = document.createElement("div");
+      card.className = "pickCard";
+      card.innerHTML = `<canvas width="80" height="80"></canvas><div>${sp.name}</div>
+        <span class="typeChip" style="background:${t.chip}">${t.emoji} ${t.name}</span>
+        <small>${sp.dex}</small>`;
+      card.onclick = () => {
+        starterPick = id;
+        [...grid.children].forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+        $("confirmStarter").disabled = false;
+        sfx("pickup");
+      };
+      grid.appendChild(card);
+      const c = card.querySelector("canvas");
+      drawLumina(c.getContext("2d"), id, 8, 6, 4, 0, { face: true });
+    });
+    $("confirmStarter").disabled = true;
+    showOverlay("starterOverlay");
+  }
+  $("confirmStarter").addEventListener("click", () => {
+    if (!starterPick) return;
+    const mon = makeMon(starterPick, 5);
+    game.party = [mon];
+    markDex(starterPick, "caught");
+    game.flags.gotStarter = true;
+    game.bag.charm += 0; game.bag.grassRing = 1;
+    hideOverlay("starterOverlay");
+    sfx("complete");
+    const after = STORY.profAfter.map(l => ({ name: l.name, text: l.text.replaceAll("{mon}", mon.name) }));
+    openDialog(after, () => { updateHud(); saveGame(true); });
+    updateHud();
+  });
+
+  /* ============================================================
+   * 11) BATTLE — trái tim của trò chơi
+   * ============================================================ */
+  const battle = {
+    active: false, busy: false, mode: "wild", // wild | gym | dream
+    pMon: null, allyMon: null, eMon: null,
+    enemyTeam: [], enemyIdx: 0,
+    fx: { shakeP: 0, shakeE: 0, flash: 0, soul: 0 },
+    soul: 0,            // chỉ dùng cho dream (chữa lành)
+    menu: "root",       // root | moves | switch
+    capturing: false,
+    canRun: true,
+    seq: 0              // token chuỗi lượt — tăng lên để hủy chuỗi runSteps cũ khi có handoff
+  };
+
+  function startWildBattle(speciesId, level) {
+    const e = makeMon(speciesId, level);
+    markDex(speciesId, "seen");
+    enterBattle({ mode: "wild", enemy: e, canRun: true });
+  }
+  function startGym() {
+    if (!game.flags.gotStarter) { openDialog([{ name: "Thủ Lĩnh Hạ", text: "Con chưa có Lumina nào sao? Hãy ghé Giáo Sư Tơ ở làng trước đã." }]); return; }
+    if (game.flags.gymDone) {
+      openDialog([{ name: "Thủ Lĩnh Hạ", text: "Con đã có Huy Hiệu Can Đảm rồi. Hãy đi tiếp về phía cổng lâu đài phía Đông!" }]);
+      return;
+    }
+    openDialog(STORY.gymBefore, () => {
+      const team = [makeMon("embo", 7), makeMon("pyrofox", 9)];
+      enterBattle({ mode: "gym", enemyTeam: team, canRun: false });
+    });
+  }
+  function approachCastle() {
+    game.flags.sawCastle = true;
+    if (!game.flags.gymDone) {
+      openDialog([
+        { name: "", text: "Cổng lâu đài phủ đầy gai đen. Một sức ép vô hình đẩy {name} lùi lại." },
+        { name: "", text: "Có lẽ cần chứng tỏ lòng can đảm trước — hãy thắng Thủ Lĩnh Hạ ở Sân Đấu Can Đảm đã." }
+      ]);
+      return;
+    }
+    if (game.flags.dreamDone) { showEnding(); return; }
+    openDialog(STORY.castleGate, () => {
+      // Đêm xuống → giấc mơ về K
+      bannerThen("🌙 Màn đêm buông xuống...", () => {
+        openDialog(STORY.dreamIntro, () => startDreamBattle());
+      });
+    });
+  }
+
+  function startDreamBattle() {
+    const guard = makeMon("thornward", 12);
+    // K mượn cho bạn một Lumielle để song đấu
+    const ally = makeMon("lumielle", 12);
+    ally.fromK = true;
+    enterBattle({ mode: "dream", enemy: guard, ally, canRun: false });
+  }
+
+  function enterBattle(opts) {
+    battle.active = true; battle.busy = true; battle.mode = opts.mode;
+    battle.enemyTeam = opts.enemyTeam || (opts.enemy ? [opts.enemy] : []);
+    battle.enemyIdx = 0;
+    battle.eMon = battle.enemyTeam[0];
+    battle.pMon = leadMon();
+    if (!battle.pMon) { battle.active = false; battle.busy = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt"); return; }
+    battle.pMon.bond = 0;
+    battle.allyMon = opts.ally || null;
+    if (battle.allyMon) battle.allyMon.bond = 0;
+    battle.canRun = !!opts.canRun;
+    battle.soul = 0;
+    battle.capturing = false;
+    battle.menu = "root";
+    battle.fx = { shakeP: 0, shakeE: 0, flash: 0, soul: 0 };
+    canvas.classList.remove("tilt");
+    $("battleUI").classList.add("on");
+    $("enemyBox2").style.display = "none";
+    $("allyBox").style.display = battle.allyMon ? "block" : "none";
+    refreshMusic();
+    const intro = battle.mode === "wild"
+      ? `Một ${battle.eMon.name} hoang ${TYPES[battle.eMon.type].emoji} xuất hiện!`
+      : battle.mode === "gym"
+        ? `Thủ Lĩnh Hạ tung ra ${battle.eMon.name}!`
+        : `Gai Thủ Vệ trỗi dậy từ nỗi sợ...`;
+    setBattleMsg(intro);
+    renderBattleBoxes();
+    setTimeout(() => { battle.busy = false; showBattleMenu(); }, 1100);
+  }
+
+  function setBattleMsg(t) { $("battleMsg").textContent = t; }
+
+  function renderBattleBoxes() {
+    const e = battle.eMon, p = battle.pMon, a = battle.allyMon;
+    $("enemyBox").innerHTML = monBoxHtml(e, { foe: true });
+    $("playerBox").innerHTML = monBoxHtml(p, { exp: true, bond: true });
+    if (a) $("allyBox").innerHTML = monBoxHtml(a, { bond: true, ally: true });
+    // Dream: hiển thị thanh "Tâm Hồn" (chữa lành) thay cho thông tin enemy bond
+    if (battle.mode === "dream") {
+      $("enemyBox").innerHTML = soulBoxHtml(e, battle.soul);
+    }
+  }
+  function hpClass(m) { const r = m.hp / m.maxHp; return r > 0.5 ? "" : r > 0.22 ? "mid" : "low"; }
+  function monBoxHtml(m, o = {}) {
+    const t = TYPES[m.type];
+    const statusTag = m.status ? `<span class="statusTag" style="background:${m.status === "sleep" ? "#cdbff0" : "#ffe0a3"}">${m.status === "sleep" ? "😴 Ngủ" : "💫 Bối rối"}</span>` : "";
+    const hpr = clamp((m.hp / m.maxHp) * 100, 0, 100);
+    let h = `<div class="row1"><span>${o.ally ? "💞 " : ""}${m.name} <span class="typeChip" style="background:${t.chip}">${t.emoji}</span>${statusTag}</span><span>Lv${m.level}</span></div>`;
+    h += `<div class="hpTrack"><div class="hpFill ${hpClass(m)}" style="width:${hpr}%"></div></div>`;
+    h += `<div style="font-size:calc(10px*var(--fontScale));margin-top:2px;">${o.foe ? "" : "HP " + Math.max(0, Math.ceil(m.hp)) + "/" + m.maxHp}</div>`;
+    if (o.exp) { const er = clamp((m.exp / expNeeded(m.level)) * 100, 0, 100); h += `<div class="expTrack"><div class="expFill" style="width:${er}%"></div></div>`; }
+    if (o.bond) { h += `<div style="font-size:calc(10px*var(--fontScale));margin-top:3px;">Đồng Điệu</div><div class="bondTrack"><div class="bondFill" style="width:${clamp(m.bond, 0, 100)}%"></div></div>`; }
+    return h;
+  }
+  function soulBoxHtml(m, soul) {
+    const t = TYPES[m.type];
+    const hpr = clamp((m.hp / m.maxHp) * 100, 0, 100);
+    let h = `<div class="row1"><span>${m.name} <span class="typeChip" style="background:${t.chip}">${t.emoji}</span></span><span>Lv${m.level}</span></div>`;
+    h += `<div class="hpTrack"><div class="hpFill ${hpClass(m)}" style="width:${hpr}%"></div></div>`;
+    h += `<div style="font-size:calc(10px*var(--fontScale));margin-top:3px;">💗 Tâm Hồn (chữa lành)</div>`;
+    h += `<div class="bondTrack"><div class="bondFill" style="width:${clamp(soul, 0, 100)}%"></div></div>`;
+    return h;
+  }
+
+  /* ---- Menu battle ---- */
+  function showBattleMenu() {
+    if (battle.busy) return;
+    battle.menu = "root";
+    const menu = $("battleMenu");
+    menu.className = "pixel-panel";
+    const p = battle.pMon;
+    const resoReady = p.bond >= 100;
+    let html = "";
+    html += `<button class="battleBtn" data-act="fight">⚔️ Chiến<small>Dùng chiêu thức</small></button>`;
+    if (battle.mode === "dream") {
+      html += `<button class="battleBtn" data-act="heal">💗 Chữa Lành<small>Lấp đầy Tâm Hồn cho gai</small></button>`;
+    } else {
+      html += `<button class="battleBtn" data-act="charm">💞 Bùa Kết Nối<small>Còn ${game.bag.charm || 0} · thu phục</small></button>`;
+    }
+    html += `<button class="battleBtn" data-act="switch">🔁 Đổi Lumina<small>Đưa bạn khác ra</small></button>`;
+    if (battle.canRun) html += `<button class="battleBtn" data-act="run">🏃 Bỏ chạy<small>Thoát trận hoang</small></button>`;
+    else html += `<button class="battleBtn" disabled>🚫 Không thể chạy</button>`;
+    if (resoReady) html += `<button class="battleBtn reso" data-act="reso" style="grid-column:1/-1">✨ Skill Cộng Hưởng${battle.allyMon ? " (Đôi)" : ""}<small>Đồng Điệu đầy! ${battle.mode === "dream" ? "Chữa lành mạnh" : "Sát thương/hồi lớn"} + hiệu ứng đặc biệt</small></button>`;
+    menu.innerHTML = html;
+    menu.querySelectorAll("button[data-act]").forEach(b => b.onclick = () => onBattleAction(b.dataset.act));
+  }
+
+  function onBattleAction(act) {
+    if (battle.busy) return;
+    if (act === "fight") { showMoves(); return; }
+    if (act === "heal") { showMoves(true); return; }
+    if (act === "switch") { showSwitch(); return; }
+    if (act === "charm") { tryCapture(); return; }
+    if (act === "run") { tryRun(); return; }
+    if (act === "reso") { doResonance(); return; }
+  }
+
+  function showMoves(healOnly) {
+    battle.menu = "moves";
+    const menu = $("battleMenu"); menu.className = "pixel-panel moves";
+    const p = battle.pMon;
+    let html = "";
+    p.moves.forEach(mid => {
+      const mv = MOVES[mid];
+      const tchip = mv.type ? `<span class="typeChip" style="background:${TYPES[mv.type].chip}">${TYPES[mv.type].emoji}</span>` : "";
+      const kindLabel = mv.kind === "atk" ? `SM ${mv.power}` : mv.kind === "heal" ? "Hồi máu" : mv.kind === "status" ? "Trạng thái" : mv.kind === "soul" ? "Chữa lành" : "";
+      html += `<button class="battleBtn" data-mv="${mid}">${tchip} ${mv.name}<small>${kindLabel} · ${mv.desc}</small></button>`;
+    });
+    html += `<button class="battleBtn" data-mv="__back" style="grid-column:1/-1">↩ Quay lại</button>`;
+    menu.innerHTML = html;
+    menu.querySelectorAll("button[data-mv]").forEach(b => b.onclick = () => {
+      if (b.dataset.mv === "__back") { showBattleMenu(); return; }
+      playerUseMove(b.dataset.mv);
+    });
+  }
+
+  function showSwitch() {
+    battle.menu = "switch";
+    const menu = $("battleMenu"); menu.className = "pixel-panel";
+    let html = "";
+    game.party.forEach((m, i) => {
+      const dis = (m === battle.pMon || m.hp <= 0);
+      html += `<button class="battleBtn" data-sw="${i}" ${dis ? "disabled" : ""}>${m.name} Lv${m.level} ${TYPES[m.type].emoji}<small>HP ${Math.max(0, Math.ceil(m.hp))}/${m.maxHp}${m === battle.pMon ? " · đang ra trận" : m.hp <= 0 ? " · đã gục" : ""}</small></button>`;
+    });
+    html += `<button class="battleBtn" data-sw="__back" style="grid-column:1/-1">↩ Quay lại</button>`;
+    menu.innerHTML = html;
+    menu.querySelectorAll("button[data-sw]").forEach(b => b.onclick = () => {
+      if (b.dataset.sw === "__back") { showBattleMenu(); return; }
+      doSwitch(parseInt(b.dataset.sw, 10));
+    });
+  }
+
+  /* ---- Tính sát thương ---- */
+  function damageOf(user, target, mv) {
+    const eff = effectiveness(mv.type, target.type);
+    const stab = (mv.type && mv.type === user.type) ? 1.2 : 1;
+    const base = mv.power * (user.atk / Math.max(8, target.def)) * 0.42;
+    let dmg = Math.floor(base * eff * stab * rand(0.86, 1.0)) + 1;
+    return { dmg, eff };
+  }
+
+  function effLabel(eff) { return eff > 1 ? " Rất hiệu quả!" : ""; }
+
+  /* ---- Lượt người chơi dùng chiêu ---- */
+  function playerUseMove(mid) {
+    battle.busy = true; clearMenu();
+    const p = battle.pMon, e = battle.eMon, mv = MOVES[mid];
+    const steps = [];
+
+    // Nếu đang ngủ: có thể tỉnh
+    steps.push(() => {
+      if (p.status === "sleep") {
+        if (Math.random() < 0.45) { p.status = null; setBattleMsg(`${p.name} đã tỉnh giấc!`); }
+        else { setBattleMsg(`${p.name} đang ngủ say...`); }
+      }
+    });
+
+    steps.push(() => {
+      if (p.status === "sleep") return; // bỏ lượt
+      applyMoveEffect(p, e, mv, "player");
+    });
+
+    // Kiểm tra enemy gục / dream soul
+    steps.push(() => afterHitChecks("player"));
+
+    // Đến lượt đồng minh K (dream/double)
+    if (battle.allyMon && battle.allyMon.hp > 0) {
+      steps.push(() => allyTurn());
+      steps.push(() => afterHitChecks("ally"));
+    }
+
+    // Lượt đối thủ (nếu còn sống & trận chưa kết thúc)
+    steps.push(() => { if (!battle.active) return; enemyTurn(); });
+    steps.push(() => afterHitChecks("enemy"));
+
+    runSteps(steps, () => { if (battle.active) { battle.busy = false; showBattleMenu(); renderBattleBoxes(); } });
+  }
+
+  function applyMoveEffect(user, target, mv, side) {
+    if (mv.kind === "atk") {
+      const { dmg, eff } = damageOf(user, target, mv);
+      target.hp = clamp(target.hp - dmg, 0, target.maxHp);
+      user.bond = clamp(user.bond + mv.bond, 0, 100);
+      if (side === "player" || side === "ally") { battle.fx.shakeE = 0.32; flash(); }
+      else battle.fx.shakeP = 0.32;
+      // Trong dream, đòn đánh vẫn nhích nhẹ Tâm Hồn (cho thấy mọi tương tác đều có ý nghĩa)
+      if (battle.mode === "dream" && (side === "player" || side === "ally")) battle.soul = clamp(battle.soul + 4, 0, 100);
+      setBattleMsg(`${user.name} dùng ${mv.name}! Gây ${dmg} sát thương.${effLabel(eff)}`);
+    } else if (mv.kind === "heal") {
+      const heal = Math.round(user.maxHp * mv.heal);
+      user.hp = clamp(user.hp + heal, 0, user.maxHp);
+      user.bond = clamp(user.bond + mv.bond, 0, 100);
+      burstAt(side === "enemy" ? "E" : "P", "#8af0a0", 12, "heart");
+      setBattleMsg(`${user.name} dùng ${mv.name}, hồi ${heal} HP và gắn kết hơn 💞`);
+    } else if (mv.kind === "status") {
+      if (!target.status) target.status = mv.status;
+      user.bond = clamp(user.bond + mv.bond, 0, 100);
+      burstAt(side === "player" || side === "ally" ? "E" : "P", "#cdbff0", 10, "spark");
+      setBattleMsg(`${user.name} dùng ${mv.name}! ${target.name} ${mv.status === "sleep" ? "thiu thiu ngủ 😴" : "bối rối 💫"}.`);
+    } else if (mv.kind === "soul") {
+      // chữa lành: lấp đầy Tâm Hồn của gai
+      battle.soul = clamp(battle.soul + mv.soul, 0, 100);
+      user.bond = clamp(user.bond + mv.bond, 0, 100);
+      burstAt("E", "#fff3d6", 14, "heart");
+      setBattleMsg(`${user.name} dùng ${mv.name} — gửi sự dịu dàng tới Gai Thủ Vệ. 💗`);
+    }
+  }
+
+  function allyTurn() {
+    const a = battle.allyMon, e = battle.eMon;
+    if (!a || a.hp <= 0 || !battle.active) return;
+    if (battle.mode === "dream") {
+      // K luôn chọn chữa lành
+      const mv = MOVES.soothe;
+      battle.soul = clamp(battle.soul + mv.soul, 0, 100);
+      a.bond = clamp(a.bond + mv.bond, 0, 100);
+      burstAt("E", "#e7d6ff", 12, "heart");
+      setBattleMsg(`K & ${a.name} cùng Vỗ Về Gai Thủ Vệ. Tâm Hồn dịu lại...`);
+    } else {
+      const mv = MOVES[pick(a.moves.filter(id => MOVES[id].kind === "atk")) || "tackle"];
+      applyMoveEffect(a, e, mv, "ally");
+    }
+  }
+
+  function enemyTurn() {
+    const e = battle.eMon, p = battle.pMon;
+    if (!e || e.hp <= 0 || !battle.active) return;
+    if (e.status === "sleep") {
+      if (Math.random() < 0.4) { e.status = null; setBattleMsg(`${e.name} tỉnh giấc!`); }
+      else { setBattleMsg(`${e.name} vẫn đang ngủ 😴`); return; }
+    }
+    if (battle.mode === "dream") {
+      // Gai chỉ "vùng vẫy" vì sợ — sát thương nhẹ, mục tiêu là người chơi
+      const target = (battle.allyMon && battle.allyMon.hp > 0 && Math.random() < 0.4) ? battle.allyMon : p;
+      const { dmg } = damageOf(e, target, MOVES.vine);
+      const real = Math.round(dmg * 0.7);
+      target.hp = clamp(target.hp - real, 0, target.maxHp);
+      battle.fx.shakeP = 0.3;
+      setBattleMsg(`Gai Thủ Vệ vung gai vì hoảng sợ, ${target.name} chịu ${real} sát thương.`);
+      return;
+    }
+    // chọn chiêu: ưu tiên rất hiệu quả
+    const atkMoves = e.moves.map(id => MOVES[id]).filter(m => m.kind === "atk");
+    let mv = atkMoves[0] || MOVES.tackle;
+    const superMv = atkMoves.find(m => effectiveness(m.type, p.type) > 1);
+    if (superMv) mv = superMv;
+    // đôi khi gây trạng thái
+    const statusMv = e.moves.map(id => MOVES[id]).find(m => m.kind === "status");
+    if (statusMv && !p.status && Math.random() < 0.25) mv = statusMv;
+
+    if (p.status === "dazed" && false) {} // bối rối ảnh hưởng người chơi, không phải enemy
+    applyMoveEffect(e, p, mv, "enemy");
+  }
+
+  function afterHitChecks(side) {
+    if (!battle.active) return;
+    renderBattleBoxes();
+    // Dream thắng bằng chữa lành
+    if (battle.mode === "dream" && battle.soul >= 100) { winDream(); return; }
+    // Enemy gục
+    if (battle.eMon.hp <= 0) {
+      if (battle.mode === "dream") { battle.eMon.hp = 1; return; } // không cho gục trong dream
+      onEnemyFaint();
+      return;
+    }
+    // Player team gục hết?
+    if (battle.pMon.hp <= 0) {
+      const next = game.party.find(m => m.hp > 0 && m !== battle.pMon);
+      const allyAlive = battle.allyMon && battle.allyMon.hp > 0;
+      if (!next && !allyAlive) { onPlayerLose(); return; }
+      if (!next && allyAlive) { return; } // còn K cầm cự (dream)
+      // tự động đưa con kế nếu con dẫn gục
+      if (battle.pMon.hp <= 0 && next) {
+        setBattleMsg(`${battle.pMon.name} đã kiệt sức! ${next.name}, ra trận nào!`);
+        battle.pMon = next; battle.pMon.bond = battle.pMon.bond || 0;
+        renderBattleBoxes();
+      }
+    }
+  }
+
+  function onEnemyFaint() {
+    battle.busy = true; battle.seq++; clearMenu(); // hủy chuỗi lượt cũ để con kế không đánh free
+    setBattleMsg(`${battle.eMon.name} đã gục!`);
+    const gained = battle.eMon.level * 14 + 16;
+    const steps = [];
+    steps.push(() => gainExp(battle.pMon, gained));
+    steps.push(() => {
+      // gym: còn mon tiếp theo?
+      if (battle.mode === "gym" && battle.enemyIdx < battle.enemyTeam.length - 1) {
+        battle.enemyIdx++; battle.eMon = battle.enemyTeam[battle.enemyIdx];
+        setBattleMsg(`Thủ Lĩnh Hạ tung ra ${battle.eMon.name}!`);
+        renderBattleBoxes();
+        battle.busy = false; showBattleMenu();
+      } else {
+        endBattle(true);
+      }
+    });
+    runSteps(steps, null);
+  }
+
+  function gainExp(mon, amount) {
+    mon.exp += amount;
+    mon.friendship = clamp(mon.friendship + 6, 0, 100);
+    setBattleMsg(`${mon.name} nhận ${amount} EXP! (Thân thiết +)`);
+    let leveled = false;
+    while (mon.exp >= expNeeded(mon.level)) {
+      mon.exp -= expNeeded(mon.level);
+      mon.level++;
+      recalcStats(mon);
+      mon.hp = mon.maxHp;
+      leveled = true;
+    }
+    if (leveled) { setBattleMsg(`${mon.name} lên Lv${mon.level}! 🎉`); sfx("piece"); }
+    renderBattleBoxes();
+    // kiểm tra tiến hóa tự nhiên
+    tryEvolveNatural(mon);
+  }
+
+  function tryEvolveNatural(mon) {
+    const sp = SPECIES[mon.species];
+    if (sp.evolveTo && mon.level >= sp.evolveLv && mon.friendship >= 50) {
+      evolveMon(mon, sp.evolveTo);
+    }
+  }
+  function evolveMon(mon, toId) {
+    const fromName = mon.name;
+    bannerThen(`✨ ${fromName} đang tiến hóa...`, () => {
+      mon.species = toId;
+      mon.name = SPECIES[toId].name;
+      mon.type = SPECIES[toId].type;
+      mon.moves = SPECIES[toId].moves.slice(0, 4);
+      recalcStats(mon);
+      mon.hp = mon.maxHp;
+      markDex(toId, "caught");
+      sfx("complete");
+      showToast(`${fromName} đã tiến hóa thành ${mon.name}! 🌟`);
+      if (battle.active) renderBattleBoxes();
+      saveGame(true);
+    });
+  }
+
+  /* ---- Thu phục bằng Bùa Kết Nối ---- */
+  function tryCapture() {
+    if ((game.bag.charm || 0) <= 0) { setBattleMsg("Hết Bùa Kết Nối rồi! Hãy nhặt thêm ở thế giới."); setTimeout(showBattleMenu, 900); return; }
+    if (battle.mode !== "wild") { setBattleMsg("Không thể thu phục Lumina của người khác / trong giấc mơ."); setTimeout(showBattleMenu, 900); return; }
+    battle.busy = true; clearMenu();
+    game.bag.charm--;
+    const e = battle.eMon;
+    const hpFactor = 1 - e.hp / e.maxHp;           // 0..1
+    const statusBonus = e.status === "sleep" ? 0.22 : e.status === "dazed" ? 0.12 : 0;
+    const empathyBonus = clamp(game.empathy * 0.004, 0, 0.25);
+    const rate = clamp(0.30 + hpFactor * 0.4 + statusBonus + empathyBonus, 0.06, 0.96);
+    const wobbles = 3;
+    const steps = [];
+    steps.push(() => { setBattleMsg("Bạn tung Bùa Kết Nối 💞 hình lá & trái tim pha lê..."); battle.fx.flash = 0.3; });
+    let caught = true;
+    for (let i = 0; i < wobbles; i++) {
+      steps.push(() => {
+        if (!caught) return;
+        if (Math.random() < rate) { setBattleMsg(`...lắc ${i + 1}...`); }
+        else { caught = false; setBattleMsg(`${e.name} vùng ra khỏi bùa!`); }
+      });
+    }
+    steps.push(() => {
+      if (caught) { onCaptureSuccess(e); }
+      else {
+        // tăng nhẹ Đồng Cảm vì đã thử kết nối nhẹ nhàng
+        game.empathy = clamp(game.empathy + 1, 0, 60);
+        enemyTurn(); renderBattleBoxes();
+      }
+    });
+    steps.push(() => {
+      if (!caught && battle.active) { afterHitChecks("enemy"); if (battle.active) { battle.busy = false; showBattleMenu(); } }
+    });
+    runSteps(steps, () => { if (!caught && battle.active && !battle.busy) showBattleMenu(); });
+  }
+  function onCaptureSuccess(e) {
+    sfx("complete"); burstAt("E", "#ffd1e6", 20, "heart");
+    markDex(e.species, "caught");
+    game.empathy = clamp(game.empathy + 3, 0, 60);
+    game.kHeart = clamp(game.kHeart + 2, 0, 100); // đối xử dịu dàng với Lumina → K cảm động
+    if (game.party.length < 6) {
+      e.hp = Math.max(1, e.hp); e.bond = 0; game.party.push(e);
+      setBattleMsg(`💞 Đã kết Đồng Điệu với ${e.name}! Gia nhập đội.`);
+    } else {
+      setBattleMsg(`💞 Thu phục ${e.name}! Đội đã đầy (6), ${e.name} được gửi về Vườn Lumina (PC).`);
+      game.storage = game.storage || []; game.storage.push(e);
+    }
+    setTimeout(() => endBattle(true), 1300);
+  }
+
+  function doResonance() {
+    battle.busy = true; clearMenu();
+    const p = battle.pMon, e = battle.eMon;
+    p.bond = 0;
+    battle.fx.flash = 0.6; battle.fx.shakeE = 0.5;
+    const steps = [];
+    if (battle.mode === "dream") {
+      steps.push(() => {
+        setBattleMsg(`✨ ${p.name}${battle.allyMon ? " & " + battle.allyMon.name + " (của K)" : ""} cộng hưởng — ánh sáng đôi bao trùm Gai Thủ Vệ!`);
+        burstAt("E", "#fff3d6", 30, "heart"); burstAt("E", "#bfa2ff", 24, "spark");
+        battle.soul = clamp(battle.soul + 42, 0, 100);
+        if (battle.allyMon) battle.allyMon.bond = 0;
+      });
+      steps.push(() => afterHitChecks("player"));
+      steps.push(() => { if (battle.active) { enemyTurn(); afterHitChecks("enemy"); } });
+    } else {
+      steps.push(() => {
+        const resoType = p.type;
+        const mv = { type: resoType, power: 46, kind: "atk", bond: 0, name: "Cộng Hưởng" };
+        const { dmg, eff } = damageOf(p, e, mv);
+        const total = Math.round(dmg * (battle.allyMon ? 1.4 : 1.15));
+        e.hp = clamp(e.hp - total, 0, e.maxHp);
+        const heal = Math.round(p.maxHp * 0.18); p.hp = clamp(p.hp + heal, 0, p.maxHp);
+        burstAt("E", TYPES[resoType].c1, 28, "spark"); burstAt("P", "#8af0a0", 14, "heart");
+        setBattleMsg(`✨ Skill Cộng Hưởng! ${p.name} bùng sáng, gây ${total} sát thương${effLabel(eff)} và tự hồi ${heal} HP.`);
+      });
+      steps.push(() => afterHitChecks("player"));
+      if (battle.allyMon && battle.allyMon.hp > 0) { steps.push(() => allyTurn()); steps.push(() => afterHitChecks("ally")); }
+      steps.push(() => { if (battle.active) { enemyTurn(); afterHitChecks("enemy"); } });
+    }
+    runSteps(steps, () => { if (battle.active) { battle.busy = false; showBattleMenu(); renderBattleBoxes(); } });
+  }
+
+  function doSwitch(idx) {
+    const m = game.party[idx];
+    if (!m || m === battle.pMon || m.hp <= 0) { showBattleMenu(); return; }
+    battle.busy = true; clearMenu();
+    battle.pMon = m; m.bond = m.bond || 0;
+    setBattleMsg(`Đi nào, ${m.name}!`);
+    renderBattleBoxes();
+    const steps = [() => { if (battle.active) { enemyTurn(); afterHitChecks("enemy"); } }];
+    runSteps(steps, () => { if (battle.active) { battle.busy = false; showBattleMenu(); renderBattleBoxes(); } });
+  }
+
+  function tryRun() {
+    if (!battle.canRun) { setBattleMsg("Không thể bỏ chạy khỏi trận này!"); return; }
+    battle.busy = true; clearMenu();
+    if (Math.random() < 0.7) { setBattleMsg("Bạn đã thoát an toàn."); setTimeout(() => endBattle(false), 800); }
+    else {
+      setBattleMsg("Không chạy thoát được!");
+      const steps = [() => { enemyTurn(); afterHitChecks("enemy"); }];
+      runSteps(steps, () => { if (battle.active) { battle.busy = false; showBattleMenu(); renderBattleBoxes(); } });
+    }
+  }
+
+  function onPlayerLose() {
+    battle.busy = true; battle.seq++; clearMenu();
+    setBattleMsg("Cả đội đã kiệt sức... Bạn lùi về làng nghỉ ngơi.");
+    setTimeout(() => {
+      // hồi máu toàn đội, đưa về spawn
+      game.party.forEach(m => { m.hp = m.maxHp; m.status = null; });
+      player.x = world.spawn.tx * TILE; player.y = world.spawn.ty * TILE;
+      endBattle(false);
+    }, 1300);
+  }
+
+  function winDream() {
+    battle.busy = true; battle.seq++; clearMenu();
+    battle.fx.flash = 0.8;
+    setBattleMsg("💗 Tâm Hồn đầy! Gai Thủ Vệ ngừng vùng vẫy...");
+    burstAt("E", "#b8f7c1", 40, "spark"); burstAt("E", "#ffd1e6", 30, "heart");
+    setTimeout(() => {
+      game.flags.dreamDone = true;
+      game.kHeart = clamp(game.kHeart + 18, 0, 100);
+      battle.active = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
+      refreshMusic();
+      openDialog([
+        { name: "", text: "Gai góc tan thành cánh hoa. Một con đường sáng hiện ra phía lâu đài." },
+        { name: "K", text: "Cậu thấy chưa? Mình không cần đánh bại nỗi sợ — chỉ cần hiểu nó. Cảm ơn cậu... vì đã tới." },
+        { name: "", text: "Nhịp Đập Trái Tim của hai người gần nhau hơn bao giờ hết. (Còn tiếp ở Chương sau...)" }
+      ], () => { saveGame(true); showEnding(); });
+    }, 1500);
+  }
+
+  function endBattle(victory) {
+    if (battle.mode === "gym" && victory) {
+      battle.active = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
+      refreshMusic();
+      game.flags.gymDone = true;
+      if (!game.badges.includes("courage")) game.badges.push("courage");
+      if (!game.keys.includes("courage")) game.keys.push("courage");
+      game.bag.courageBadge = (game.bag.courageBadge || 0) + 1;
+      game.empathy = clamp(game.empathy + 5, 0, 60);
+      game.kHeart = clamp(game.kHeart + 10, 0, 100);
+      game.party.forEach(m => { m.hp = m.maxHp; m.status = null; });
+      openDialog(STORY.gymWin, () => { updateHud(); saveGame(true); });
+      return;
+    }
+    battle.active = false; battle.busy = false;
+    $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
+    // hồi nhẹ sau trận hoang
+    if (battle.mode === "wild") { battle.pMon.bond = 0; }
+    refreshMusic();
+    updateHud(); saveGame(true);
+  }
+
+  /* Bộ chạy chuỗi bước có nhịp (để animation HP/particle kịp hiển thị) */
+  function runSteps(steps, done) {
+    const myId = battle.seq;
+    let i = 0;
+    function next() {
+      if (battle.seq !== myId) return; // chuỗi đã bị thay thế (đối thủ gục / thắng / thua giữa chừng)
+      if (i >= steps.length) { if (done) done(); return; }
+      const s = steps[i++];
+      try { s(); } catch (err) { console.error(err); }
+      renderBattleBoxes();
+      setTimeout(next, 880);
+    }
+    next();
+  }
+  function clearMenu() { $("battleMenu").innerHTML = ""; }
+  function flash() { if (!settings.noFlash) battle.fx.flash = Math.max(battle.fx.flash, 0.25); }
+  function burstAt(side, color, n, type) {
+    const x = side === "E" ? VIEW_W * 0.7 : VIEW_W * 0.28;
+    const y = side === "E" ? VIEW_H * 0.34 : VIEW_H * 0.6;
+    burst(x, y, color, settings.noFlash ? Math.min(n, 8) : n, type);
+  }
+
+  /* ============================================================
+   * 12) KẾT THÚC (3 ending preview theo Nhịp Đập)
+   * ============================================================ */
+  function endingTier() {
+    if (game.kHeart >= 80) return "true";
+    if (game.kHeart >= 50) return "gentle";
+    return "friend";
+  }
+  function showEnding() {
+    const tier = endingTier();
+    let title, body;
+    if (tier === "true") {
+      title = "💖 True Romance";
+      body = `<p>Nhịp Đập Trái Tim đạt <b>${game.kHeart}%</b>. Khi lời nguyền tan, K nắm tay {name} dưới mưa sao băng. K hơi run, lấy hơi: "Tớ thích cậu — từ rất lâu rồi."</p>
+      <p>Lumina của hai người tỏa sáng đồng điệu và tiến hóa dạng <b>Song Sinh</b>. Hậu bản mở khóa một vùng đất mới để hai người cùng khám phá.</p>`;
+    } else if (tier === "gentle") {
+      title = "🌸 Gentle Promise";
+      body = `<p>Nhịp Đập Trái Tim đạt <b>${game.kHeart}%</b>. K mỉm cười dịu dàng: "Cho tớ thêm chút thời gian để lành lại nhé? Hẹn cậu ở Lễ Hội Ánh Sáng năm sau."</p>
+      <p>Một kết thúc mở, ấm áp và đầy hứa hẹn.</p>`;
+    } else {
+      title = "🍃 Friendship Bloom";
+      body = `<p>Nhịp Đập Trái Tim ở mức <b>${game.kHeart}%</b>. K ôm {name} thật chặt: "Cảm ơn cậu đã cứu tớ. Cậu là người bạn quý nhất của tớ."</p>
+      <p>Tình bạn nở hoa. Hậu bản tập trung vào khám phá & hoàn thiện Lumina-dex.</p>`;
+    }
+    $("endingTitle").textContent = title;
+    $("endingBody").innerHTML = fmt(body) + `<p style="opacity:.8;font-size:calc(12px*var(--fontScale));">Mẹo: trò chuyện tử tế, đối xử nhẹ nhàng với Lumina (thu phục thay vì hạ gục), và chiến đấu cùng K sẽ nâng Nhịp Đập cho ending ngọt hơn ở các chương sau.</p>`;
+    showOverlay("endingOverlay");
+  }
+
+  /* ============================================================
+   * 13) MENU: party / bag / dex / settings
+   * ============================================================ */
+  function anyOverlayOpen() {
+    return ["starterOverlay", "partyOverlay", "bagOverlay", "dexOverlay", "setOverlay", "endingOverlay"]
+      .some(id => !$(id).classList.contains("hidden"));
+  }
+  function showOverlay(id) { $(id).classList.remove("hidden"); }
+  function hideOverlay(id) { $(id).classList.add("hidden"); }
+
+  function openParty() {
+    const grid = $("partyGrid"); grid.innerHTML = "";
+    $("partyDetail").innerHTML = "";
+    game.party.forEach((m, i) => {
+      const t = TYPES[m.type];
+      const card = document.createElement("div");
+      card.className = "pickCard";
+      card.innerHTML = `<canvas width="80" height="80"></canvas><div>${i === 0 ? "👑 " : ""}${m.name} Lv${m.level}</div>
+        <span class="typeChip" style="background:${t.chip}">${t.emoji} ${t.name}</span>
+        <small>HP ${Math.max(0, Math.ceil(m.hp))}/${m.maxHp} · Thân thiết ${m.friendship}</small>`;
+      card.onclick = () => showMonDetail(i);
+      grid.appendChild(card);
+      drawLumina(card.querySelector("canvas").getContext("2d"), m.species, 8, 6, 4, 0, { face: true });
+    });
+    showOverlay("partyOverlay");
+  }
+  function showMonDetail(i) {
+    const m = game.party[i];
+    const sp = SPECIES[m.species];
+    const t = TYPES[m.type];
+    const moveList = m.moves.map(id => { const mv = MOVES[id]; return `• ${mv.name}${mv.type ? " " + TYPES[mv.type].emoji : ""} <small>(${mv.kind === "atk" ? "SM " + mv.power : mv.kind})</small>`; }).join("<br>");
+    const canEvo = sp.evolveTo;
+    const ringReady = canEvo && (game.bag.grassRing || 0) > 0 && m.level >= 8;
+    const det = $("partyDetail");
+    det.innerHTML = `<div class="pixel-panel" style="padding:12px;margin-top:8px;text-align:left;">
+      <b>${m.name}</b> <span class="typeChip" style="background:${t.chip}">${t.emoji} ${t.name}</span><br>
+      <small>Lv ${m.level} · EXP ${m.exp}/${expNeeded(m.level)} · HP ${Math.max(0, Math.ceil(m.hp))}/${m.maxHp}</small><br>
+      <small>ATK ${m.atk} · DEF ${m.def} · SPD ${m.spd} · Thân thiết ${m.friendship}</small>
+      <p style="margin:8px 0 4px;">${sp.dex}</p>
+      <div style="margin:6px 0;">${moveList}</div>
+      <div class="modalActions">
+        ${i !== 0 ? `<button class="ghostBtn" id="setLeadBtn">Đặt làm dẫn đầu 👑</button>` : ""}
+        ${canEvo ? `<button class="primaryBtn" id="evoBtn" ${ringReady ? "" : "disabled"}>Tiến hóa bằng Nhẫn Cỏ 💍 ${ringReady ? "" : "(cần Lv8+ & 1 Nhẫn Cỏ)"}</button>` : ""}
+      </div></div>`;
+    if (i !== 0) $("setLeadBtn").onclick = () => { const arr = game.party; arr.splice(i, 1); arr.unshift(m); openParty(); updateHud(); saveGame(true); };
+    if (canEvo && ringReady) $("evoBtn").onclick = () => {
+      game.bag.grassRing--;
+      hideOverlay("partyOverlay");
+      evolveMon(m, sp.evolveTo);
+      setTimeout(() => { openParty(); }, 1600);
+    };
+  }
+
+  function openBag() {
+    const items = [
+      ["charm", "💞 Bùa Kết Nối", "Thu phục Lumina hoang (hình lá & trái tim pha lê)."],
+      ["grassRing", "💍 Nhẫn Cỏ", "Kỷ Vật — giúp Lumina đủ thân thiết tiến hóa."],
+      ["letter", "💌 Lá Thư", "Kỷ Vật ký ức — sẽ dùng ở chương sau."],
+      ["courageBadge", "🎖️ Huy Hiệu Can Đảm", "Chứng nhận đã thắng Thủ Lĩnh Vùng Can Đảm."]
+    ];
+    let html = "";
+    items.forEach(([k, name, desc]) => {
+      const n = game.bag[k] || 0;
+      html += `<div class="settingRow"><span>${name} <small style="opacity:.7;">${desc}</small></span><b>×${n}</b></div>`;
+    });
+    html += `<div class="settingRow"><span>🔑 Chìa Khóa Cảm Xúc</span><b>${game.keys.length}/4</b></div>`;
+    html += `<div class="settingRow"><span>💗 Đồng Cảm (ảnh hưởng tỉ lệ thu phục)</span><b>${game.empathy}</b></div>`;
+    $("bagList").innerHTML = html;
+    showOverlay("bagOverlay");
+  }
+
+  function openDex() {
+    const ids = Object.keys(SPECIES).filter(id => !["pyrofox", "thornward"].includes(id));
+    const caught = ids.filter(id => game.dex[id] === "caught").length;
+    $("dexCount").textContent = `Đã gặp/thu phục ${Object.keys(game.dex).length}/${ids.length} loài · Đã thu phục ${caught}`;
+    const grid = $("dexGrid"); grid.innerHTML = "";
+    ids.forEach(id => {
+      const sp = SPECIES[id], t = TYPES[sp.type];
+      const st = game.dex[id];
+      const card = document.createElement("div");
+      card.className = "pickCard";
+      if (!st) {
+        card.innerHTML = `<canvas width="80" height="80"></canvas><div>???</div><small>Chưa gặp</small>`;
+        card.style.filter = "grayscale(1) brightness(0.85)";
+      } else {
+        card.innerHTML = `<canvas width="80" height="80"></canvas><div>${sp.name}</div>
+          <span class="typeChip" style="background:${t.chip}">${t.emoji}</span>
+          <small>${st === "caught" ? "✅ Đã thu phục" : "👁 Đã gặp"}</small>`;
+      }
+      grid.appendChild(card);
+      const g = card.querySelector("canvas").getContext("2d");
+      if (st) drawLumina(g, id, 8, 6, 4, 0, { face: true });
+      else { g.fillStyle = "rgba(91,58,102,.35)"; g.fillRect(20, 22, 40, 40); }
+    });
+    showOverlay("dexOverlay");
+  }
+
+  function openSettings() {
+    syncSettingButtons();
+    showOverlay("setOverlay");
+  }
+  function syncSettingButtons() {
+    $("tgContrast").textContent = settings.contrast ? "Bật" : "Tắt";
+    $("tgContrast").classList.toggle("on", settings.contrast);
+    $("tgFlash").textContent = settings.noFlash ? "Bật" : "Tắt";
+    $("tgFlash").classList.toggle("on", settings.noFlash);
+    $("tgMusic").textContent = settings.music ? "Bật" : "Tắt";
+    $("tgMusic").classList.toggle("on", settings.music);
+    document.querySelectorAll("[data-font]").forEach(b => b.classList.toggle("on", parseFloat(b.dataset.font) === settings.font));
+  }
+  function applySettings() {
+    const shell = $("gameShell");
+    shell.classList.toggle("highContrast", settings.contrast);
+    shell.classList.toggle("noFlash", settings.noFlash);
+    document.documentElement.style.setProperty("--fontScale", settings.font);
+    localStorage.setItem(SET_KEY, JSON.stringify(settings));
+  }
+
+  function itemName(k) {
+    return { charm: "Bùa Kết Nối 💞", grassRing: "Nhẫn Cỏ 💍", letter: "Lá Thư 💌", courageBadge: "Huy Hiệu Can Đảm 🎖️" }[k] || k;
+  }
+  function markDex(id, state) {
+    if (game.dex[id] === "caught") return;
+    if (state === "caught" || !game.dex[id]) game.dex[id] = state;
+  }
+
+  /* ============================================================
+   * 14) HUD + LA BÀN + NHỊP ĐẬP
+   * ============================================================ */
+  function updateHud() {
+    $("areaName").textContent = "🗺️ Vùng Khởi Hành";
+    let quest = "Gặp Giáo Sư Tơ nhận Lumina";
+    if (game.flags.gotStarter && !game.flags.gymDone) quest = "Tới Sân Đấu Can Đảm (phía Đông)";
+    else if (game.flags.gymDone && !game.flags.dreamDone) quest = "Tới cổng Lâu Đài phía Đông";
+    else if (game.flags.dreamDone) quest = "Chương 1 hoàn tất ✨";
+    $("quest").textContent = "🎯 " + quest;
+    const lead = game.party[0];
+    $("stats").textContent = lead ? `👑 ${lead.name} Lv${lead.level} ${TYPES[lead.type].emoji} · Đội ${game.party.length}/6` : "Chưa có Lumina";
+    $("heartFill").style.width = game.kHeart + "%";
+    $("heartText").textContent = game.kHeart + "%";
+  }
+  function updateCompass() {
+    // chỉ về lâu đài (K)
+    const castle = world.objects.find(o => o.type === "castle");
+    if (!castle) return;
+    const dx = (castle.x + 16) - (player.x + player.w / 2);
+    const dy = (castle.y + 16) - (player.y + player.h / 2);
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    $("compassArrow").style.transform = `rotate(${ang}deg)`;
+  }
+
+  /* ============================================================
+   * 15) RENDER OVERWORLD
+   * ============================================================ */
+  function draw() {
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    if (battle.active) { drawBattle(); return; }
+    drawOverworld();
+  }
+
+  function drawOverworld() {
+    // nền cỏ
+    ctx.fillStyle = "#9be3a8"; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    const startX = Math.floor(camera.x / TILE), startY = Math.floor(camera.y / TILE);
+    const endX = startX + Math.ceil(VIEW_W / TILE) + 1, endY = startY + Math.ceil(VIEW_H / TILE) + 1;
+    for (let ty = startY; ty < endY; ty++) {
+      for (let tx = startX; tx < endX; tx++) {
+        const sx = tx * TILE - camera.x, sy = ty * TILE - camera.y;
+        drawTile(tileAt(tx, ty), sx, sy, tx, ty);
+      }
+    }
+    // objects + player theo thứ tự y
+    const drawables = [];
+    for (const o of world.objects) drawables.push({ y: o.y, fn: () => drawObject(o) });
+    drawables.push({ y: player.y, fn: drawPlayer });
+    drawables.sort((a, b) => a.y - b.y);
+    drawables.forEach(d => d.fn());
+
+    drawParticles();
+    drawDayNight();
+  }
+
+  function drawTile(t, sx, sy, tx, ty) {
+    if (t === "G" || t === "F" || t === "g" || t === "P") {
+      // nền cỏ caro nhẹ
+      const checker = (tx + ty) % 2 === 0;
+      ctx.fillStyle = checker ? "#9be3a8" : "#90dc9f";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fillRect(sx, sy, TILE, 3);
+    }
+    if (t === "P") drawPath(sx, sy, tx, ty);
+    if (t === "F") drawFlower(sx + 8, sy + 10, "#ff7ab6");
+    if (t === "g") drawTallGrass(sx, sy, tx, ty);
+    if (t === "T") drawTree(sx, sy);
+    if (t === "W") drawWater(sx, sy, tx, ty);
+    if (t === "R") drawRock(sx, sy);
+    if (t === "L") drawBuilding(sx, sy, tx, ty, "#9fb8ff", "#5b6fd6"); // lab
+    if (t === "B") drawBuilding(sx, sy, tx, ty, "#ffcaa3", "#c46a3a"); // nhà gạch
+    if (t === "C") drawBuilding(sx, sy, tx, ty, "#7a6f88", "#3b3346"); // lâu đài
+  }
+
+  function drawPath(sx, sy) {
+    ctx.fillStyle = "#e9cfa0"; ctx.fillRect(sx + 1, sy + 1, TILE - 2, TILE - 2);
+    ctx.fillStyle = "#dcbe8b"; ctx.fillRect(sx + 4, sy + 6, 6, 4); ctx.fillRect(sx + 18, sy + 16, 7, 5);
+    ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(sx + 1, sy + 1, TILE - 2, 2);
+  }
+  function drawFlower(x, y, c) {
+    ctx.fillStyle = "#6bbf78"; ctx.fillRect(x + 2, y + 4, 2, 6);
+    ctx.fillStyle = c; ctx.fillRect(x, y, 6, 4); ctx.fillRect(x + 1, y - 2, 4, 6);
+    ctx.fillStyle = "#fff3a3"; ctx.fillRect(x + 2, y + 1, 2, 2);
+  }
+  function drawTallGrass(sx, sy, tx, ty) {
+    const sway = Math.sin(visualClock * 2 + tx * 0.7 + ty * 0.5) * 1.5;
+    ctx.fillStyle = "#5fbf72"; ctx.fillRect(sx + 2, sy + 12, TILE - 4, TILE - 12);
+    ctx.fillStyle = "#74d489";
+    for (let i = 0; i < 5; i++) {
+      const bx = sx + 4 + i * 5 + sway;
+      ctx.fillRect(bx, sy + 8, 3, 18);
+      ctx.fillRect(bx - 1, sy + 6, 5, 4);
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(sx + 3, sy + 13, TILE - 6, 2);
+    // chấm sáng báo hiệu có thể gặp Lumina
+    if ((tx + ty) % 3 === 0) { ctx.fillStyle = "rgba(255,209,102,0.7)"; ctx.fillRect(sx + 14 + sway, sy + 18, 2, 2); }
+  }
+  function drawTree(sx, sy) {
+    ctx.fillStyle = "rgba(59,38,69,0.18)"; ctx.fillRect(sx + 6, sy + 26, 20, 5);
+    ctx.fillStyle = "#7a5230"; ctx.fillRect(sx + 13, sy + 16, 6, 14);
+    ctx.fillStyle = "#3f9a55"; ctx.fillRect(sx + 4, sy + 2, 24, 18);
+    ctx.fillStyle = "#52b86a"; ctx.fillRect(sx + 6, sy + 3, 20, 10);
+    ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fillRect(sx + 8, sy + 4, 8, 4);
+    ctx.fillStyle = "#2f7a43"; ctx.fillRect(sx + 4, sy + 16, 24, 4);
+  }
+  function drawWater(sx, sy) {
+    ctx.fillStyle = "#4db5ff"; ctx.fillRect(sx, sy, TILE, TILE);
+    ctx.fillStyle = "#7ccbff"; ctx.fillRect(sx, sy, TILE, 4);
+    const w = Math.sin(visualClock * 2 + sx * 0.05) * 2;
+    ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillRect(sx + 6 + w, sy + 12, 8, 2); ctx.fillRect(sx + 18 - w, sy + 22, 7, 2);
+  }
+  function drawRock(sx, sy) {
+    ctx.fillStyle = "rgba(59,38,69,0.18)"; ctx.fillRect(sx + 5, sy + 24, 22, 5);
+    ctx.fillStyle = "#7a6f7e"; ctx.fillRect(sx + 5, sy + 10, 22, 16);
+    ctx.fillStyle = "#9a8fa0"; ctx.fillRect(sx + 7, sy + 12, 14, 6);
+    ctx.fillStyle = "#5b3a66"; ctx.fillRect(sx + 5, sy + 22, 22, 4);
+  }
+  function drawBuilding(sx, sy, tx, ty, wall, roof) {
+    // chỉ vẽ phần thân; mái vẽ ở hàng trên cùng của khối
+    ctx.fillStyle = wall; ctx.fillRect(sx, sy, TILE, TILE);
+    ctx.fillStyle = "rgba(0,0,0,0.12)"; ctx.fillRect(sx, sy + TILE - 4, TILE, 4);
+    // mái nếu ô phía trên không cùng loại
+    const above = tileAt(tx, ty - 1);
+    if (above !== tileAt(tx, ty)) {
+      ctx.fillStyle = roof; ctx.fillRect(sx - 1, sy - 6, TILE + 2, 12);
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(sx - 1, sy - 6, TILE + 2, 3);
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.16)"; ctx.fillRect(sx + 4, sy + 6, 8, 8); // cửa sổ
+      ctx.fillStyle = "rgba(59,38,69,0.4)"; ctx.fillRect(sx + 4, sy + 6, 8, 8);
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    }
+  }
+
+  function drawObject(o) {
+    const x = Math.floor(o.x - camera.x), y = Math.floor(o.y - camera.y);
+    if (x < -40 || x > VIEW_W + 40 || y < -48 || y > VIEW_H + 40) return;
+    if (o.type === "npc") drawNpc(x, y, o);
+    else if (o.type === "gym") drawGym(x, y, o);
+    else if (o.type === "castle") drawCastleObj(x, y, o);
+    else if (o.type === "sign") drawSign(x, y);
+    else if (o.type === "item") drawCharmItem(x, y);
+  }
+
+  function drawBlobShadow(x, y, w, h) {
+    ctx.fillStyle = "rgba(59,38,69,0.18)"; ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+  }
+
+  function drawPlayer() {
+    const x = Math.floor(player.x - camera.x), y = Math.floor(player.y - camera.y);
+    drawBlobShadow(x + 1, y + 22, 20, 6);
+    drawHero(ctx, x, y, { dir: player.dir, moving: player.moving, step: player.step, clock: visualClock });
+  }
+
+  // Nữ huấn luyện viên — chibi tóc dài, áo hồng, có chiếc la bàn bên hông.
+  function drawHero(g, x, y, opts) {
+    const moving = opts.moving, step = opts.step || 0, clock = opts.clock || 0, dir = opts.dir || "down";
+    const bob = moving ? Math.sin(step) * 1.8 : Math.sin(clock * 2.2) * 0.35;
+    const foot = moving ? Math.sign(Math.sin(step)) : 0;
+    const baseY = Math.floor(y + bob);
+    const hair = "#6b3b5f", skin = "#ffd7c2", outfit = "#ff7ab6";
+    // tóc dài hai bên
+    g.fillStyle = hair; g.fillRect(x + 2, baseY + 6, 4, 15); g.fillRect(x + 15, baseY + 6, 4, 15);
+    // viền
+    g.fillStyle = "rgba(59,38,69,0.78)"; g.fillRect(x + 3, baseY + 2, 15, 16); g.fillRect(x + 5, baseY + 17, 12, 9);
+    // tóc trên
+    g.fillStyle = hair; g.fillRect(x + 4, baseY + 1, 13, 9); g.fillRect(x + 2, baseY + 6, 17, 5);
+    g.fillStyle = "rgba(255,255,255,0.28)"; g.fillRect(x + 6, baseY + 3, 7, 2);
+    // mặt
+    g.fillStyle = skin; g.fillRect(x + 4, baseY + 8, 13, 9);
+    g.fillStyle = "#3b2645";
+    if (dir === "left") { g.fillRect(x + 5, baseY + 11, 3, 3); }
+    else if (dir === "right") { g.fillRect(x + 13, baseY + 11, 3, 3); }
+    else if (dir === "up") { g.fillRect(x + 6, baseY + 11, 3, 2); g.fillRect(x + 12, baseY + 11, 3, 2); }
+    else {
+      const blink = !moving && Math.sin(clock * 1.7) > 0.96;
+      if (blink) { g.fillRect(x + 5, baseY + 13, 3, 1); g.fillRect(x + 13, baseY + 13, 3, 1); }
+      else { g.fillRect(x + 5, baseY + 11, 3, 3); g.fillRect(x + 13, baseY + 11, 3, 3);
+        g.fillStyle = "#fff7fb"; g.fillRect(x + 7, baseY + 11, 1, 1); g.fillRect(x + 15, baseY + 11, 1, 1); }
+      g.fillStyle = "#ff7ab6"; g.fillRect(x + 9, baseY + 15, 3, 1);
+      g.fillStyle = "#ffb3d6"; g.fillRect(x + 4, baseY + 14, 2, 2); g.fillRect(x + 15, baseY + 14, 2, 2);
+    }
+    // áo
+    g.fillStyle = outfit; g.fillRect(x + 5, baseY + 17, 11, 6);
+    g.fillStyle = "rgba(255,255,255,0.42)"; g.fillRect(x + 5, baseY + 17, 11, 2);
+    // la bàn ký ức (đốm vàng bên hông)
+    g.fillStyle = "#ffd166"; g.fillRect(x + 15, baseY + 19, 3, 3);
+    g.fillStyle = "#b64a7f"; g.fillRect(x + 16, baseY + 20, 1, 1);
+    // tay chân
+    g.fillStyle = skin; g.fillRect(x + 2, baseY + 18, 3, 5); g.fillRect(x + 16, baseY + 18, 3, 5);
+    g.fillStyle = "#5b3a66"; g.fillRect(x + 5, baseY + 23, 4, 3 + Math.max(0, foot)); g.fillRect(x + 12, baseY + 23, 4, 3 + Math.max(0, -foot));
+  }
+
+  function drawNpc(x, y, o) {
+    const bob = Math.sin(visualClock * 2.4 + x * 0.01) * 0.8;
+    const baseY = Math.floor(y + bob);
+    const color = o.data.color || "#bfa2ff";
+    drawBlobShadow(x + 2, y + 22, 20, 6);
+    ctx.fillStyle = "rgba(59,38,69,0.75)"; ctx.fillRect(x + 3, baseY + 3, 17, 16); ctx.fillRect(x + 5, baseY + 18, 14, 8);
+    ctx.fillStyle = "#7a4f8a"; ctx.fillRect(x + 5, baseY + 1, 13, 8);
+    ctx.fillStyle = "#ffd7c2"; ctx.fillRect(x + 4, baseY + 8, 15, 9);
+    ctx.fillStyle = "#3b2645"; ctx.fillRect(x + 6, baseY + 11, 3, 3); ctx.fillRect(x + 14, baseY + 11, 3, 3);
+    ctx.fillStyle = "#ffb3d6"; ctx.fillRect(x + 4, baseY + 14, 2, 2); ctx.fillRect(x + 17, baseY + 14, 2, 2);
+    ctx.fillStyle = color; ctx.fillRect(x + 5, baseY + 17, 13, 7);
+    ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillRect(x + 6, baseY + 17, 11, 2);
+    // dấu "!" nếu là Giáo Sư & chưa nhận starter
+    if (o.data.who === "prof" && !game.flags.gotStarter) {
+      const yy = baseY - 8 + Math.sin(visualClock * 4) * 1.5;
+      ctx.fillStyle = "#ffd166"; ctx.fillRect(x + 10, Math.floor(yy), 3, 6); ctx.fillRect(x + 10, Math.floor(yy) + 7, 3, 2);
+    }
+  }
+  function drawSign(x, y) {
+    drawBlobShadow(x + 6, y + 24, 16, 5);
+    ctx.fillStyle = "#7a5230"; ctx.fillRect(x + 12, y + 14, 4, 12);
+    ctx.fillStyle = "#caa06a"; ctx.fillRect(x + 4, y + 6, 20, 12);
+    ctx.fillStyle = "#8a6a3c"; ctx.fillRect(x + 6, y + 9, 16, 2); ctx.fillRect(x + 6, y + 13, 12, 2);
+    ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.fillRect(x + 4, y + 6, 20, 2);
+  }
+  function drawGym(x, y, o) {
+    drawBlobShadow(x + 2, y + 26, 24, 6);
+    // bục đấu sĩ lửa
+    ctx.fillStyle = "#c46a3a"; ctx.fillRect(x, y + 2, 28, 24);
+    ctx.fillStyle = "#ff8a4d"; ctx.fillRect(x + 2, y + 4, 24, 6);
+    ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(x + 2, y + 4, 24, 2);
+    ctx.fillStyle = "#5b3a66"; ctx.fillRect(x + 10, y + 14, 8, 12); // cửa
+    // ngọn lửa nhỏ nhấp nháy
+    if (!settings.noFlash) {
+      const f = Math.sin(visualClock * 8) * 2;
+      ctx.fillStyle = "#ffd166"; ctx.fillRect(x + 3 + f, y - 4, 4, 6); ctx.fillRect(x + 22 - f, y - 4, 4, 6);
+      ctx.fillStyle = "#ff8a4d"; ctx.fillRect(x + 4 + f, y - 1, 2, 4); ctx.fillRect(x + 23 - f, y - 1, 2, 4);
+    }
+    // biển "Can Đảm"
+    ctx.fillStyle = "#fff3d6"; ctx.fillRect(x + 4, y - 8, 20, 6);
+    ctx.fillStyle = "#c46a3a"; ctx.fillRect(x + 6, y - 6, 3, 2); ctx.fillRect(x + 11, y - 6, 3, 2); ctx.fillRect(x + 16, y - 6, 3, 2);
+  }
+  function drawCastleObj(x, y, o) {
+    drawBlobShadow(x, y + 26, 30, 6);
+    const open = game.flags.dreamDone;
+    ctx.fillStyle = open ? "#9a86b8" : "#4b4356"; ctx.fillRect(x - 2, y - 6, 32, 32);
+    ctx.fillStyle = open ? "#c9b3e8" : "#2f2a39"; ctx.fillRect(x, y - 10, 6, 8); ctx.fillRect(x + 22, y - 10, 6, 8);
+    ctx.fillStyle = open ? "#ffd1e6" : "#1c1726"; ctx.fillRect(x + 10, y + 6, 8, 20); // cổng
+    if (!open) {
+      // gai đen
+      ctx.fillStyle = "#1c1726";
+      ctx.fillRect(x + 2, y + 18, 3, 8); ctx.fillRect(x + 24, y + 18, 3, 8); ctx.fillRect(x + 13, y + 2, 3, 6);
+    } else {
+      // hoa nở
+      drawFlower(x + 2, y + 18, "#ff7ab6"); drawFlower(x + 22, y + 18, "#bfa2ff");
+    }
+  }
+  function drawCharmItem(x, y) {
+    const fl = Math.sin(visualClock * 3) * 2;
+    drawBlobShadow(x + 8, y + 20, 12, 4);
+    // bùa hình lá + trái tim pha lê
+    ctx.fillStyle = "#b8f7c1"; ctx.fillRect(x + 8, Math.floor(y + 8 + fl), 8, 6);
+    ctx.fillStyle = "#ff7ab6"; ctx.fillRect(x + 10, Math.floor(y + 6 + fl), 4, 3); ctx.fillRect(x + 11, Math.floor(y + 4 + fl), 2, 3);
+    ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(x + 9, Math.floor(y + 9 + fl), 2, 1);
+    if (!settings.noFlash) { ctx.fillStyle = "rgba(255,243,163,0.5)"; ctx.fillRect(x + 6, Math.floor(y + 6 + fl), 1, 1); ctx.fillRect(x + 17, Math.floor(y + 11 + fl), 1, 1); }
+  }
+
+  function drawDayNight() {
+    // overworld ban ngày nhẹ; khi đã thấy castle & chưa dreamDone, tạo chút âm u phía Đông
+    if (game.flags.sawCastle && !game.flags.dreamDone) {
+      ctx.fillStyle = "rgba(42,22,50,0.10)"; ctx.fillRect(VIEW_W * 0.6, 0, VIEW_W * 0.4, VIEW_H);
+    }
+  }
+
+  /* ============================================================
+   * 16) RENDER BATTLE SCENE (trên canvas)
+   * ============================================================ */
+  function drawBattle() {
+    // nền battle theo mode
+    let top, bot;
+    if (battle.mode === "dream") { top = "#2a2350"; bot = "#5b4a86"; }
+    else if (battle.mode === "gym") { top = "#ffd9b3"; bot = "#ffcaa3"; }
+    else { top = "#cdeeff"; bot = "#b8f7c1"; }
+    const grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    grd.addColorStop(0, top); grd.addColorStop(1, bot);
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    // các dải sáng nền
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    for (let i = 0; i < 4; i++) ctx.fillRect(0, 60 + i * 70, VIEW_W, 24);
+
+    // flash
+    if (battle.fx.flash > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${battle.fx.flash})`;
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      battle.fx.flash = Math.max(0, battle.fx.flash - 0.05);
+    }
+
+    // bục
+    const eX = VIEW_W * 0.7, eY = VIEW_H * 0.36;
+    const pX = VIEW_W * 0.28, pY = VIEW_H * 0.66;
+    drawPlatform(eX, eY + 26);
+    drawPlatform(pX, pY + 26);
+
+    // enemy
+    const esh = battle.fx.shakeE > 0 ? Math.sin(visualClock * 50) * battle.fx.shakeE * 8 : 0;
+    drawLumina(ctx, battle.eMon.species, eX - 32 + esh, eY - 32, 4, visualClock, { face: true, foe: true, big: battle.mode === "dream" });
+    battle.fx.shakeE = Math.max(0, battle.fx.shakeE - 0.04);
+
+    // player active
+    const psh = battle.fx.shakeP > 0 ? Math.sin(visualClock * 50) * battle.fx.shakeP * 8 : 0;
+    drawLumina(ctx, battle.pMon.species, pX - 32 + psh, pY - 32, 4, visualClock, { face: true });
+    battle.fx.shakeP = Math.max(0, battle.fx.shakeP - 0.04);
+
+    // ally (K's lumina) trong dream/double
+    if (battle.allyMon && battle.allyMon.hp > 0) {
+      drawLumina(ctx, battle.allyMon.species, pX + 18, pY - 18, 3, visualClock, { face: true });
+      // hình bóng K nhỏ phía sau
+      drawKShadow(pX + 56, pY - 30);
+    }
+
+    drawParticles();
+
+    // viền cảnh mơ
+    if (battle.mode === "dream") { ctx.fillStyle = "rgba(191,162,255,0.10)"; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+  }
+  function drawPlatform(cx, cy) {
+    ctx.fillStyle = "rgba(59,38,69,0.18)";
+    ctx.beginPath(); ctx.ellipse(cx, cy, 44, 12, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  function drawKShadow(x, y) {
+    // bóng dáng chàng trai K mờ ảo
+    ctx.save(); ctx.globalAlpha = 0.55;
+    ctx.fillStyle = "#3b2645"; ctx.fillRect(x + 4, y + 1, 14, 8); ctx.fillRect(x + 2, y + 6, 18, 5);
+    ctx.fillStyle = "#ffd7c2"; ctx.fillRect(x + 4, y + 9, 15, 9);
+    ctx.fillStyle = "#3b2645"; ctx.fillRect(x + 7, y + 13, 2, 2); ctx.fillRect(x + 15, y + 13, 2, 2);
+    ctx.fillStyle = "#7bdff2"; ctx.fillRect(x + 5, y + 18, 13, 8);
+    ctx.restore();
+    if (!settings.noFlash) { ctx.fillStyle = "rgba(255,243,214,0.5)"; ctx.fillRect(x + 22, y + 2, 2, 2); }
+  }
+
+  /* ============================================================
+   * 17) VẼ LUMINA (procedural, theo shape)
+   * ============================================================ */
+  function drawLumina(g, speciesId, x, y, s, clock, opts = {}) {
+    const sp = SPECIES[speciesId];
+    const t = TYPES[sp.type];
+    const c1 = sp.c1 || t.c1, c2 = sp.c2 || t.c2;
+    const float = Math.sin(clock * 2.4 + x * 0.05) * (1.2 * s / 4);
+    const oy = y + Math.floor(float);
+    const px = (X, Y, W, H, col) => { g.fillStyle = col; g.fillRect(Math.floor(x + X * s), Math.floor(oy + Y * s), W * s, H * s); };
+    const evolved = sp.shape.endsWith("2");
+
+    // bóng
+    g.fillStyle = "rgba(59,38,69,0.16)";
+    g.fillRect(Math.floor(x + 3 * s), Math.floor(y + 15 * s), 12 * s, 3 * s);
+
+    // aura cảm xúc cho dạng tiến hóa
+    if (evolved && !settings.noFlash) {
+      g.save(); g.globalAlpha = 0.18 + Math.sin(clock * 3) * 0.06;
+      g.fillStyle = c2; g.fillRect(Math.floor(x - 1 * s), Math.floor(oy - 1 * s), 18 * s, 18 * s); g.restore();
+    }
+
+    const shape = sp.shape;
+    if (shape === "ember" || shape === "ember2") {
+      // tai/tua lửa
+      px(3, 0, 3, 4, c1); px(10, 0, 3, 4, c1);
+      // viền tối
+      g.fillStyle = "rgba(59,38,69,0.7)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
+      px(3, 3, 10, 10, c2);            // thân
+      px(3, 3, 10, 3, c1);             // đỉnh lửa
+      // đuôi lửa
+      px(13, 8, 3, 4, c1); if (evolved) px(15, 6, 2, 4, c2);
+      drawFace(px, 5, 7, opts.foe);
+      if (evolved) { px(6, 0, 4, 2, c2); }
+    } else if (shape === "drop" || shape === "drop2") {
+      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 2 * s), 12 * s, 12 * s);
+      px(3, 2, 10, 11, c1);
+      px(4, 2, 8, 4, c2);              // sáng đỉnh giọt
+      px(2, 6, 2, 4, c2); px(12, 6, 2, 4, c2); // vây
+      drawFace(px, 5, 7, opts.foe);
+      if (evolved) { px(1, 10, 2, 2, c2); px(13, 10, 2, 2, c2); }
+    } else if (shape === "sprout" || shape === "sprout2") {
+      // lá trên đầu
+      px(7, 0, 2, 3, "#3f9a55"); px(5, 1, 3, 2, "#52b86a"); px(8, 1, 3, 2, "#52b86a");
+      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
+      px(3, 3, 10, 10, c1);
+      px(4, 4, 8, 3, c2);
+      drawFace(px, 5, 7, opts.foe);
+      if (evolved) { drawFlowerPix(px, 6, -1, "#ff7ab6"); }
+    } else if (shape === "frost") {
+      px(3, 0, 2, 4, c2); px(11, 0, 2, 4, c2); // tai băng
+      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 2 * s), Math.floor(oy + 3 * s), 12 * s, 11 * s);
+      px(3, 3, 10, 10, c1);
+      px(4, 4, 8, 3, c2);
+      px(7, 8, 2, 2, "#fff7fb");
+      drawFace(px, 5, 6, opts.foe);
+    } else if (shape === "gale") {
+      // cánh gió
+      px(0, 6, 3, 3, c2); px(13, 6, 3, 3, c2);
+      g.fillStyle = "rgba(59,38,69,0.6)"; g.fillRect(Math.floor(x + 3 * s), Math.floor(oy + 3 * s), 10 * s, 10 * s);
+      px(4, 3, 8, 9, c1);
+      px(5, 3, 6, 3, c2);
+      px(6, 0, 4, 3, c2); // chỏm
+      drawFace(px, 5, 6, opts.foe);
+    } else if (shape === "luna" || shape === "luna2") {
+      // vầng trăng/sao
+      g.fillStyle = "rgba(59,38,69,0.5)"; g.fillRect(Math.floor(x + 3 * s), Math.floor(oy + 2 * s), 10 * s, 11 * s);
+      px(3, 2, 10, 11, c1);
+      px(4, 2, 7, 4, c2);
+      px(6, -1, 4, 2, c2); // chỏm sáng
+      drawFace(px, 5, 6, opts.foe);
+      if (!settings.noFlash) { px(0, 1, 1, 1, "#fff3d6"); px(14, 4, 1, 1, "#fff3d6"); }
+      if (evolved) { px(1, 6, 1, 4, c2); px(14, 6, 1, 4, c2); }
+    } else if (shape === "thorn") {
+      // Gai Thủ Vệ — to, gai góc, mắt buồn
+      g.fillStyle = "rgba(28,23,38,0.85)"; g.fillRect(Math.floor(x + 1 * s), Math.floor(oy + 2 * s), 14 * s, 13 * s);
+      px(2, 3, 12, 11, "#3b3346");
+      // gai
+      px(1, 1, 2, 4, "#1c1726"); px(13, 1, 2, 4, "#1c1726"); px(7, 0, 2, 3, "#1c1726");
+      px(0, 8, 2, 3, "#1c1726"); px(14, 8, 2, 3, "#1c1726");
+      // mắt buồn (xanh nhạt)
+      g.fillStyle = "#9fe0ff"; g.fillRect(Math.floor(x + 4 * s), Math.floor(oy + 6 * s), 2 * s, 2 * s); g.fillRect(Math.floor(x + 10 * s), Math.floor(oy + 6 * s), 2 * s, 2 * s);
+      g.fillStyle = "#fff7fb"; g.fillRect(Math.floor(x + 4 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s); g.fillRect(Math.floor(x + 10 * s), Math.floor(oy + 6 * s), 1 * s, 1 * s);
+      // miệng run rẩy
+      g.fillStyle = "#1c1726"; g.fillRect(Math.floor(x + 6 * s), Math.floor(oy + 10 * s), 4 * s, 1 * s);
+    }
+  }
+  function drawFace(px, fx, fy, foe) {
+    // mắt long lanh
+    px(fx, fy, 2, 2, "#3b2645"); px(fx + 4, fy, 2, 2, "#3b2645");
+    px(fx, fy, 1, 1, "#fff7fb"); px(fx + 4, fy, 1, 1, "#fff7fb");
+    // má hồng
+    px(fx - 1, fy + 2, 1, 1, "#ffb3d6"); px(fx + 6, fy + 2, 1, 1, "#ffb3d6");
+    // miệng nhỏ
+    px(fx + 2, fy + 2, 2, 1, "#b64a7f");
+  }
+  function drawFlowerPix(px, fx, fy, c) {
+    px(fx, fy, 2, 2, c); px(fx - 1, fy + 1, 1, 1, c); px(fx + 2, fy + 1, 1, 1, c); px(fx, fy + 1, 2, 1, "#fff3a3");
+  }
+
+  /* ============================================================
+   * 18) PARTICLES
+   * ============================================================ */
+  function burst(x, y, color, count, type = "spark") {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 20 + Math.random() * 70;
+      particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20,
+        gravity: type === "heart" ? -6 : 14, life: 0.5 + Math.random() * 0.7, maxLife: 1.2,
+        color, type, size: 3 + Math.random() * 4 });
+    }
+  }
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gravity * dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+  function drawParticles() {
+    for (const p of particles) {
+      const a = clamp(p.life / p.maxLife, 0, 1);
+      ctx.globalAlpha = a; ctx.fillStyle = p.color;
+      if (p.type === "heart") { const s = p.size; ctx.fillRect(p.x - s / 2, p.y, s, s * 0.7); ctx.fillRect(p.x - s, p.y - s * 0.3, s * 0.7, s * 0.6); ctx.fillRect(p.x + s * 0.3, p.y - s * 0.3, s * 0.7, s * 0.6); }
+      else ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ============================================================
+   * 19) BANNER / FADE / TOAST
+   * ============================================================ */
+  function bannerThen(text, cb) {
+    const b = $("banner"); b.textContent = text; b.classList.add("show");
+    const fade = $("fadeLayer"); fade.style.opacity = "0.65";
+    setTimeout(() => { fade.style.opacity = "0"; b.classList.remove("show"); if (cb) cb(); }, 1400);
+  }
+  function showToast(msg) {
+    const old = $("toast"); if (old) old.remove();
+    const el = document.createElement("div"); el.id = "toast"; el.className = "pixel-panel"; el.textContent = msg;
+    $("gameShell").appendChild(el); setTimeout(() => el.remove(), 2100);
+  }
+
+  /* ============================================================
+   * 20) SAVE / LOAD
+   * ============================================================ */
+  function saveGame(silent) {
+    try {
+      const data = { v: 1, game, player: { x: player.x, y: player.y, dir: player.dir }, settings };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      if (!silent) showToast("Đã lưu 💾");
+    } catch (e) { console.warn("save fail", e); }
+  }
+  function loadGame() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      Object.assign(game, data.game);
+      buildWorld();
+      // bỏ object item đã nhặt: dựa trên flag đơn giản — giữ nguyên (đủ tốt cho slice)
+      player.x = data.player.x; player.y = data.player.y; player.dir = data.player.dir;
+      return true;
+    } catch (e) { console.warn("load fail", e); return false; }
+  }
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SET_KEY);
+      if (raw) Object.assign(settings, JSON.parse(raw));
+    } catch (e) {}
+    applySettings();
+  }
+
+  /* ============================================================
+   * 21) AUDIO (WebAudio — không cần file ngoài)
+   * ============================================================ */
+  const audio = { ctx: null, enabled: false, timer: null, beat: 0 };
+  function ensureAudio() {
+    if (!audio.ctx) { try { audio.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
+    if (audio.ctx.state === "suspended") audio.ctx.resume();
+  }
+  function sfx(type) {
+    ensureAudio(); if (!audio.ctx) return;
+    const now = audio.ctx.currentTime;
+    const notes = {
+      pickup: [720, 960], piece: [640, 860, 1120], complete: [523, 659, 784, 1046],
+      hurt: [160, 110], warp: [330, 660]
+    }[type] || [440];
+    notes.forEach((freq, i) => {
+      const osc = audio.ctx.createOscillator(), g = audio.ctx.createGain();
+      osc.type = type === "hurt" ? "sawtooth" : "square";
+      osc.frequency.setValueAtTime(freq, now + i * 0.055);
+      g.gain.setValueAtTime(0.0001, now + i * 0.055);
+      g.gain.exponentialRampToValueAtTime(0.05, now + i * 0.055 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.055 + 0.13);
+      osc.connect(g); g.connect(audio.ctx.destination);
+      osc.start(now + i * 0.055); osc.stop(now + i * 0.055 + 0.16);
+    });
+  }
+  const SONGS = {
+    adventure: { tempo: 240, lead: "triangle",
+      chords: [[261.63, 329.63, 392], [196, 246.94, 392], [220, 261.63, 329.63], [174.61, 220, 261.63]],
+      bass: [65.41, 49, 55, 43.65],
+      melody: [523.25, null, 659.25, 784, 659.25, null, 523.25, null, 493.88, null, 587.33, null, 784, null, 587.33, null] },
+    battle: { tempo: 200, lead: "square",
+      chords: [[220, 277.18, 329.63], [246.94, 311.13, 369.99], [261.63, 329.63, 392], [196, 246.94, 392]],
+      bass: [55, 61.74, 65.41, 49],
+      melody: [659.25, 659.25, null, 587.33, 523.25, null, 587.33, null, 659.25, null, 784, null, 659.25, 587.33, 523.25, null] },
+    dream: { tempo: 340, lead: "sine",
+      chords: [[220, 261.63, 329.63], [174.61, 220, 261.63], [261.63, 329.63, 392], [196, 246.94, 293.66]],
+      bass: [55, 43.65, 65.41, 49],
+      melody: [659.25, null, null, 523.25, null, null, 440, null, 523.25, null, null, 659.25, null, null, 880, null] }
+  };
+  function currentSong() {
+    if (battle.active) return battle.mode === "dream" ? SONGS.dream : SONGS.battle;
+    return SONGS.adventure;
+  }
+  function playNote(freq, type, vol, dur, when) {
+    const osc = audio.ctx.createOscillator(), g = audio.ctx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, when);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(vol, when + 0.025);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    osc.connect(g); g.connect(audio.ctx.destination); osc.start(when); osc.stop(when + dur + 0.05);
+  }
+  function musicStep() {
+    if (!audio.enabled || !audio.ctx) return;
+    const song = currentSong(), now = audio.ctx.currentTime, step = audio.beat;
+    const ci = Math.floor(step / 8) % song.chords.length, chord = song.chords[ci];
+    if (step % 4 === 0) playNote(song.bass[ci], "triangle", 0.06, 0.5, now);
+    playNote(chord[step % 3], "square", 0.012, 0.22, now);
+    if (step % 8 === 0) chord.forEach(f => playNote(f / 2, "sine", 0.02, 1.6, now));
+    const m = song.melody[step % song.melody.length];
+    if (m) playNote(m, song.lead, 0.045, 0.42, now);
+    audio.beat++;
+  }
+  function startMusic() { stopMusic(); audio.beat = 0; audio.timer = setInterval(musicStep, currentSong().tempo); }
+  function stopMusic() { if (audio.timer) { clearInterval(audio.timer); audio.timer = null; } }
+  function refreshMusic() { if (audio.enabled && audio.ctx) startMusic(); }
+  function setMusic(on) {
+    settings.music = on; ensureAudio(); audio.enabled = on;
+    $("musicBtn").textContent = on ? "♫" : "♪";
+    if (on) startMusic(); else stopMusic();
+    applySettings();
+  }
+
+  /* ============================================================
+   * 22) VÒNG LẶP GAME
+   * ============================================================ */
+  let lastT = 0;
+  function loop(t) {
+    const dt = Math.min(0.05, (t - lastT) / 1000 || 0); lastT = t;
+    visualClock += dt; worldTime += dt;
+    if (game.started && world) {
+      movePlayer(dt);
+      if (!battle.active) updateCamera();
+      updateParticles(dt);
+      updateCompass();
+      // gợi ý tương tác
+      const near = !battle.active && !dialog.active && !anyOverlayOpen() ? nearestInteractable() : null;
+      const hint = $("hint");
+      if (near) {
+        hint.classList.remove("hidden");
+        hint.textContent = near.type === "item" ? "Nhấn E để nhặt"
+          : near.type === "gym" ? "Nhấn E: Thử thách Thủ Lĩnh"
+          : near.type === "castle" ? "Nhấn E: Tới cổng lâu đài"
+          : near.type === "sign" ? "Nhấn E để đọc" : "Nhấn E để nói chuyện";
+      } else hint.classList.add("hidden");
+      draw();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ============================================================
+   * 23) ĐIỀU KHIỂN / SỰ KIỆN UI
+   * ============================================================ */
+  window.addEventListener("keydown", e => {
+    ensureAudio();
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key.toLowerCase();
+    keys[k] = true;
+    if (k === "e" || k === "enter" || k === " ") {
+      if (!battle.active) { e.preventDefault(); interact(); }
+    }
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
+  });
+  window.addEventListener("keyup", e => { keys[(e.key.length === 1 ? e.key.toLowerCase() : e.key.toLowerCase())] = false; });
+
+  // mobile dpad
+  document.querySelectorAll(".dpad button").forEach(b => {
+    const dir = b.dataset.dir;
+    const on = ev => { ev.preventDefault(); mobile[dir] = true; ensureAudio(); };
+    const off = ev => { ev.preventDefault(); mobile[dir] = false; };
+    b.addEventListener("touchstart", on, { passive: false }); b.addEventListener("touchend", off);
+    b.addEventListener("mousedown", on); b.addEventListener("mouseup", off); b.addEventListener("mouseleave", off);
+  });
+  $("interactTouch").addEventListener("click", () => { ensureAudio(); interact(); });
+
+  // toolbar
+  $("partyBtn").onclick = () => { if (game.party.length) openParty(); else showToast("Chưa có Lumina nào."); };
+  $("bagBtn").onclick = openBag;
+  $("dexBtn").onclick = openDex;
+  $("saveBtn").onclick = () => saveGame(false);
+  $("setBtn").onclick = openSettings;
+  $("musicBtn").onclick = () => setMusic(!settings.music);
+
+  $("closeParty").onclick = () => hideOverlay("partyOverlay");
+  $("closeBag").onclick = () => hideOverlay("bagOverlay");
+  $("closeDex").onclick = () => hideOverlay("dexOverlay");
+  $("closeSet").onclick = () => hideOverlay("setOverlay");
+
+  // settings toggles
+  $("tgContrast").onclick = () => { settings.contrast = !settings.contrast; applySettings(); syncSettingButtons(); };
+  $("tgFlash").onclick = () => { settings.noFlash = !settings.noFlash; applySettings(); syncSettingButtons(); };
+  $("tgMusic").onclick = () => { setMusic(!settings.music); syncSettingButtons(); };
+  document.querySelectorAll("[data-font]").forEach(b => b.onclick = () => { settings.font = parseFloat(b.dataset.font); applySettings(); syncSettingButtons(); });
+  $("resetBtn").onclick = () => {
+    if (confirm("Xóa bản lưu và chơi lại từ đầu?")) { localStorage.removeItem(SAVE_KEY); location.reload(); }
+  };
+
+  // ending
+  $("endingRestart").onclick = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
+  $("endingContinue").onclick = () => hideOverlay("endingOverlay");
+
+  // start
+  $("startBtn").onclick = () => {
+    const nm = $("playerNameInput").value.trim();
+    game.playerName = nm || "Bạn";
+    beginGame(true);
+  };
+  $("continueBtn").onclick = () => {
+    if (loadGame()) { beginGame(false); }
+    else showToast("Chưa có bản lưu nào.");
+  };
+
+  function beginGame(fresh) {
+    hideOverlay("startOverlay");
+    if (fresh || !world) buildWorld();
+    if (fresh) { player.x = world.spawn.tx * TILE; player.y = world.spawn.ty * TILE; }
+    game.started = true;
+    canvas.classList.add("tilt");
+    updateHud();
+    setMusic(settings.music); // áp dụng trạng thái nhạc đã lưu
+    if (fresh) {
+      bannerThen("Chương 1 · Khởi Hành", () => {
+        openDialog([
+          { name: "", text: "Bình minh ở Vùng Khởi Hành. Chiếc la bàn ký ức của {name} khẽ rung — chỉ thẳng về phía Đông, nơi K đang bị giam." },
+          { name: "", text: "Hãy tới Phòng Thí Nghiệm của Giáo Sư Tơ (dấu ❗) để nhận Lumina đầu tiên nhé. (Nhấn E cạnh Giáo Sư.)" }
+        ]);
+      });
+    }
+    saveGame(true);
+  }
+
+  /* ---- Khởi động ---- */
+  loadSettings();
+  // nếu có bản lưu, gợi ý nút Tải; vẫn hiện màn start
+  if (!localStorage.getItem(SAVE_KEY)) $("continueBtn").style.display = "none";
+  requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
