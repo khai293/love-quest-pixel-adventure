@@ -606,9 +606,9 @@
     badges: [],           // ["courage"]
     keys: [],             // Chìa Khóa Cảm Xúc
     party: [],            // [LuminaInstance]
-    bag: { charm: 5, grassRing: 1, letter: 0, courageBadge: 0 },
+    bag: { charm: 8, grassRing: 1, letter: 0, courageBadge: 0, potion: 4 },
     dex: {},              // {speciesId: "seen"|"caught"}
-    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false }
+    flags: { gotStarter: false, gymDone: false, sawCastle: false, dreamDone: false, trainerDone: false }
   };
 
   const settings = { contrast: false, noFlash: false, font: 1, music: false };
@@ -741,6 +741,9 @@
       obj("prof", "npc", 5, 5, { color: "#bfa2ff", who: "prof" }),
       obj("folk1", "npc", 11, 5, { color: "#9fe0ff", who: "folk1" }),
       obj("folk2", "npc", 15, 6, { color: "#ffd166", who: "folk2" }),
+      // Trạm Hồi Sức (Pokémon Center) + huấn luyện viên đường
+      obj("nurse", "npc", 8, 6, { color: "#ff9bcc", who: "nurse" }),
+      obj("trainer", "npc", 17, 12, { color: "#bfa2ff", who: "trainer" }),
       // Bùa nhặt thêm
       obj("charm1", "item", 21, 12, { item: "charm", amount: 3 }),
       obj("charm2", "item", 31, 20, { item: "charm", amount: 3 }),
@@ -894,7 +897,8 @@
     const line = dialog.lines[dialog.i];
     $("dialogName").textContent = line.name ? fmt(line.name) : "";
     $("dialogName").style.display = line.name ? "block" : "none";
-    $("dialogText").textContent = fmt(line.text);
+    dialog.full = fmt(line.text); dialog.shown = 0; dialog.typing = true;
+    $("dialogText").textContent = "";
     const choicesEl = $("dialogChoices");
     choicesEl.innerHTML = "";
     if (line.choices) {
@@ -910,6 +914,7 @@
     }
   }
   dialog.advance = function () {
+    if (dialog.typing) { dialog.typing = false; dialog.shown = dialog.full.length; $("dialogText").textContent = dialog.full; return; }
     if (dialog.lines[dialog.i] && dialog.lines[dialog.i].choices) return; // chờ chọn
     dialog.i++;
     if (dialog.i >= dialog.lines.length) {
@@ -920,17 +925,38 @@
     } else renderDialog();
   };
   $("nextBtn").addEventListener("click", () => dialog.advance());
+  function updateDialog(dt) {
+    if (!dialog.typing) return;
+    dialog.shown += dt * 55;
+    if (dialog.shown >= dialog.full.length) { dialog.shown = dialog.full.length; dialog.typing = false; }
+    $("dialogText").textContent = dialog.full.slice(0, Math.floor(dialog.shown));
+  }
 
   function talkNpc(o) {
     const who = o.data.who;
     if (who === "prof") {
       if (!game.flags.gotStarter) { openStarter(); return; }
-      openDialog([{ name: "Giáo Sư Tơ", text: "Đi về phía Đông qua cỏ cao, gặp Thủ Lĩnh Hạ ở Sân Đấu Can Đảm nhé. La bàn của con đang chỉ về K đó." }]);
+      openDialog([{ name: "Giáo Sư Tơ", text: "Đi về phía Đông qua cỏ cao, gặp Thủ Lĩnh Hạ ở Sân Đấu Can Đảm nhé. Mệt thì ghé Cô Y Tá Lá ngay cạnh đây để hồi sức cho cả đội. La bàn của con đang chỉ về K đó." }]);
     } else if (who === "folk1") {
       openDialog([STORY.townsfolk[0]]);
     } else if (who === "folk2") {
       openDialog([STORY.townsfolk[1]]);
+    } else if (who === "nurse") {
+      openDialog([{ name: "Cô Y Tá Lá", text: "Chào {name}! Đây là Trạm Hồi Sức 💚. Để cô chăm các bé Lumina cho con nhé — về đây bất cứ lúc nào con cần." }], () => healParty());
+    } else if (who === "trainer") {
+      if (game.flags.trainerDone) { openDialog([{ name: "Người Lữ Hành", text: "Trận vừa rồi vui ghê! Chúc con sớm tìm được K nha 🌟" }]); return; }
+      if (!game.flags.gotStarter) { openDialog([{ name: "Người Lữ Hành", text: "Con chưa có Lumina nào à? Ghé Giáo Sư Tơ ở làng trước nhé!" }]); return; }
+      openDialog([
+        { name: "Người Lữ Hành", text: "Ê này! Lumina của con trông đáng yêu đó. Đấu một trận giao hữu nhé?" },
+        { name: "Người Lữ Hành", text: "Để xem con và các bé Lumina đồng điệu tới đâu nào!" }
+      ], () => startTrainer());
     }
+  }
+  function healParty() {
+    game.party.forEach(m => { m.hp = m.maxHp; m.status = null; });
+    sfx("heal"); burst(VIEW_W * 0.5, VIEW_H * 0.45, "#8af0a0", 18, "heart"); burst(VIEW_W * 0.5, VIEW_H * 0.45, "#b8f7c1", 10, "spark");
+    showToast("Đội Lumina đã hồi phục đầy đủ! 💚");
+    saveGame(true);
   }
 
   /* ============================================================
@@ -965,11 +991,11 @@
   }
   $("confirmStarter").addEventListener("click", () => {
     if (!starterPick) return;
-    const mon = makeMon(starterPick, 5);
+    const mon = makeMon(starterPick, 6);
     game.party = [mon];
     markDex(starterPick, "caught");
     game.flags.gotStarter = true;
-    game.bag.charm += 0; game.bag.grassRing = 1;
+    game.bag.charm += 3; game.bag.grassRing = 1; game.bag.potion = (game.bag.potion || 0) + 3;
     hideOverlay("starterOverlay");
     sfx("complete");
     const after = STORY.profAfter.map(l => ({ name: l.name, text: l.text.replaceAll("{mon}", mon.name) }));
@@ -1005,8 +1031,12 @@
     }
     openDialog(STORY.gymBefore, () => {
       const team = [makeMon("embo", 7), makeMon("pyrofox", 9)];
-      enterBattle({ mode: "gym", enemyTeam: team, canRun: false });
+      enterBattle({ mode: "gym", enemyTeam: team, canRun: false, foeName: "Thủ Lĩnh Hạ" });
     });
+  }
+  function startTrainer() {
+    const team = [makeMon("zephy", 5), makeMon("sprou", 6)];
+    enterBattle({ mode: "trainer", enemyTeam: team, canRun: false, foeName: "Người Lữ Hành" });
   }
   function approachCastle() {
     game.flags.sawCastle = true;
@@ -1045,6 +1075,7 @@
     battle.allyMon = opts.ally || null;
     if (battle.allyMon) battle.allyMon.bond = 0;
     battle.canRun = !!opts.canRun;
+    battle.foeName = opts.foeName || (opts.mode === "gym" ? "Thủ Lĩnh Hạ" : opts.mode === "trainer" ? "Người Lữ Hành" : "");
     battle.soul = 0;
     battle.capturing = false;
     battle.menu = "root";
@@ -1058,9 +1089,9 @@
     refreshMusic();
     const intro = battle.mode === "wild"
       ? `Một ${battle.eMon.name} hoang ${TYPES[battle.eMon.type].emoji} xuất hiện!`
-      : battle.mode === "gym"
-        ? `Thủ Lĩnh Hạ tung ra ${battle.eMon.name}!`
-        : `Gai Thủ Vệ trỗi dậy từ nỗi sợ...`;
+      : battle.mode === "dream"
+        ? `Gai Thủ Vệ trỗi dậy từ nỗi sợ...`
+        : `${battle.foeName} tung ra ${battle.eMon.name}!`;
     setBattleMsg(intro);
     renderBattleBoxes();
     setTimeout(() => { battle.busy = false; showBattleMenu(); }, 1100);
@@ -1115,6 +1146,7 @@
     } else {
       html += `<button class="battleBtn" data-act="charm">💞 Bùa Kết Nối<small>Còn ${game.bag.charm || 0} · thu phục</small></button>`;
     }
+    if (battle.mode !== "dream") html += `<button class="battleBtn" data-act="bag">🧪 Túi<small>Trà Hồi Sức ×${game.bag.potion || 0}</small></button>`;
     html += `<button class="battleBtn" data-act="switch">🔁 Đổi Lumina<small>Đưa bạn khác ra</small></button>`;
     if (battle.canRun) html += `<button class="battleBtn" data-act="run">🏃 Bỏ chạy<small>Thoát trận hoang</small></button>`;
     else html += `<button class="battleBtn" disabled>🚫 Không thể chạy</button>`;
@@ -1129,6 +1161,7 @@
     if (act === "heal") { showMoves(true); return; }
     if (act === "switch") { showSwitch(); return; }
     if (act === "charm") { tryCapture(); return; }
+    if (act === "bag") { usePotion(); return; }
     if (act === "run") { tryRun(); return; }
     if (act === "reso") { doResonance(); return; }
   }
@@ -1218,18 +1251,20 @@
     const us = sideOf(user), ts = sideOf(target);
     if (mv.kind === "atk") {
       const { dmg, eff } = damageOf(user, target, mv);
-      target.hp = clamp(target.hp - dmg, 0, target.maxHp);
+      // Giảm độ khó: địch đánh nhẹ hơn (~0.72), người chơi & đồng đội mạnh hơn chút (~1.12)
+      const dealt = Math.max(1, Math.round(dmg * (us === "E" ? 0.72 : 1.12)));
+      target.hp = clamp(target.hp - dealt, 0, target.maxHp);
       user.bond = clamp(user.bond + mv.bond, 0, 100);
       if (battle.mode === "dream" && (us === "P" || us === "A")) battle.soul = clamp(battle.soul + 4, 0, 100);
       setLunge(us, ts);
       const tcol = mv.type ? TYPES[mv.type] : null;
       const c1 = tcol ? tcol.c1 : "#ff9bcc", c2 = tcol ? tcol.c2 : "#fff7fb";
       const tp = battlePos(ts);
-      const onHit = () => { impactBurst(tp, c1, c2, mv.type); impactOn(ts); dmgNumber(tp, dmg, eff); if (eff > 1) effPopup(tp); flash(0.18); shakeScreen(eff > 1 ? 6 : dmg >= 22 ? 4 : 2.5); };
+      const onHit = () => { impactBurst(tp, c1, c2, mv.type); impactOn(ts); dmgNumber(tp, dealt, eff); if (eff > 1) effPopup(tp); flash(0.18); shakeScreen(eff > 1 ? 6 : dealt >= 22 ? 4 : 2.5); };
       const melee = !mv.type || mv.power <= 16;
       if (melee) battle.anims.push({ type: "delayHit", t: 0, dur: 0.16, fn: onHit });
       else battle.anims.push({ type: "proj", t: 0, dur: 0.32, from: battlePos(us), to: tp, c1, c2, onHit });
-      setBattleMsg(`${user.name} dùng ${mv.name}! Gây ${dmg} sát thương.${effLabel(eff)}`);
+      setBattleMsg(`${user.name} dùng ${mv.name}! Gây ${dealt} sát thương.${effLabel(eff)}`);
     } else if (mv.kind === "heal") {
       const heal = Math.round(user.maxHp * mv.heal);
       user.hp = clamp(user.hp + heal, 0, user.maxHp);
@@ -1277,7 +1312,7 @@
       // Gai chỉ "vùng vẫy" vì sợ — sát thương nhẹ, mục tiêu là người chơi
       const target = (battle.allyMon && battle.allyMon.hp > 0 && Math.random() < 0.4) ? battle.allyMon : p;
       const { dmg } = damageOf(e, target, MOVES.vine);
-      const real = Math.round(dmg * 0.7);
+      const real = Math.round(dmg * 0.55);
       target.hp = clamp(target.hp - real, 0, target.maxHp);
       const ts = sideOf(target);
       setLunge("E", ts); impactBurst(battlePos(ts), "#3b3346", "#9fe0ff", "nature"); impactOn(ts); dmgNumber(battlePos(ts), real, 0);
@@ -1326,14 +1361,14 @@
   function onEnemyFaint() {
     battle.busy = true; battle.seq++; clearMenu(); // hủy chuỗi lượt cũ để con kế không đánh free
     setBattleMsg(`${battle.eMon.name} đã gục!`);
-    const gained = battle.eMon.level * 14 + 16;
+    const gained = battle.eMon.level * 18 + 30;
     const steps = [];
     steps.push(() => gainExp(battle.pMon, gained));
     steps.push(() => {
-      // gym: còn mon tiếp theo?
-      if (battle.mode === "gym" && battle.enemyIdx < battle.enemyTeam.length - 1) {
+      // gym/trainer: còn mon tiếp theo?
+      if ((battle.mode === "gym" || battle.mode === "trainer") && battle.enemyIdx < battle.enemyTeam.length - 1) {
         battle.enemyIdx++; battle.eMon = battle.enemyTeam[battle.enemyIdx];
-        setBattleMsg(`Thủ Lĩnh Hạ tung ra ${battle.eMon.name}!`);
+        setBattleMsg(`${battle.foeName} tung ra ${battle.eMon.name}!`);
         renderBattleBoxes();
         battle.busy = false; showBattleMenu();
       } else {
@@ -1355,7 +1390,7 @@
       mon.hp = mon.maxHp;
       leveled = true;
     }
-    if (leveled) { setBattleMsg(`${mon.name} lên Lv${mon.level}! 🎉`); sfx("piece"); }
+    if (leveled) { setBattleMsg(`${mon.name} lên Lv${mon.level}! 🎉`); sfx("levelup"); }
     renderBattleBoxes();
     // kiểm tra tiến hóa tự nhiên
     tryEvolveNatural(mon);
@@ -1392,9 +1427,10 @@
     game.bag.charm--;
     const e = battle.eMon;
     const hpFactor = 1 - e.hp / e.maxHp;           // 0..1
-    const statusBonus = e.status === "sleep" ? 0.22 : e.status === "dazed" ? 0.12 : 0;
-    const empathyBonus = clamp(game.empathy * 0.004, 0, 0.25);
-    const rate = clamp(0.30 + hpFactor * 0.4 + statusBonus + empathyBonus, 0.06, 0.96);
+    const statusBonus = e.status === "sleep" ? 0.32 : e.status === "dazed" ? 0.2 : 0;
+    const empathyBonus = clamp(game.empathy * 0.006, 0, 0.35);
+    // Dễ hơn: tỉ lệ nền cao, sàn 0.3 nên gần như luôn có cơ hội bắt
+    const rate = clamp(0.5 + hpFactor * 0.42 + statusBonus + empathyBonus, 0.3, 0.99);
     const wobbles = 3;
     const steps = [];
     steps.push(() => {
@@ -1426,7 +1462,7 @@
     runSteps(steps, () => { if (!caught && battle.active && !battle.busy) showBattleMenu(); });
   }
   function onCaptureSuccess(e) {
-    sfx("complete"); burstAt("E", "#ffd1e6", 20, "heart");
+    sfx("caught"); bannerThen("✨ Gotcha! ✨", null); burstAt("E", "#ffd1e6", 24, "heart"); burstAt("E", "#fff3a3", 16, "star");
     markDex(e.species, "caught");
     game.empathy = clamp(game.empathy + 3, 0, 60);
     game.kHeart = clamp(game.kHeart + 2, 0, 100); // đối xử dịu dàng với Lumina → K cảm động
@@ -1438,6 +1474,19 @@
       game.storage = game.storage || []; game.storage.push(e);
     }
     setTimeout(() => endBattle(true), 1300);
+  }
+
+  function usePotion() {
+    if ((game.bag.potion || 0) <= 0) { setBattleMsg("Hết Trà Hồi Sức rồi! Ghé Trạm Hồi Sức (Cô Y Tá Lá) ở làng nhé."); setTimeout(showBattleMenu, 900); return; }
+    const p = battle.pMon;
+    if (p.hp >= p.maxHp) { setBattleMsg(`${p.name} đang khỏe re, chưa cần hồi mà!`); setTimeout(showBattleMenu, 900); return; }
+    battle.busy = true; clearMenu();
+    game.bag.potion--;
+    const heal = Math.round(p.maxHp * 0.5); p.hp = clamp(p.hp + heal, 0, p.maxHp);
+    const ps = sideOf(p); healFx(battlePos(ps)); dmgNumber(battlePos(ps), heal, 0, "#8af0a0", "+"); sfx("heal"); renderBattleBoxes();
+    setBattleMsg(`Dùng Trà Hồi Sức 🧪 cho ${p.name}, hồi ${heal} HP!`);
+    const steps = [() => { if (battle.active) { enemyTurn(); afterHitChecks("enemy"); } }];
+    runSteps(steps, () => { if (battle.active) { battle.busy = false; showBattleMenu(); renderBattleBoxes(); } });
   }
 
   function doResonance() {
@@ -1540,6 +1589,16 @@
   }
 
   function endBattle(victory) {
+    if (battle.mode === "trainer" && victory) {
+      battle.active = false; battle.busy = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
+      refreshMusic();
+      game.flags.trainerDone = true;
+      game.empathy = clamp(game.empathy + 3, 0, 60);
+      game.bag.potion = (game.bag.potion || 0) + 2;
+      game.party.forEach(m => { m.hp = m.maxHp; m.status = null; });
+      openDialog([{ name: "Người Lữ Hành", text: "Hay lắm! Lumina của con rất tin con. Tặng con 2 Trà Hồi Sức 🧪 — lên đường bình an nhé!" }], () => { updateHud(); saveGame(true); });
+      return;
+    }
     if (battle.mode === "gym" && victory) {
       battle.active = false; $("battleUI").classList.remove("on"); canvas.classList.add("tilt");
       refreshMusic();
@@ -2438,7 +2497,7 @@
   }
 
   /* ===== Hiệu ứng chiêu thức & cảnh battle ===== */
-  let _ambT = 0, screenShake = 0;
+  let _ambT = 0, screenShake = 0, _lowHpT = 0;
   function shakeScreen(v) { screenShake = Math.max(screenShake, settings.noFlash ? v * 0.4 : v); }
   function sideOf(mon) { return mon === battle.eMon ? "E" : mon === battle.allyMon ? "A" : "P"; }
   function battlePos(side) {
@@ -2517,6 +2576,10 @@
     battle.fx.shakeE = Math.max(0, battle.fx.shakeE - dt * 1.6);
     battle.fx.shakeP = Math.max(0, battle.fx.shakeP - dt * 1.6);
     if (battle.fx.intro > 0) battle.fx.intro = Math.max(0, battle.fx.intro - dt);
+    // tiếng bíp cảnh báo khi máu thấp (đặc trưng Pokémon)
+    if (audio.enabled && battle.pMon && battle.pMon.hp > 0 && battle.pMon.hp / battle.pMon.maxHp < 0.2) {
+      _lowHpT -= dt; if (_lowHpT <= 0) { _lowHpT = 0.55; sfx("lowhp"); }
+    } else _lowHpT = 0;
     for (const k of ["P", "E", "A"]) {
       battle.fx.hit[k] = Math.max(0, (battle.fx.hit[k] || 0) - dt * 3.2);
       const lg = battle.fx.lunge[k]; if (lg) lg.t += dt;
@@ -2653,7 +2716,8 @@
     const now = audio.ctx.currentTime;
     const notes = {
       pickup: [720, 960], piece: [640, 860, 1120], complete: [523, 659, 784, 1046],
-      hurt: [160, 110], warp: [330, 660]
+      hurt: [160, 110], warp: [330, 660],
+      caught: [659, 784, 988, 1319], levelup: [523, 659, 784, 1047, 1319], heal: [784, 988, 1175], lowhp: [880]
     }[type] || [440];
     notes.forEach((freq, i) => {
       const osc = audio.ctx.createOscillator(), g = audio.ctx.createGain();
@@ -2725,6 +2789,7 @@
       if (!battle.active) updateCamera();
       updateParticles(dt);
       if (battle.active) updateBattleFx(dt); else ambientOverworld(dt);
+      if (dialog.active) updateDialog(dt);
       updateCompass();
       // gợi ý tương tác
       const near = !battle.active && !dialog.active && !anyOverlayOpen() ? nearestInteractable() : null;
