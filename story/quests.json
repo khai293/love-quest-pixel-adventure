@@ -1,0 +1,6 @@
+{
+  "note":"Locations, foods and visual layouts used by puzzles are illustrative. They are editable gameplay props, not asserted personal facts.",
+  "quests":[{"chapter":0,"goals":["drive-through-three-lit-waypoints","park-safely","match-five-bouquet-pieces"]},{"chapter":1,"goals":["trace-adjacent-route-via-waypoint","choose-and-send-three-sample-messages","reach-pickup-and-return-together"]},{"chapter":2,"goals":["match-five-tickets","seat-five-characters","remember-five-illustrative-foods","arrange-and-photograph-five-characters"]},{"chapter":3,"goals":["explore-both-perspectives","assemble-an-empathetic-message-with-no-single-correct-answer","move-both-characters-and-reconcile"]},{"chapter":4,"goals":["arrange-four-memory-items-chronologically","unwrap-gift-and-open-personal-letter"]}],
+  "foods":{"sample":true,"items":[{"id":0,"icon":"🍜","name":"Mì"},{"id":1,"icon":"🍚","name":"Cơm"},{"id":2,"icon":"🥪","name":"Bánh mì"},{"id":3,"icon":"🍕","name":"Pizza"},{"id":4,"icon":"🥗","name":"Rau củ"}]},
+  "photos":{"source":"local browser uploads only","status":"TODO actual photographs"}
+}

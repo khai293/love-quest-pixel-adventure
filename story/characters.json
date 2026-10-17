@@ -1,0 +1,7 @@
+[
+  {"id":"female","name":"Em","realName":"","role":"player","heightCm":158,"hair":"black, long","glasses":true,"outfit":"cream floral blouse, light shorts, sneakers","portrait":{"sheet":"assets/portraits.png","columns":6,"rows":2,"row":0,"expressions":["happy","sad","surprised","shy","upset","joyful"]},"status":"real name and personal dialogue TODO"},
+  {"id":"male","name":"Anh","realName":"","role":"companion","hair":"black, short","outfit":"sage shirt, light undershirt, black trousers, dark shoes","portrait":{"sheet":"assets/portraits.png","columns":6,"rows":2,"row":1,"expressions":["happy","sad","surprised","shy","upset","joyful"]},"status":"real name and personal dialogue TODO"},
+  {"id":"niece1","name":"Cháu 1","realName":"","role":"female protagonist's child relative","appearance":"placeholder; not a factual likeness"},
+  {"id":"niece2","name":"Cháu 2","realName":"","role":"female protagonist's child relative","appearance":"placeholder; not a factual likeness"},
+  {"id":"brother","name":"Em trai","realName":"","age":8,"role":"male protagonist's younger brother","appearance":"placeholder; not a factual likeness"}
+]

@@ -1,0 +1,5 @@
+{
+  "version":1,
+  "schema":{"trigger":"chapter:step-complete","condition":"all previous chapters completed","actions":["unlock-chapter","add-memory-item","save-progress","camera-focus","dialogue","animate-character"]},
+  "events":[{"id":"bouquet","chapter":0,"on":"complete","giveItem":"Bó hoa đầu tiên","unlock":1},{"id":"message","chapter":1,"on":"complete","giveItem":"Tin nhắn kỷ niệm","unlock":2},{"id":"photo","chapter":2,"on":"complete","giveItem":"Bức ảnh của năm người","unlock":3},{"id":"heart","chapter":3,"on":"complete","giveItem":"Trái tim hòa giải","unlock":4},{"id":"ending","chapter":4,"on":"complete","giveItem":"Lá thư 20/10"}]
+}
