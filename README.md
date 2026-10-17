@@ -27,7 +27,9 @@ Trên máy tính: WASD / phím mũi tên để đi, E để tương tác, C đ�
 | Giận một chút, thương nhiều hơn | Khám phá hai phía cảm xúc, ghép lời nhắn, cùng bước lại gần và làm hòa |
 | Món quà ngày 20/10 | Đặt lại bốn vật phẩm, tháo ruy-băng, mở thư và ảnh |
 
-13 phần chơi, chương mở tuần tự, tự lưu sau từng phần. Có album, chơi lại chương, xuất/nhập tiến trình, chuyển nhân vật, ba khu vực khám phá, ba chế độ ánh sáng, nhạc tổng hợp theo chương và chất lượng đồ họa nhẹ.
+13 phần chơi, chương mở tuần tự, tự lưu sau từng phần. Có album, chơi lại chương, xuất/nhập tiến trình, chuyển nhân vật, ba khu vực khám phá, ba chế độ ánh sáng, nhạc nền và chất lượng đồ họa nhẹ.
+
+Nhạc nền dùng đúng tệp **NƠI NÀY CÓ ANH - Instrumental.mp3** do người dùng cung cấp, được lưu tại `assets/audio/noi-nay-co-anh-instrumental.mp3` và phát lặp. Nhạc bắt đầu sau thao tác nhấn chơi/bật loa; không tự phát khi vừa tải trang. Có bật/tắt, chỉnh âm lượng ngay và ghi nhớ lựa chọn. Đổi chương hoặc quay lại tab không tua bài về đầu. Tắt tab/tạm rời cửa sổ sẽ tạm dừng; khi trở lại hành trình, bài tiếp tục. Âm lượng trên iOS có thể phụ thuộc nút âm lượng thiết bị.
 
 Hai cháu và em trai 8 tuổi xuất hiện trong chương xem phim/ăn uống. Không có khu vui chơi hay gắp thú. Trò chơi mới không dùng cốt truyện hoặc cơ chế chiến đấu của Lumina Quest.
 
@@ -54,11 +56,12 @@ src/world.js              Pixel renderer, camera, collision và sprite nhân v�
 src/activities.js         13 phần chơi và hội thoại theo dữ liệu
 src/story-engine.js       API timeline / điều kiện / sự kiện
 src/storage.js            Lưu tiến trình và cài đặt tách biệt bản cũ
-src/audio.js              Nhạc Web Audio gốc, không tải tài nguyên ngoài
+src/audio.js              Phát MP3 và hiệu ứng tương tác Web Audio
 src/style.css             Giao diện responsive
 src/activities.css        Giao diện mini-game
 assets/key-art.png        Minh họa gốc cho màn hình chính
 assets/portraits.png      12 chân dung, lưới 6 biểu cảm × 2 nhân vật
+assets/audio/             Bản instrumental người dùng cung cấp
 story/                    Dữ liệu nội dung
 tests/test_game.py        Kiểm thử trình duyệt thực
 archive/                  Hai game HTML gốc, sao lưu nguyên trạng
@@ -90,6 +93,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 Chạy máy chủ ở cổng 8000 trước. Có thể đặt `CHROMIUM_PATH` hoặc `LOVEQUEST_TEST_URL` nếu cần. Bộ test dùng hồ sơ trình duyệt mới, không đụng bản lưu thật; đi qua đủ năm chương và 13 phần chơi bằng UI, tải lại giữa chương, chơi lại, xác nhận album/ảnh, thử bản lưu không hợp lệ, bàn phím, cảm ứng thật qua Chromium CDP, màn hình dọc/ngang.
+
+`tests/test_audio.py` kiểm tra giải mã/phát đúng MP3, chạm để phát, bật/tắt và ghi nhớ tùy chọn, âm lượng tức thời, giữ vị trí khi mở chương, mô phỏng sự kiện đổi cửa sổ để kiểm tra tạm dừng/tiếp tục và phát lặp thật ở cuối bài (chạy nhanh 16 lần trong kiểm thử).
 
 Mục tiêu là trải nghiệm mượt trên máy phổ thông; hiệu năng phụ thuộc thiết bị. Có tùy chọn giảm chi tiết và chuyển động. Mô phỏng cảm ứng đã được kiểm thử trên Chromium; cần thêm kiểm tra thực tế trên iPhone/Safari và các máy Android cụ thể.
 

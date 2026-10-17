@@ -28,6 +28,7 @@ const itemSymbols=['💐','✉','🎞','♡','🎁'];
 let toastTimer,saveTimer,autosaveAt=0,previousFocus=null,transitioning=false;
 
 function notify(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,3600);}
+audio.addEventListener('playbackerror',event=>notify(event.detail==='gesture'?'Chạm vào bản đồ hoặc nhấn phím di chuyển để cho phép phát nhạc.':'Chưa tải được nhạc nền. Hãy kiểm tra kết nối rồi bật nhạc lại.'));
 function isModal(){return !$('panelModal').hidden||!$('activityModal').hidden;}
 function stopMovement(){keys.clear();held.clear();state.target=null;state.player.moving=false;document.querySelectorAll('.dpad button').forEach(b=>b.classList.remove('pressed'));}
 function persist(show=false){
@@ -177,8 +178,8 @@ function openSettings(){
   openPanel('Một chút theo ý bạn','CÀI ĐẶT',`<p class="panel-subtitle">Một thế giới vừa vặn với bạn. Mọi thay đổi được lưu trên thiết bị này.</p>
     <div class="settings-row"><label for="femaleName">Tên nhân vật nữ<small>Tóc đen, kính tròn · 158 cm</small></label><input class="name-input" id="femaleName" maxlength="20" value="${esc(progress.names.female)}"></div>
     <div class="settings-row"><label for="maleName">Tên nhân vật nam<small>Tóc đen, áo xanh sage</small></label><input class="name-input" id="maleName" maxlength="20" value="${esc(progress.names.male)}"></div>
-    <div class="settings-row"><label>Nhạc nền<small>Giai điệu nhẹ theo từng chương</small></label><button id="musicToggle" class="switch ${settings.music?'on':''}">${settings.music?'Đang bật':'Đang tắt'}</button></div>
-    <div class="settings-row"><label for="volumeInput">Âm lượng<small>Âm thanh được tạo trực tiếp, không tải nhạc ngoài</small></label><input id="volumeInput" type="range" min="0" max="1" step="0.05" value="${settings.volume}" aria-label="Âm lượng"></div>
+    <div class="settings-row"><label>Nhạc nền<small>Nơi này có anh · Instrumental</small></label><button id="musicToggle" class="switch ${settings.music?'on':''}">${settings.music?'Đang bật':'Đang tắt'}</button></div>
+    <div class="settings-row"><label for="volumeInput">Âm lượng<small>Nhạc phát lặp lại, bắt đầu sau khi bạn nhấn chơi</small></label><input id="volumeInput" type="range" min="0" max="1" step="0.05" value="${settings.volume}" aria-label="Âm lượng"></div>
     <div class="settings-row"><label for="qualityInput">Đồ họa<small>Chế độ nhẹ giảm số hạt và hiệu ứng</small></label><select id="qualityInput"><option value="high" ${settings.quality==='high'?'selected':''}>Nhiều chi tiết</option><option value="low" ${settings.quality==='low'?'selected':''}>Nhẹ nhàng</option></select></div>
     <div class="settings-row"><label for="daylightInput">Thời gian trong ngày<small>Chỉ thay đổi ánh sáng, không khóa nội dung</small></label><select id="daylightInput">${Object.entries(daylightNames).map(([id,n])=>`<option value="${id}" ${settings.daylight===id?'selected':''}>${n}</option>`).join('')}</select></div>
     <div class="settings-row"><label>Giảm chuyển động<small>Giảm hạt bay và các chuyển cảnh</small></label><button id="motionToggle" class="switch ${settings.reducedMotion?'on':''}">${settings.reducedMotion?'Đang bật':'Đang tắt'}</button></div>
@@ -186,7 +187,7 @@ function openSettings(){
     const saveNames=()=>{progress.names.female=$('femaleName').value.trim()||'Em';progress.names.male=$('maleName').value.trim()||'Anh';if(hasSave)saveProgress(progress);updateHud();};
     $('femaleName').onchange=$('maleName').onchange=saveNames;
     $('musicToggle').onclick=()=>{audio.toggle();writeSettings(settings);openSettings();updateSound();};
-    $('volumeInput').oninput=e=>{settings.volume=Number(e.target.value);writeSettings(settings);};
+    $('volumeInput').oninput=e=>{audio.setVolume(e.target.value);writeSettings(settings);};
     $('qualityInput').onchange=e=>{settings.quality=e.target.value;writeSettings(settings);};
     $('daylightInput').onchange=e=>{settings.daylight=e.target.value;writeSettings(settings);updateHud();};
     $('motionToggle').onclick=()=>{settings.reducedMotion=!settings.reducedMotion;writeSettings(settings);openSettings();};

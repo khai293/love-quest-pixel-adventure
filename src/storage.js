@@ -34,7 +34,7 @@ export function saveProgress(progress) {
 }
 
 export function readSettings() {
-  const defaults = {volume:0.35,music:false,quality:'high',daylight:'morning',reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
+  const defaults = {volume:0.35,music:true,quality:'high',daylight:'morning',reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
   try { return {...defaults,...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')}; } catch { return defaults; }
 }
 
